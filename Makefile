@@ -28,6 +28,9 @@ comp:
 	@printf "Compiling ...\n"
 	@$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(LFLAGS) $(INCLD) -o $(Binary) $(Source)
 
+win32:
+	@printf "Placeholder for after I have installed MINGW.\n"
+
 run:
 	@printf "Running ...\n"
 	@./$(Binary)
