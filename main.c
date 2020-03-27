@@ -1,13 +1,24 @@
 #include <gtk/gtk.h>
+#include <openssl/sha.h>
 #include <stdio.h> // TODO remove this
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define BUFFER_SIZE 1024
 
 char const *Master = "g45p98f98ur.yew";
 char const *Slaves = "wnryff.rgw";
 gboolean exit_status = TRUE;
+
+///////////////////////////////////////////////////////////////////////////////
+
+// block the program for some amount of time
+void wait(int unsigned delay)
+{
+	int unsigned end_time = time(0) + delay;
+	while(time(0) < end_time);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -70,6 +81,8 @@ void del_credentials(void)
 void request_passphrase(void);
 void validate_passphrase(GtkWidget *widget, gpointer data);
 void quit_passphrase(void);
+void digest_to_hexdigest(char unsigned **p);
+gboolean hide_tooltip(gpointer data);
 
 // ask user to enter their information
 void request_passphrase(void)
@@ -93,28 +106,23 @@ void request_passphrase(void)
 	gtk_label_set_markup(GTK_LABEL(main_label), "<b>Enter your passphrase to log in.</b>");
 	gtk_grid_attach(GTK_GRID(grid), main_label, 0, 0, 2, 1);
 
-	// username
-	GtkWidget *uname_label = gtk_label_new("Username");
-	gtk_grid_attach(GTK_GRID(grid), uname_label, 0, 1, 1, 1);
-	GtkWidget *uname_entry = gtk_entry_new();
-	gtk_grid_attach(GTK_GRID(grid), uname_entry, 1, 1, 1, 1);
-
-	// password
+	// passphrase
 	GtkWidget *pw_label = gtk_label_new("Passphrase");
-	gtk_grid_attach(GTK_GRID(grid), pw_label, 0, 2, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), pw_label, 0, 1, 1, 1);
 	GtkWidget *pw_entry = gtk_entry_new();
-	gtk_grid_attach(GTK_GRID(grid), pw_entry, 1, 2, 1, 1);
+	gtk_entry_set_visibility(GTK_ENTRY(pw_entry), FALSE);
+	gtk_grid_attach(GTK_GRID(grid), pw_entry, 1, 1, 1, 1);
 
 	// wrap username and password entries in a struct
-	// there is no website here, so just pass a null pointer
-	set_credentials(NULL, uname_entry, pw_entry);
+	// there is no website or username here, so just pass a null pointer
+	set_credentials(NULL, NULL, pw_entry);
 
 	// button
 	GtkWidget *login_button = gtk_button_new_with_label("Log In");
 	// gtk_widget_set_halign(login_button, GTK_ALIGN_CENTER);
 	// gtk_widget_set_hexpand(login_button, FALSE);
 	g_signal_connect(GTK_BUTTON(login_button), "clicked", G_CALLBACK(validate_passphrase), &window);
-	gtk_grid_attach(GTK_GRID(grid), login_button, 0, 3, 2, 1);
+	gtk_grid_attach(GTK_GRID(grid), login_button, 0, 2, 2, 1);
 
 	// display everything
 	gtk_widget_show_all(window);
@@ -125,41 +133,56 @@ void request_passphrase(void)
 // compare the provided information with the stored information
 void validate_passphrase(GtkWidget *widget, gpointer data)
 {
+	// get the window in which tooltips will be shown
+	GtkWidget **window = data;
+
 	// read provided information
 	// `gtk_entry_buffer_get_text' returns `gchar const'
 	// `gchar' is typedef'd to `char'
-	char const *uname = gtk_entry_buffer_get_text(GTK_ENTRY_BUFFER(credentials->uname));
-	char const *pw    = gtk_entry_buffer_get_text(GTK_ENTRY_BUFFER(credentials->pw));
+	char const *pw = gtk_entry_buffer_get_text(GTK_ENTRY_BUFFER(credentials->pw));
+
+	// sanity
+	if(!strcmp(pw, ""))
+	{
+		gtk_widget_set_tooltip_text(*window, "Cannot log in. \'Passphrase\' field is empty");
+		g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
+		return;
+	}
+
+	// hash the passphrase
+	char unsigned *pwh = malloc(SHA512_DIGEST_LENGTH * sizeof *pwh);
+	SHA512((char unsigned *)pw, strlen(pw), pwh);
+	digest_to_hexdigest(&pwh);
 
 	// read stored information
-	char *uname_s = malloc(BUFFER_SIZE * sizeof *uname_s);
-	char *pw_s    = malloc(BUFFER_SIZE * sizeof *pw_s);
+	// `pwh_s' is the stored hexdigest of the SHA512 of the passphrase
+	// hence, it must be 257 characters long (remember null byte)
+	char *pwh_s = malloc(2 * SHA512_DIGEST_LENGTH * sizeof *pwh_s + 1);
 	FILE *pp_file = fopen(Master, "r");
-	fgets(uname_s, BUFFER_SIZE, pp_file);
-	uname_s[strcspn(uname_s, "\r\n")] = '\0';
-	fgets(pw_s, BUFFER_SIZE, pp_file);
-	pw_s[strcspn(pw_s, "\r\n")] = '\0';
+	fgets(pwh_s, 2 * SHA512_DIGEST_LENGTH + 1, pp_file);
 
 	// compare
-	if(strcmp(uname, uname_s) || strcmp(pw, pw_s))
+	if(strcmp((char *)pwh, pwh_s))
 	{
 		del_credentials();
-		memset(uname_s, 0, BUFFER_SIZE);
-		memset(pw_s,    0, BUFFER_SIZE);
-		printf("Authentication failure! :(\n");
-		// GtkWidget **window = data;
-		// GtkWidget *err = gtk_dialog_new_with_buttons("Authentication Error", GTK_WINDOW(*window), GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, "OK", GTK_RESPONSE_ACCEPT, NULL);
-		// gtk_dialog_run(GTK_DIALOG(err));
+		memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
+		gtk_widget_set_tooltip_text(*window, "Cannot log in. Wrong passphrase entered.");
+		g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
 		return;
 	}
 
 	// on success, trash the data and close the login
 	// so that the program can proceed
-	printf("Authentication success! :)\n");
 	del_credentials();
-	memset(uname_s, 0, BUFFER_SIZE);
-	memset(pw_s,    0, BUFFER_SIZE);
+	memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
 	gtk_main_quit();
+}
+
+gboolean hide_tooltip(gpointer data)
+{
+	GtkWidget *widget = data;
+	gtk_widget_set_has_tooltip(widget, FALSE);
+	return G_SOURCE_REMOVE;
 }
 
 // close the window
@@ -169,6 +192,28 @@ void quit_passphrase(void)
 	free(credentials);
 	gtk_main_quit();
 	exit(0);
+}
+
+void digest_to_hexdigest(char unsigned **p)
+{
+	// `digest' is (basically) a 512-bit number
+	// thus, it is represented using 128 bytes
+	// `hexdigest' is hexadecimal form of the same number
+	// it will be 257 bytes long
+	// because two hex characters are required to represent one byte
+	// plus one extra byte, for the null character
+	char unsigned *digest = *p;
+	char unsigned *hexdigest = malloc(2 * SHA512_DIGEST_LENGTH * sizeof *hexdigest + 1);
+
+	// for each byte in `digest', write two bytes in `hexdigest'
+	for(int i = 0; i < SHA512_DIGEST_LENGTH; ++i)
+	{
+		sprintf((char *)hexdigest + 2 * i, "%02x", digest[i]);
+	}
+
+	// make the argument point to `hexdigest'
+	memset(digest, 0, SHA512_DIGEST_LENGTH);
+	*p = hexdigest;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
