@@ -7,6 +7,7 @@
 
 char const *Master = "g45p98f98ur.yew";
 char const *Slaves = "wnryff.rgw";
+gboolean status = FALSE;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -112,7 +113,8 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	// so that the program can proceed
 	del_credentials();
 	memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
-	gtk_main_quit();
+	status = TRUE;
+	gtk_widget_destroy(*window);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -127,12 +129,18 @@ gboolean hide_tooltip(gpointer data)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// close the window
+// called automatically when the window is destroyed
 void quit_passphrase(void)
 {
+	// trash sensitive data, then exit the GTK loop
 	del_credentials();
 	free(credentials);
 	gtk_main_quit();
-	exit(0);
+	
+	// if user failed to enter correct passphrase, quit the program
+	if(status == FALSE)
+	{
+		exit(0);
+	}
 }
 
