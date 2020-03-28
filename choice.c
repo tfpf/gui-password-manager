@@ -4,6 +4,7 @@
 // prototypes
 void request_choice(void);
 void quit_choice(void);
+void handle_choice(GtkWidget *widget, gpointer data);
 
 // show a window to ask the user what they want to do
 void request_choice(void)
@@ -33,15 +34,33 @@ void request_choice(void)
 	GtkWidget *chg_button = gtk_button_new_with_label("Change a Password");
 	GtkWidget *see_button = gtk_button_new_with_label("View a Password");
 	GtkWidget *cpp_button = gtk_button_new_with_label("Change the Passphrase");
+	g_signal_connect(GTK_BUTTON(add_button), "clicked", G_CALLBACK(handle_choice), &window);
+	g_signal_connect(GTK_BUTTON(del_button), "clicked", G_CALLBACK(handle_choice), &window);
+	g_signal_connect(GTK_BUTTON(chg_button), "clicked", G_CALLBACK(handle_choice), &window);
+	g_signal_connect(GTK_BUTTON(see_button), "clicked", G_CALLBACK(handle_choice), &window);
+	g_signal_connect(GTK_BUTTON(cpp_button), "clicked", G_CALLBACK(handle_choice), &window);
 	gtk_grid_attach(GTK_GRID(grid), add_button, 0, 1, 1, 1);
 	gtk_grid_attach(GTK_GRID(grid), del_button, 0, 2, 1, 1);
 	gtk_grid_attach(GTK_GRID(grid), chg_button, 0, 3, 1, 1);
 	gtk_grid_attach(GTK_GRID(grid), see_button, 0, 4, 1, 1);
 	gtk_grid_attach(GTK_GRID(grid), cpp_button, 0, 5, 1, 1);
 
+	// display everything
 	gtk_widget_show_all(window);
 	g_signal_connect(window, "destroy", G_CALLBACK(quit_choice), NULL);
 	gtk_main();
+}
+
+void handle_choice(GtkWidget *widget, gpointer data)
+{
+	GtkWidget **window = data;
+	printf("click detected\n");
+	gtk_widget_hide(*window);
+	GtkWidget *w = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_widget_show_all(w);
+	g_signal_connect(w, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+	gtk_main();
+	gtk_widget_show_all(*window);
 }
 
 void quit_choice(void)

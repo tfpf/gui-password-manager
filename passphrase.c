@@ -7,7 +7,6 @@
 
 char const *Master = "g45p98f98ur.yew";
 char const *Slaves = "wnryff.rgw";
-gboolean status = FALSE;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -49,9 +48,9 @@ void request_passphrase(void)
 	gtk_entry_set_visibility(GTK_ENTRY(pw_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(grid), pw_entry, 1, 1, 1, 1);
 
-	// set the user information in the global struct variable
-	// there is only the passphrase, so pass a null pointer for the rest
+	// set the information in the global struct variable
 	set_credentials(NULL, NULL, pw_entry);
+	credentials->status = FALSE;
 
 	// button
 	GtkWidget *login_button = gtk_button_new_with_label("Log In");
@@ -103,6 +102,7 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	if(strcmp((char *)pwh, pwh_s))
 	{
 		del_credentials();
+		memset(pwh  , 0, 2 * SHA512_DIGEST_LENGTH + 1);
 		memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
 		gtk_widget_set_tooltip_text(*window, "Cannot log in. Wrong passphrase entered.");
 		g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
@@ -112,8 +112,9 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	// on success, trash the data and close the login
 	// so that the program can proceed
 	del_credentials();
+	memset(pwh  , 0, 2 * SHA512_DIGEST_LENGTH + 1);
 	memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
-	status = TRUE;
+	credentials->status = TRUE;
 	gtk_widget_destroy(*window);
 }
 
@@ -136,9 +137,9 @@ void quit_passphrase(void)
 	del_credentials();
 	free(credentials);
 	gtk_main_quit();
-	
+
 	// if user failed to enter correct passphrase, quit the program
-	if(status == FALSE)
+	if(credentials->status == FALSE)
 	{
 		exit(0);
 	}

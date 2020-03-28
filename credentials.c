@@ -4,13 +4,17 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// entry buffers of entries which contain data are wrapped into this struct
 // a convenient way to access and delete the sensitive data from anywhere
 typedef struct
 {
+	// entry buffers of entries which contain data
 	GtkEntryBuffer *site;
 	GtkEntryBuffer *uname;
 	GtkEntryBuffer *pw;
+
+	// whether user has logged in by entering correct passphrase
+	// if logged in, this is `TRUE'
+	gboolean status;
 }
 credentials_t;
 credentials_t *credentials;
@@ -42,9 +46,9 @@ void set_credentials(GtkWidget *site_entry, GtkWidget *uname_entry, GtkWidget *p
 
 	// store new data
 	credentials = malloc(sizeof *credentials);
-	credentials->site  =  site_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(site_entry));
-	credentials->uname = uname_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(uname_entry));
-	credentials->pw    =    pw_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(pw_entry));
+	credentials->site   =  site_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(site_entry));
+	credentials->uname  = uname_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(uname_entry));
+	credentials->pw     =    pw_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(pw_entry));
 }
 
 ///////////////////////////////////////////////////////////////////////////////

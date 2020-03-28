@@ -11,7 +11,7 @@
 
 int main(int const argc, char const *argv[])
 {
-	// setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stdout, NULL, _IONBF, 0);
 
 	// must be called before any other GTK functions
 	// normally, arguments are pointers to `argc' and `argv'
