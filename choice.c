@@ -11,41 +11,39 @@ void request_choice(void)
 {
 	// window
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_container_set_border_width(GTK_CONTAINER(window), 50);
+	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
 	gtk_window_set_icon_from_file(GTK_WINDOW(window), "favicon.png", NULL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 	gtk_window_set_title(GTK_WINDOW(window), "Password Manager");
 
-	// grid
-	GtkWidget *grid = gtk_grid_new();
-	gtk_grid_set_column_spacing(GTK_GRID(grid), 25);
-	gtk_grid_set_row_spacing(GTK_GRID(grid), 25);
-	gtk_container_add(GTK_CONTAINER(window), grid);
+	// notebook tabs
+	GtkWidget *add_frame = gtk_frame_new(NULL);
+	GtkWidget *del_frame = gtk_frame_new(NULL);
+	GtkWidget *chg_frame = gtk_frame_new(NULL);
+	GtkWidget *see_frame = gtk_frame_new(NULL);
+	GtkWidget *cpp_frame = gtk_frame_new(NULL);
+	GtkWidget *add_label = gtk_label_new("Add Password");
+	GtkWidget *del_label = gtk_label_new("Delete Password");
+	GtkWidget *chg_label = gtk_label_new("Change Password");
+	GtkWidget *see_label = gtk_label_new("View Password");
+	GtkWidget *cpp_label = gtk_label_new("Change Passphrase");
+	gtk_container_set_border_width(GTK_CONTAINER(add_frame), 50);
+	gtk_container_set_border_width(GTK_CONTAINER(del_frame), 50);
+	gtk_container_set_border_width(GTK_CONTAINER(chg_frame), 50);
+	gtk_container_set_border_width(GTK_CONTAINER(see_frame), 50);
+	gtk_container_set_border_width(GTK_CONTAINER(cpp_frame), 50);
 
-	// header
-	GtkWidget *main_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(main_label), "<b>What would you like to do?</b>");
-	gtk_grid_attach(GTK_GRID(grid), main_label, 0, 0, 1, 1);
+	// notebook
+	GtkWidget *notebook = gtk_notebook_new();
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), add_frame, add_label);
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), del_frame, del_label);
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), chg_frame, chg_label);
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), see_frame, see_label);
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), cpp_frame, cpp_label);
+	gtk_container_add(GTK_CONTAINER(window), notebook);
 
-	// buttons
-	GtkWidget *add_button = gtk_button_new_with_label("Add a Password");
-	GtkWidget *del_button = gtk_button_new_with_label("Delete a Password");
-	GtkWidget *chg_button = gtk_button_new_with_label("Change a Password");
-	GtkWidget *see_button = gtk_button_new_with_label("View a Password");
-	GtkWidget *cpp_button = gtk_button_new_with_label("Change the Passphrase");
-	g_signal_connect(GTK_BUTTON(add_button), "clicked", G_CALLBACK(handle_choice), &window);
-	g_signal_connect(GTK_BUTTON(del_button), "clicked", G_CALLBACK(handle_choice), &window);
-	g_signal_connect(GTK_BUTTON(chg_button), "clicked", G_CALLBACK(handle_choice), &window);
-	g_signal_connect(GTK_BUTTON(see_button), "clicked", G_CALLBACK(handle_choice), &window);
-	g_signal_connect(GTK_BUTTON(cpp_button), "clicked", G_CALLBACK(handle_choice), &window);
-	gtk_grid_attach(GTK_GRID(grid), add_button, 0, 1, 1, 1);
-	gtk_grid_attach(GTK_GRID(grid), del_button, 0, 2, 1, 1);
-	gtk_grid_attach(GTK_GRID(grid), chg_button, 0, 3, 1, 1);
-	gtk_grid_attach(GTK_GRID(grid), see_button, 0, 4, 1, 1);
-	gtk_grid_attach(GTK_GRID(grid), cpp_button, 0, 5, 1, 1);
-
-	// display everything
+	// show everything
 	gtk_widget_show_all(window);
 	g_signal_connect(window, "destroy", G_CALLBACK(quit_choice), NULL);
 	gtk_main();
