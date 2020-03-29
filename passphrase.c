@@ -6,7 +6,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 char const *Master = ".Master";
-char const *Slaves = ".Slave";
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -35,6 +34,8 @@ void request_passphrase(void)
 	gtk_container_set_border_width(GTK_CONTAINER(grid), 50);
 	gtk_grid_set_column_spacing(GTK_GRID(grid), 25);
 	gtk_grid_set_row_spacing(GTK_GRID(grid), 25);
+	gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(grid, TRUE);
 	gtk_container_add(GTK_CONTAINER(window), grid);
 
 	// header
@@ -55,14 +56,13 @@ void request_passphrase(void)
 
 	// button
 	GtkWidget *login_button = gtk_button_new_with_label("Log In");
-	// gtk_widget_set_halign(login_button, GTK_ALIGN_CENTER);
-	// gtk_widget_set_hexpand(login_button, FALSE);
 	g_signal_connect(GTK_BUTTON(login_button), "clicked", G_CALLBACK(validate_passphrase), &window);
 	gtk_grid_attach(GTK_GRID(grid), login_button, 0, 2, 2, 1);
 
 	// display everything
 	gtk_widget_show_all(window);
 	g_signal_connect(window, "destroy", G_CALLBACK(quit_passphrase), NULL);
+	gtk_widget_grab_focus(pw_entry);
 	gtk_main();
 }
 
@@ -75,9 +75,9 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	GtkWidget **window = data;
 
 	// read provided information
-	// `gtk_entry_buffer_get_text' returns `gchar const'
-	// `gchar' is typedef'd to `char'
-	char const *pw = gtk_entry_buffer_get_text(GTK_ENTRY_BUFFER(credentials->pw));
+	// `get_credentials_pw' returns `gchar const *'
+	// but `gchar' is typedef'd to `char' in GTK
+	char const *pw = get_credentials_pw();
 
 	// sanity
 	if(!strcmp(pw, ""))
@@ -98,6 +98,7 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	char *pwh_s = malloc(2 * SHA512_DIGEST_LENGTH * sizeof *pwh_s + 1);
 	FILE *pp_file = fopen(Master, "r");
 	fgets(pwh_s, 2 * SHA512_DIGEST_LENGTH + 1, pp_file);
+	fclose(pp_file);
 
 	// compare
 	if(strcmp((char *)pwh, pwh_s))
@@ -136,12 +137,12 @@ void quit_passphrase(void)
 {
 	// trash sensitive data, then exit the GTK loop
 	del_credentials();
-	free(credentials);
 	gtk_main_quit();
 
 	// if user failed to enter correct passphrase, quit the program
 	if(credentials->status == FALSE)
 	{
+		free(credentials);
 		exit(0);
 	}
 }
