@@ -24,7 +24,7 @@ void request_passphrase(void)
 {
 	// window
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_container_set_border_width(GTK_CONTAINER(window), 50);
+	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
 	gtk_window_set_icon_from_file(GTK_WINDOW(window), "favicon.png", NULL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
@@ -32,6 +32,7 @@ void request_passphrase(void)
 
 	// grid
 	GtkWidget *grid = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(grid), 50);
 	gtk_grid_set_column_spacing(GTK_GRID(grid), 25);
 	gtk_grid_set_row_spacing(GTK_GRID(grid), 25);
 	gtk_container_add(GTK_CONTAINER(window), grid);
