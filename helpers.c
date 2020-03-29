@@ -26,7 +26,7 @@ void digest_to_hexdigest(char unsigned **p)
 	// each byte in `digest' will be displayed as two hex characters
 	// plus one extra byte at the end, for the null character
 	char unsigned *digest = *p;
-	char unsigned *hexdigest = malloc(2 * SHA512_DIGEST_LENGTH * sizeof *hexdigest + 1);
+	char unsigned *hexdigest = malloc((2 * SHA512_DIGEST_LENGTH + 1) * sizeof *hexdigest);
 
 	// for each byte in `digest', write two bytes in `hexdigest'
 	for(int i = 0; i < SHA512_DIGEST_LENGTH; ++i)

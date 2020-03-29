@@ -95,7 +95,7 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	// read stored information
 	// `pwh_s' is the stored hexdigest of the SHA512 of the passphrase
 	// hence, it must be 257 characters long (remember null byte)
-	char *pwh_s = malloc(2 * SHA512_DIGEST_LENGTH * sizeof *pwh_s + 1);
+	char *pwh_s = malloc((2 * SHA512_DIGEST_LENGTH + 1) * sizeof *pwh_s);
 	FILE *pp_file = fopen(Master, "r");
 	fgets(pwh_s, 2 * SHA512_DIGEST_LENGTH + 1, pp_file);
 	fclose(pp_file);
