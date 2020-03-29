@@ -35,12 +35,8 @@ void del_credentials(void);
 void set_credentials(GtkWidget *site_entry, GtkWidget *uname_entry, GtkWidget *pw_entry)
 {
 	// if the struct previously held some data, remove it
-	del_credentials();
 	if(credentials != NULL)
 	{
-		if(credentials->site  != NULL) free(credentials->site);
-		if(credentials->uname != NULL) free(credentials->uname);
-		if(credentials->pw    != NULL) free(credentials->pw);
 		free(credentials);
 	}
 
