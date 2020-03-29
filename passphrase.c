@@ -13,7 +13,6 @@ char const *Master = ".Master";
 void request_passphrase(void);
 void validate_passphrase(GtkWidget *widget, gpointer data);
 void quit_passphrase(void);
-void digest_to_hexdigest(char unsigned **p);
 gboolean hide_tooltip(gpointer data);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -87,10 +86,14 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 		return;
 	}
 
-	// hash the passphrase
+	// hash the passphrase multiple times
 	char unsigned *pwh = malloc(SHA512_DIGEST_LENGTH * sizeof *pwh);
 	SHA512((char unsigned *)pw, strlen(pw), pwh);
-	digest_to_hexdigest(&pwh);
+	for(int i = 0; i < 65535; ++i)
+	{
+		SHA512(pwh, SHA512_DIGEST_LENGTH, pwh);
+	}
+	digest_to_hexdigest(&pwh, SHA512_DIGEST_LENGTH);
 
 	// read stored information
 	// `pwh_s' is the stored hexdigest of the SHA512 of the passphrase
