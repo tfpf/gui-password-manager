@@ -36,27 +36,27 @@ void request_choice(void)
 	// notebook tab to add password
 	GtkWidget *add_grd = create_add_grd(&window);
 	GtkWidget *add_lbl = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(add_lbl), "<span weight=\"ultralight\">Add Password</span>");
+	gtk_label_set_markup(GTK_LABEL(add_lbl), "<span weight=\"normal\">Add Password</span>");
 
 	// notebook tab to delete password
 	GtkWidget *del_grd = create_del_grd(&window);
 	GtkWidget *del_lbl = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(del_lbl), "<span weight=\"ultralight\">Delete Password</span>");
+	gtk_label_set_markup(GTK_LABEL(del_lbl), "<span weight=\"normal\">Edit/Delete Password</span>");
 
 	// notebook tab to change password
 	GtkWidget *chg_grd = create_chg_grd(&window);
 	GtkWidget *chg_lbl = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(chg_lbl), "<span weight=\"ultralight\">Change Password</span>");
+	gtk_label_set_markup(GTK_LABEL(chg_lbl), "<span weight=\"normal\">Change Password</span>");
 
 	// notebook tab to view password
 	GtkWidget *see_grd = create_see_grd(&window);
 	GtkWidget *see_lbl = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(see_lbl), "<span weight=\"ultralight\">View Password</span>");
+	gtk_label_set_markup(GTK_LABEL(see_lbl), "<span weight=\"normal\">View Password</span>");
 
 	// notebook tab to change passphrase
 	GtkWidget *cpp_grd = create_cpp_grd(&window);
 	GtkWidget *cpp_lbl = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(cpp_lbl), "<span weight=\"ultralight\">Change Passphrase</span>");
+	gtk_label_set_markup(GTK_LABEL(cpp_lbl), "<span weight=\"normal\">Change Passphrase</span>");
 
 	// notebook
 	GtkWidget *notebook = gtk_notebook_new();
