@@ -1,5 +1,8 @@
 #include <gtk/gtk.h>
+#include <stdio.h>
 #include <stdlib.h>
+
+#define MAX_BUF_SIZ 1
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -11,7 +14,7 @@ char const *Slave = ".Slave";
 void request_choice(void);
 void quit_choice(void);
 void add_password(GtkWidget *widget, gpointer data);
-void populate_add_grd(gpointer data);
+void populate_add_grd(GtkWidget *add_grd, GtkWidget *window);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -35,7 +38,7 @@ void request_choice(void)
 	gtk_grid_set_row_spacing(GTK_GRID(add_grd), 25);
 	gtk_widget_set_halign(add_grd, GTK_ALIGN_CENTER);
 	gtk_widget_set_hexpand(add_grd, TRUE);
-	populate_add_grd(add_grd);
+	populate_add_grd(add_grd, window);
 
 	// notebook tab to delete password
 	GtkWidget *del_lbl = gtk_label_new(NULL);
@@ -43,8 +46,8 @@ void request_choice(void)
 	GtkWidget *del_grd = gtk_grid_new();
 	gtk_grid_set_column_spacing(GTK_GRID(del_grd), 25);
 	gtk_grid_set_row_spacing(GTK_GRID(del_grd), 25);
-	gtk_widget_set_halign(add_grd, GTK_ALIGN_CENTER);
-	gtk_widget_set_hexpand(add_grd, TRUE);
+	gtk_widget_set_halign(del_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(del_grd, TRUE);
 
 	// notebook tab to change password
 	GtkWidget *chg_lbl = gtk_label_new(NULL);
@@ -52,8 +55,8 @@ void request_choice(void)
 	GtkWidget *chg_grd = gtk_grid_new();
 	gtk_grid_set_column_spacing(GTK_GRID(chg_grd), 25);
 	gtk_grid_set_row_spacing(GTK_GRID(chg_grd), 25);
-	gtk_widget_set_halign(add_grd, GTK_ALIGN_CENTER);
-	gtk_widget_set_hexpand(add_grd, TRUE);
+	gtk_widget_set_halign(chg_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(chg_grd, TRUE);
 
 	// notebook tab to view password
 	GtkWidget *see_lbl = gtk_label_new(NULL);
@@ -61,8 +64,8 @@ void request_choice(void)
 	GtkWidget *see_grd = gtk_grid_new();
 	gtk_grid_set_column_spacing(GTK_GRID(see_grd), 25);
 	gtk_grid_set_row_spacing(GTK_GRID(see_grd), 25);
-	gtk_widget_set_halign(add_grd, GTK_ALIGN_CENTER);
-	gtk_widget_set_hexpand(add_grd, TRUE);
+	gtk_widget_set_halign(see_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(see_grd, TRUE);
 
 	// notebook tab to change passphrase
 	GtkWidget *cpp_lbl = gtk_label_new(NULL);
@@ -70,8 +73,8 @@ void request_choice(void)
 	GtkWidget *cpp_grd = gtk_grid_new();
 	gtk_grid_set_column_spacing(GTK_GRID(cpp_grd), 25);
 	gtk_grid_set_row_spacing(GTK_GRID(cpp_grd), 25);
-	gtk_widget_set_halign(add_grd, GTK_ALIGN_CENTER);
-	gtk_widget_set_hexpand(add_grd, TRUE);
+	gtk_widget_set_halign(cpp_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(cpp_grd, TRUE);
 
 	// notebook
 	GtkWidget *notebook = gtk_notebook_new();
@@ -91,11 +94,8 @@ void request_choice(void)
 ///////////////////////////////////////////////////////////////////////////////
 
 // fill notebook tab to add password
-void populate_add_grd(gpointer data)
+void populate_add_grd(GtkWidget *add_grd, GtkWidget *window)
 {
-	// get the grid in which widgets will be shown
-	GtkWidget *add_grd = data;
-
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(main_label), "<b>Enter the following details to add a new password.</b>");
@@ -126,7 +126,7 @@ void populate_add_grd(gpointer data)
 
 	// button
 	GtkWidget *add_btn = gtk_button_new_with_label("Add Password");
-	g_signal_connect(GTK_BUTTON(add_btn), "clicked", G_CALLBACK(add_password), NULL);
+	g_signal_connect(GTK_BUTTON(add_btn), "clicked", G_CALLBACK(add_password), &window);
 	gtk_grid_attach(GTK_GRID(add_grd), add_btn, 0, 4, 2, 1);
 }
 
@@ -135,9 +135,49 @@ void populate_add_grd(gpointer data)
 // write credentials to file
 void add_password(GtkWidget *widget, gpointer data)
 {
-	see_credentials();
-	FILE *pw_file = fopen(Slave, "a");
-	// fprintf();
+	// window containing the notebook
+	GtkWidget **window = data;
+
+	// read provided information
+	char const *site  = get_credentials_site();
+	char const *uname = get_credentials_uname();
+	char const *pw    = get_credentials_pw();
+
+	// calculate required string length
+	// 2 extra characters required to separate `site', `uname' and `pw'
+	// 1 extra character required for the LF character
+	// 1 extra character required for the null character added by `sprintf'
+	// total 4 extra characters required
+	size_t line_length = strlen(site) + strlen(uname) + strlen(pw) + 4;
+
+	// do not allow extremely long credentials
+	if(line_length > MAX_BUF_SIZ)
+	{
+		printf("too long\n");
+		// gtk_widget_set_tooltip_text(*window, "Cannot add password. Credentials entered are too long.");
+		g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, NULL);
+		return;
+	}
+
+	// create string of credentials in the form described above
+	// use a non-printable ASCII character as the separator
+	char *line = malloc(line_length * sizeof *line);
+	sprintf(line, "%s\x1b%s\x1b%s\n", site, uname, pw);
+
+	FILE *pw_file = fopen(Slave, "ab");
+	fwrite(line, sizeof *line, line_length - 1, pw_file);
+	// fwrite(site, sizeof *site, strlen(site), pw_file);
+	// fwrite("\x1b", 1, 1, pw_file);
+	// fwrite(uname, sizeof *uname, strlen(uname), pw_file);
+	// fwrite("\x1b", 1, 1, pw_file);
+	// fwrite(pw, sizeof *pw, strlen(pw), pw_file);
+	// fwrite("\n", 1, 1, pw_file);
+	fclose(pw_file);
+
+	pw_file = fopen(Slave, "rb");
+	fgets(line, line_length + 100, pw_file);
+	printf("%c", line[4]);
+	fclose(pw_file);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
