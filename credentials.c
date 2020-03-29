@@ -103,9 +103,6 @@ void see_credentials(void)
 	printf("%10s: %s\n", "site",  get_credentials_site());
 	printf("%10s: %s\n", "uname", get_credentials_uname());
 	printf("%10s: %s\n", "pw",    get_credentials_pw());
-	// if(credentials->site  != NULL) printf("%10s: %s\n", "site",  gtk_entry_buffer_get_text(GTK_ENTRY_BUFFER(credentials->site)));
-	// if(credentials->uname != NULL) printf("%10s: %s\n", "uname", gtk_entry_buffer_get_text(GTK_ENTRY_BUFFER(credentials->uname)));
-	// if(credentials->pw    != NULL) printf("%10s: %s\n", "pw",    gtk_entry_buffer_get_text(GTK_ENTRY_BUFFER(credentials->pw)));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
