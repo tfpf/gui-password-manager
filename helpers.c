@@ -39,3 +39,13 @@ void digest_to_hexdigest(char unsigned **p)
 	*p = hexdigest;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+// hide the tooltip, if the widget has any
+gboolean hide_tooltip(gpointer data)
+{
+	GtkWidget *window = data;
+	gtk_widget_set_has_tooltip(window, FALSE);
+	return G_SOURCE_REMOVE;
+}
+

@@ -122,16 +122,6 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// hide the tooltip, if any
-gboolean hide_tooltip(gpointer data)
-{
-	GtkWidget *window = data;
-	gtk_widget_set_has_tooltip(window, FALSE);
-	return G_SOURCE_REMOVE;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
 // called automatically when the window is destroyed
 void quit_passphrase(void)
 {
