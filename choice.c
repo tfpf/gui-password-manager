@@ -15,7 +15,6 @@ void request_choice(void);
 void quit_choice(void);
 void add_password(GtkWidget *widget, gpointer data);
 GtkWidget *create_add_grd(GtkWidget **window);
-GtkWidget *create_del_grd(GtkWidget **window);
 GtkWidget *create_chg_grd(GtkWidget **window);
 GtkWidget *create_see_grd(GtkWidget **window);
 GtkWidget *create_cpp_grd(GtkWidget **window);
@@ -38,15 +37,10 @@ void request_choice(void)
 	GtkWidget *add_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(add_lbl), "<span weight=\"normal\">Add Password</span>");
 
-	// notebook tab to delete password
-	GtkWidget *del_grd = create_del_grd(&window);
-	GtkWidget *del_lbl = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(del_lbl), "<span weight=\"normal\">Edit/Delete Password</span>");
-
-	// notebook tab to change password
+	// notebook tab to edit or delete password
 	GtkWidget *chg_grd = create_chg_grd(&window);
 	GtkWidget *chg_lbl = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(chg_lbl), "<span weight=\"normal\">Change Password</span>");
+	gtk_label_set_markup(GTK_LABEL(chg_lbl), "<span weight=\"normal\">Edit/Delete Password</span>");
 
 	// notebook tab to view password
 	GtkWidget *see_grd = create_see_grd(&window);
@@ -61,7 +55,6 @@ void request_choice(void)
 	// notebook
 	GtkWidget *notebook = gtk_notebook_new();
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), add_grd, add_lbl);
-	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), del_grd, del_lbl);
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), chg_grd, chg_lbl);
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), see_grd, see_lbl);
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), cpp_grd, cpp_lbl);
@@ -125,15 +118,6 @@ GtkWidget *create_add_grd(GtkWidget **window)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// populate the notebook tab to delete password
-GtkWidget *create_del_grd(GtkWidget **window)
-{
-	GtkWidget *del_grd = gtk_grid_new();
-	return del_grd;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
 // populate the notebook tab to change password
 GtkWidget *create_chg_grd(GtkWidget **window)
 {
@@ -171,6 +155,29 @@ void add_password(GtkWidget *widget, gpointer data)
 	char const *site  = get_credentials_site();
 	char const *uname = get_credentials_uname();
 	char const *pw    = get_credentials_pw();
+
+	// sanity
+	if(!strcmp(site, ""))
+	{
+		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Website\' field is empty.");
+                g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
+                return;
+	}
+	if(!strcmp(uname, ""))
+	{
+		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Username\' field is empty.");
+                g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
+                return;
+	}
+	if(!strcmp(pw, ""))
+	{
+		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Password\' field is empty.");
+                g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
+                return;
+	}
+
+	// generate a random encryption key for AES256
+	char unsigned *key = malloc(SHA256_DIGEST_LENGTH * sizeof)
 
 	// calculate required string length
 	// 2 extra characters required to separate `site', `uname' and `pw'
