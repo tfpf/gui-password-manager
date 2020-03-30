@@ -177,7 +177,7 @@ void add_password(GtkWidget *widget, gpointer data)
 	}
 
 	// generate a random encryption key for AES256
-	char unsigned *key = malloc(SHA256_DIGEST_LENGTH * sizeof)
+	char unsigned *key = malloc(SHA256_DIGEST_LENGTH * sizeof *key);
 
 	// calculate required string length
 	// 2 extra characters required to separate `site', `uname' and `pw'
