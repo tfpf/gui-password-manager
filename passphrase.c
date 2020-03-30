@@ -13,7 +13,6 @@ char const *Master = ".Master";
 void request_passphrase(void);
 void validate_passphrase(GtkWidget *widget, gpointer data);
 void quit_passphrase(void);
-gboolean hide_tooltip(gpointer data);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -51,7 +50,6 @@ void request_passphrase(void)
 
 	// set the information in the global struct variable
 	set_credentials(NULL, NULL, pw_entry);
-	credentials->status = FALSE;
 
 	// button
 	GtkWidget *login_button = gtk_button_new_with_label("Log In");
@@ -81,7 +79,7 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	// sanity
 	if(!strcmp(pw, ""))
 	{
-		gtk_widget_set_tooltip_text(*window, "Cannot log in. \'Passphrase\' field is empty");
+		gtk_widget_set_tooltip_text(*window, "Cannot log in. \'Passphrase\' field is empty.");
 		g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
 		return;
 	}
@@ -114,12 +112,16 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 		return;
 	}
 
-	// on success, trash the data and close the login
-	// so that the program can proceed
+	// on success, store a hash of the passphrase
+	// it will be used as the key encryption key
+	char unsigned *kek = malloc(SHA256_DIGEST_LENGTH * sizeof *kek);
+	SHA256((char unsigned *)pw, strlen(pw), kek);
+	credentials->kek = kek;
+
+	// trash the data and close the login so that the program can proceed
 	del_credentials();
 	memset(pwh  , 0, 2 * SHA512_DIGEST_LENGTH + 1);
 	memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
-	credentials->status = TRUE;
 	gtk_widget_destroy(*window);
 }
 
@@ -133,7 +135,7 @@ void quit_passphrase(void)
 	gtk_main_quit();
 
 	// if user failed to enter correct passphrase, quit the program
-	if(credentials->status == FALSE)
+	if(credentials->kek == NULL)
 	{
 		free(credentials);
 		exit(0);
