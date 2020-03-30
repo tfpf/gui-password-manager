@@ -12,9 +12,9 @@ typedef struct
 	GtkEntryBuffer *uname;
 	GtkEntryBuffer *pw;
 
-	// whether user has logged in by entering correct passphrase
-	// if logged in, this is `TRUE'
-	gboolean status;
+	// key encryption key which will be used to encrypt the AES keys
+	// which themselves will be used to encrypt the data
+	char unsigned *kek;
 }
 credentials_t;
 credentials_t *credentials;
@@ -48,6 +48,10 @@ void set_credentials(GtkWidget *site_entry, GtkWidget *uname_entry, GtkWidget *p
 	credentials->site   =  site_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(site_entry));
 	credentials->uname  = uname_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(uname_entry));
 	credentials->pw     =    pw_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(pw_entry));
+
+	// initially, user has not logged in
+	// indidate this by setting the key encryption key to a null pointer
+	credentials->kek = NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -87,6 +91,14 @@ gchar const *get_credentials_pw(void)
 	}
 
 	return gtk_entry_buffer_get_text(GTK_ENTRY_BUFFER(credentials->pw));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+// get the key encryption key
+char unsigned *get_credentials_kek(void)
+{
+	return credentials->kek;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
