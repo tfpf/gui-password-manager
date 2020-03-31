@@ -2,6 +2,7 @@ SHELL  = /bin/sh
 RM     = rm
 PRINT  = printf
 CC     = gcc
+WC     = x86_64-w64-mingw32-gcc
 CFLAGS = -O0
 WFLAGS = -Wall -Wextra
 WIGN   = -Wno-unused-parameter
@@ -11,13 +12,15 @@ INCLD  = -pthread -I/usr/include/gtk-3.0 -I/usr/include/at-spi2-atk/2.0 -I/usr/i
 # pkg-config --libs --cflags gtk+-3.0
 # it required installing GTK3 using the following
 # sudo apt install libgtk-3-dev
+# https://askubuntu.com/questions/942010/how-to-compile-c-gtk3-program-in-ubuntu-for-windows
 
-Source   = main.c
-Assembly = main.s
-Binary   = main.elf
+Source     = main.c
+Assembly   = main.s
+Binary     = main.elf
+Executable = main.exe
 
 
-.PHONY: clean asm comp win32 exec run all
+.PHONY: clean asm comp pe exec run all
 
 
 clean:
@@ -30,8 +33,9 @@ comp:
 	@$(PRINT) "Compiling ...\n"
 	@$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(LFLAGS) $(INCLD) -o $(Binary) $(Source)
 
-win32:
-	@$(PRINT) "Placeholder for after I have installed MINGW.\n"
+pe:
+	@$(PRINT) "Compiling ...\n"
+	@$(WC) $(CFLAGS) $(WFLAGS) $(WIGN) $(LFLAGS) $(INCLD) -o $(Executable) $(Source)
 
 exec:
 	@$(PRINT) "Running ...\n"
