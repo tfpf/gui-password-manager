@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include <time.h>
 
 #include "credentials.c"
 #include "helpers.c"
@@ -11,7 +12,13 @@
 
 int main(int const argc, char const *argv[])
 {
+	// disable output buffering
 	setvbuf(stdout, NULL, _IONBF, 0);
+
+	// seed the random number generator
+	struct timespec *t = malloc(sizeof *t);
+	timespec_get(t, TIME_UTC);
+	srandom(t->tv_nsec ^ t->tv_sec);
 
 	// must be called before any other GTK functions
 	// normally, arguments are pointers to `argc' and `argv'
