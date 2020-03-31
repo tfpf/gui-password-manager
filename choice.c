@@ -176,8 +176,20 @@ void add_password(GtkWidget *widget, gpointer data)
                 return;
 	}
 
-	// generate a random encryption key for AES256
-	char unsigned *key = malloc(SHA256_DIGEST_LENGTH * sizeof *key);
+	// generate encryption key and initialisation vector for AES
+	char unsigned *key = generate_random(32);
+	char unsigned *iv  = generate_random(16);
+
+	int pwlen = strlen(pw);
+	int ctlen = pwlen * 2;
+	char unsigned *ct = malloc(ctlen * sizeof *ct);
+	ctlen = encrypt((char unsigned *)pw, pwlen, key, iv, ct);
+	digest_to_hexdigest(&ct, ctlen);
+	printf("%s (%d)\n", ct, ctlen);
+	hexdigest_to_digest(&ct, ctlen);
+	pwlen = decrypt(ct, ctlen, key, iv, (char unsigned *)pw);
+	printf("%s (%d)\n\n", pw, pwlen);
+	return;
 
 	// calculate required string length
 	// 2 extra characters required to separate `site', `uname' and `pw'
