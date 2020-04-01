@@ -180,14 +180,13 @@ void add_password(GtkWidget *widget, gpointer data)
 	char unsigned *key = generate_random(32);
 	char unsigned *iv  = generate_random(16);
 
-	int pwlen = strlen(pw);
-	int ctlen = pwlen * 2;
-	char unsigned *ct = malloc(ctlen * sizeof *ct);
-	ctlen = encrypt((char unsigned *)pw, pwlen, key, iv, ct);
-	digest_to_hexdigest(&ct, ctlen);
-	printf("%s (%d)\n", ct, ctlen);
-	hexdigest_to_digest(&ct, ctlen);
-	pwlen = decrypt(ct, ctlen, key, iv, (char unsigned *)pw);
+	// encrypt the website, username and password
+	char unsigned *e_pw;
+	int e_pwlen = encrypt((char unsigned *)pw, strlen(pw), key, iv, &e_pw);
+	digest_to_hexdigest(&e_pw, e_pwlen);
+	printf("%s (%d)\n", e_pw, e_pwlen);
+	hexdigest_to_digest(&e_pw, e_pwlen);
+	int pwlen = decrypt(e_pw, e_pwlen, key, iv, (char unsigned **)&pw);
 	printf("%s (%d)\n\n", pw, pwlen);
 	return;
 
