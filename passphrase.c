@@ -50,6 +50,7 @@ void request_passphrase(void)
 
 	// set the information in the global struct variable
 	set_credentials(NULL, NULL, pw_entry);
+	credentials->kek = NULL;
 
 	// button
 	GtkWidget *login_button = gtk_button_new_with_label("Log In");
@@ -105,7 +106,7 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	if(strcmp((char *)pwh, pwh_s))
 	{
 		del_credentials();
-		memset(pwh  , 0, 2 * SHA512_DIGEST_LENGTH + 1);
+		memset(pwh,   0, 2 * SHA512_DIGEST_LENGTH + 1);
 		memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
 		gtk_widget_set_tooltip_text(*window, "Cannot log in. Wrong passphrase entered.");
 		g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
@@ -120,7 +121,7 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 
 	// trash the data and close the login so that the program can proceed
 	del_credentials();
-	memset(pwh  , 0, 2 * SHA512_DIGEST_LENGTH + 1);
+	memset(pwh,   0, 2 * SHA512_DIGEST_LENGTH + 1);
 	memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
 	gtk_widget_destroy(*window);
 }
