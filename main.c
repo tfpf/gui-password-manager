@@ -6,8 +6,6 @@
 #include "passphrase.c"
 #include "choice.c"
 
-// gboolean exit_status = TRUE;
-
 ///////////////////////////////////////////////////////////////////////////////
 
 int main(int const argc, char const *argv[])
