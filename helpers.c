@@ -86,35 +86,53 @@ gboolean hide_tooltip(gpointer data)
 
 // encrypt data using 256-bit AES
 // this encrypts data to be stored on the disk, hence XTS mode is used
-int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, unsigned char *ciphertext)
+int encrypt(char unsigned *pt, int ptlen, char unsigned *key, char unsigned *iv, char unsigned **ct)
 {
+	// allocate space to store ciphertext
+	// to be on the safer side, allocate more space than required
+	*ct = malloc(2 * ptlen * sizeof **ct);
+
+	// encrypt
 	EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 	EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, key, iv);
 	int len;
-	EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len);
-	int ciphertext_len = len;
-	EVP_EncryptFinal_ex(ctx, ciphertext + len, &len);
-	ciphertext_len += len;
+	EVP_EncryptUpdate(ctx, *ct, &len, pt, ptlen);
+	int ctlen = len;
+	EVP_EncryptFinal_ex(ctx, *ct + len, &len);
+	ctlen += len;
 	EVP_CIPHER_CTX_free(ctx);
 
-	return ciphertext_len;
+	// all the bytes allocated to store the ciphertext may not be used
+	// hence, the actual ciphertext length is being returned
+	return ctlen;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 // decrypt data using 256-bit AES
-int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, unsigned char *plaintext)
+int decrypt(char unsigned *ct, int ctlen, char unsigned *key, char unsigned *iv, char unsigned **pt)
 {
+	// allocate space to store plaintext
+	// to be on the safer side, allocate more space than required
+	*pt = malloc(2 * ctlen * sizeof **pt);
+
+	// decrypt
 	EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 	EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, key, iv);
 	int len;
-	EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len);
-	int plaintext_len = len;
-	EVP_DecryptFinal_ex(ctx, plaintext + len, &len);
-	plaintext_len += len;
+	EVP_DecryptUpdate(ctx, *pt, &len, ct, ctlen);
+	int ptlen = len;
+	EVP_DecryptFinal_ex(ctx, *pt + len, &len);
+	ptlen += len;
 	EVP_CIPHER_CTX_free(ctx);
 
-	return plaintext_len;
+	// plaintext is supposed to be in printable form
+	// hence, a null character must be added at the end
+	(*pt)[ptlen] = '\0';
+
+	// all the bytes allocated to store the plaintext may not be used
+	// hence, the actual plaintext length is being returned
+	return ptlen;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
