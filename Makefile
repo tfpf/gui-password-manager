@@ -27,6 +27,7 @@ clean:
 	$(RM) -f $(Binary) $(Assembly)
 
 asm:
+	clear
 	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(LFLAGS) $(INCLD) -s -o $(Assembly) $(Source)
 
 comp:
