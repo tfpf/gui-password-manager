@@ -180,41 +180,45 @@ void add_password(GtkWidget *widget, gpointer data)
 	char unsigned *key = generate_random(32);
 	char unsigned *iv  = generate_random(16);
 
-	// encrypt the website, username and password
-	char unsigned *e_pw;
-	int e_pwlen = encrypt((char unsigned *)pw, strlen(pw), key, iv, &e_pw);
-	digest_to_hexdigest(&e_pw, e_pwlen);
-	printf("%s (%d)\n", e_pw, e_pwlen);
-	hexdigest_to_digest(&e_pw, e_pwlen);
-	int pwlen = decrypt(e_pw, e_pwlen, key, iv, (char unsigned **)&pw);
-	printf("%s (%d)\n\n", pw, pwlen);
-	return;
+	// encrypt the website, username and password using the AES key
+	char unsigned *e_site, *e_uname, *e_pw;
+	int e_sitelen  = encrypt((char unsigned *)site,  strlen(site),  key, iv, &e_site);
+	int e_unamelen = encrypt((char unsigned *)uname, strlen(uname), key, iv, &e_uname);
+	int e_pwlen    = encrypt((char unsigned *)pw,    strlen(pw),    key, iv, &e_pw);
+	digest_to_hexdigest(&e_site,  e_sitelen);
+	digest_to_hexdigest(&e_uname, e_unamelen);
+	digest_to_hexdigest(&e_pw,    e_pwlen);
 
-	// calculate required string length
-	// 2 extra characters required to separate `site', `uname' and `pw'
-	// 1 extra character required for the LF character
-	// 1 extra character required for the null character added by `sprintf'
-	// total 4 extra characters required
-	size_t line_length = strlen(site) + strlen(uname) + strlen(pw) + 4;
+	// encrypt the initialisation vector and AES key using the key encryption key
+	char unsigned *kek = credentials->kek;
+	char unsigned *e_key, *e_iv;
+	int e_keylen = encrypt(key, 32, kek, iv, &e_key);
+	int e_ivlen  = encrypt(iv,  16, kek, iv, &e_iv);
+	digest_to_hexdigest(&e_key, e_keylen);
+	digest_to_hexdigest(&e_iv,  e_ivlen);
 
-	// do not allow extremely long credentials
-	if(line_length > MAX_BUF_SIZ)
-	{
-		gtk_widget_set_tooltip_text(*window, "Cannot add password. Credentials entered are too long.");
-		g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
-		return;
-	}
-
-	// create string of credentials in the form described above
-	// use a non-printable ASCII character as the separator
-	// write `line_length - 1' characters to the file
-	// i.e. write everything in `line' except the final null character
-	char *line = malloc(line_length * sizeof *line);
-	sprintf(line, "%s\x1b%s\x1b%s\n", site, uname, pw);
+	// combine all of them into a single string
+	// hexdigest is twice as long as digest, hence multiplying by 2
+	// 4 extra characters to separate the 5 items
+	// 1 character for the line feed character
+	// 1 extra character for the null character added by `sprintf'
+	int len = 2 * (e_sitelen + e_unamelen + e_pwlen + e_keylen + e_ivlen) + 4 + 1 + 1;
+	char *line = malloc(len * sizeof *line);
+	sprintf(line, "%s\x1b%s\x1b%s\x1b%s\x1b%s\n", e_site, e_uname, e_pw, e_key, e_iv);
 	FILE *pw_file = fopen(Slave, "ab");
-	fwrite(line, sizeof *line, line_length - 1, pw_file);
+	fwrite(line, sizeof *line, len - 1, pw_file);
 	fclose(pw_file);
+
+	// trash all sensitive data
 	del_credentials();
+	memset(key,     0, 32);
+	memset(iv,      0, 16);
+	memset(e_site,  0, e_sitelen);
+	memset(e_uname, 0, e_unamelen);
+	memset(e_pw,    0, e_pwlen);
+	memset(e_key,   0, e_keylen);
+	memset(e_iv,    0, e_ivlen);
+	memset(line,    0, len);
 
 	// display success message
 	gtk_widget_set_tooltip_text(*window, "Password added successfully.");
