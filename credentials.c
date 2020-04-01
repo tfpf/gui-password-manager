@@ -48,10 +48,6 @@ void set_credentials(GtkWidget *site_entry, GtkWidget *uname_entry, GtkWidget *p
 	credentials->site   =  site_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(site_entry));
 	credentials->uname  = uname_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(uname_entry));
 	credentials->pw     =    pw_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(pw_entry));
-
-	// initially, user has not logged in
-	// indidate this by setting the key encryption key to a null pointer
-	credentials->kek = NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
