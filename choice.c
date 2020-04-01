@@ -14,10 +14,10 @@ char const *Slave = ".Slave";
 void request_choice(void);
 void quit_choice(void);
 void add_password(GtkWidget *widget, gpointer data);
-GtkWidget *create_add_grd(GtkWidget **window);
-GtkWidget *create_chg_grd(GtkWidget **window);
-GtkWidget *create_see_grd(GtkWidget **window);
-GtkWidget *create_cpp_grd(GtkWidget **window);
+GtkWidget *create_widget_for_add(GtkWidget **window);
+GtkWidget *create_widget_for_chg(GtkWidget **window);
+GtkWidget *create_widget_for_see(GtkWidget **window);
+GtkWidget *create_widget_for_cpp(GtkWidget **window);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -33,22 +33,22 @@ void request_choice(void)
 	gtk_window_set_title(GTK_WINDOW(window), "Password Manager");
 
 	// notebook tab to add password
-	GtkWidget *add_grd = create_add_grd(&window);
+	GtkWidget *add_grd = create_widget_for_add(&window);
 	GtkWidget *add_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(add_lbl), "<span weight=\"normal\">Add Password</span>");
 
 	// notebook tab to edit or delete password
-	GtkWidget *chg_grd = create_chg_grd(&window);
+	GtkWidget *chg_grd = create_widget_for_chg(&window);
 	GtkWidget *chg_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(chg_lbl), "<span weight=\"normal\">Edit/Delete Password</span>");
 
 	// notebook tab to view password
-	GtkWidget *see_grd = create_see_grd(&window);
+	GtkWidget *see_grd = create_widget_for_see(&window);
 	GtkWidget *see_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(see_lbl), "<span weight=\"normal\">View Password</span>");
 
 	// notebook tab to change passphrase
-	GtkWidget *cpp_grd = create_cpp_grd(&window);
+	GtkWidget *cpp_grd = create_widget_for_cpp(&window);
 	GtkWidget *cpp_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(cpp_lbl), "<span weight=\"normal\">Change Passphrase</span>");
 
@@ -70,9 +70,9 @@ void request_choice(void)
 ///////////////////////////////////////////////////////////////////////////////
 
 // populate the notebook tab to add password
-GtkWidget *create_add_grd(GtkWidget **window)
+GtkWidget *create_widget_for_add(GtkWidget **window)
 {
-	// the object to return
+	// the grid to return
 	GtkWidget *add_grd = gtk_grid_new();
 	gtk_container_set_border_width(GTK_CONTAINER(add_grd), 50);
         gtk_grid_set_column_spacing(GTK_GRID(add_grd), 25);
@@ -119,28 +119,43 @@ GtkWidget *create_add_grd(GtkWidget **window)
 ///////////////////////////////////////////////////////////////////////////////
 
 // populate the notebook tab to change password
-GtkWidget *create_chg_grd(GtkWidget **window)
+GtkWidget *create_widget_for_chg(GtkWidget **window)
 {
-	GtkWidget *del_grd = gtk_grid_new();
-	return del_grd;
+
+	// the scrollable window to return
+	GtkWidget *chg_scw = gtk_scrolled_window_new(NULL, NULL);
+	gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(chg_scw), FALSE);
+	gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(chg_scw), GTK_CORNER_TOP_LEFT);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(chg_scw), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+
+	GtkWidget *chg_grd = gtk_grid_new();
+	gtk_container_add(GTK_CONTAINER(chg_scw), chg_grd);
+
+	for(int i = 0; i < 16; ++i)
+	{
+		GtkWidget *btn = gtk_button_new_with_label("Test");
+		gtk_grid_attach(GTK_GRID(chg_grd), btn, 0, i, 1, 1);
+	}
+
+	return chg_scw;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 // populate the notebook tab to view password
-GtkWidget *create_see_grd(GtkWidget **window)
+GtkWidget *create_widget_for_see(GtkWidget **window)
 {
-	GtkWidget *del_grd = gtk_grid_new();
-	return del_grd;
+	GtkWidget *see_grd = gtk_grid_new();
+	return see_grd;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 // populate the notebook tab to change passphrase
-GtkWidget *create_cpp_grd(GtkWidget **window)
+GtkWidget *create_widget_for_cpp(GtkWidget **window)
 {
-	GtkWidget *del_grd = gtk_grid_new();
-	return del_grd;
+	GtkWidget *cpp_grd = gtk_grid_new();
+	return cpp_grd;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -189,7 +204,7 @@ void add_password(GtkWidget *widget, gpointer data)
 	digest_to_hexdigest(&e_uname, e_unamelen);
 	digest_to_hexdigest(&e_pw,    e_pwlen);
 
-	// encrypt the initialisation vector and AES key using the key encryption key
+	// encrypt initialisation vector and AES key using key encryption key
 	char unsigned *kek = credentials->kek;
 	char unsigned *e_key, *e_iv;
 	int e_keylen = encrypt(key, 32, kek, iv, &e_key);
