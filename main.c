@@ -20,6 +20,7 @@ int main(int const argc, char const *argv[])
 	struct timespec *t = malloc(sizeof *t);
 	timespec_get(t, TIME_UTC);
 	srandom(t->tv_nsec ^ t->tv_sec);
+	free(t);
 
 	// must be called before any other GTK functions
 	// normally, arguments are pointers to `argc' and `argv'

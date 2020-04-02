@@ -104,6 +104,8 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 		del_credentials();
 		memset(pwh,   0, 2 * SHA512_DIGEST_LENGTH + 1);
 		memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
+		free(pwh);
+		free(pwh_s);
 		gtk_widget_set_tooltip_text(*window, "Cannot log in. Wrong passphrase entered.");
 		g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
 		return;

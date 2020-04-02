@@ -170,8 +170,8 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 	// grid to place in the scrollable window
 	GtkWidget *bot_grd = gtk_grid_new();
 	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 5);
-        gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 0);
-        gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 0);
+        gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 5);
+        gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 5);
         gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
         gtk_widget_set_hexpand(bot_grd, TRUE);
 

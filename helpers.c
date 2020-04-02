@@ -43,6 +43,7 @@ void digest_to_hexdigest(char unsigned **p, size_t size)
 
 	// make the argument point to `hexdigest'
 	memset(digest, 0, size);
+	free(digest);
 	*p = hexdigest;
 }
 
@@ -69,6 +70,7 @@ void hexdigest_to_digest(char unsigned **p, size_t size)
 
 	// make the argument point to `digest'
 	memset(hexdigest, 0, 2 * size + 1);
+	free(hexdigest);
 	*p = digest;
 }
 
