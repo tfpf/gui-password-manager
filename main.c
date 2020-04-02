@@ -1,6 +1,9 @@
 #include <gtk/gtk.h>
 #include <time.h>
 
+char const *Master = ".Master";
+char const *Slave = ".Slave";
+
 #include "credentials.c"
 #include "helpers.c"
 #include "passphrase.c"
