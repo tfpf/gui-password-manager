@@ -6,10 +6,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-char const *Slave = ".Slave";
-
-///////////////////////////////////////////////////////////////////////////////
-
 // prototypes
 void request_choice(void);
 void quit_choice(void);
@@ -121,7 +117,6 @@ GtkWidget *create_widget_for_add(GtkWidget **window)
 // populate the notebook tab to change password
 GtkWidget *create_widget_for_chg(GtkWidget **window)
 {
-
 	// the scrollable window to return
 	GtkWidget *chg_scw = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(chg_scw), FALSE);
@@ -131,7 +126,7 @@ GtkWidget *create_widget_for_chg(GtkWidget **window)
 	GtkWidget *chg_grd = gtk_grid_new();
 	gtk_container_add(GTK_CONTAINER(chg_scw), chg_grd);
 
-	for(int i = 0; i < 16; ++i)
+	for(int i = 0; i < 56; ++i)
 	{
 		GtkWidget *btn = gtk_button_new_with_label("Test");
 		gtk_grid_attach(GTK_GRID(chg_grd), btn, 0, i, 1, 1);
@@ -145,8 +140,64 @@ GtkWidget *create_widget_for_chg(GtkWidget **window)
 // populate the notebook tab to view password
 GtkWidget *create_widget_for_see(GtkWidget **window)
 {
-	GtkWidget *see_grd = gtk_grid_new();
-	return see_grd;
+
+	// grid to be placed at the top
+	GtkWidget *top_grd = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(top_grd), 50);
+        gtk_grid_set_column_spacing(GTK_GRID(top_grd), 25);
+        gtk_grid_set_row_spacing(GTK_GRID(top_grd), 25);
+        gtk_widget_set_halign(top_grd, GTK_ALIGN_CENTER);
+        gtk_widget_set_hexpand(top_grd, TRUE);
+
+	// header
+	GtkWidget *main_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(main_label), "<b>Enter a search term to narrow down the list.</b>");
+	gtk_grid_attach(GTK_GRID(top_grd), main_label, 0, 0, 2, 1);
+
+	// label
+	GtkWidget *search_label = gtk_label_new("Search Term");
+	gtk_grid_attach(GTK_GRID(top_grd), search_label, 0, 1, 1, 1);
+	GtkWidget *search_entry = gtk_entry_new();
+	gtk_grid_attach(GTK_GRID(top_grd), search_entry, 1, 1, 1, 1);
+
+	// scrollable window to be placed at the bottom
+	GtkWidget *bot_scw = gtk_scrolled_window_new(NULL, NULL);
+	gtk_container_set_border_width(GTK_CONTAINER(bot_scw), 0);
+	gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(bot_scw), FALSE);
+	gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(bot_scw), GTK_CORNER_TOP_LEFT);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bot_scw), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+
+	// grid to place in the scrollable window
+	GtkWidget *bot_grd = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 5);
+        gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 0);
+        gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 0);
+        gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
+        gtk_widget_set_hexpand(bot_grd, TRUE);
+
+	// obtain the data to be written in this grid
+	int number_of_lines = 0;
+	char ***lines = retrieve_data_from_file(&number_of_lines);
+
+	// put this data in the grid
+	for(int i = 0; i < number_of_lines; ++i)
+	{
+		for(int j = 0; j < 5; ++j)
+		{
+			GtkWidget *l = gtk_label_new(lines[i][j]);
+			gtk_grid_attach(GTK_GRID(bot_grd), l, j, i, 1, 1);
+		}
+	}
+
+	// put the grid in the scrolled window
+	gtk_container_add(GTK_CONTAINER(bot_scw), bot_grd);
+
+	// box which will contain `top_grd' and `bot_scw'
+	GtkWidget *see_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	gtk_box_pack_start(GTK_BOX(see_box), top_grd, FALSE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(see_box), bot_scw, TRUE, TRUE, 0);
+
+	return see_box;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -214,12 +265,12 @@ void add_password(GtkWidget *widget, gpointer data)
 
 	// combine all of them into a single string
 	// hexdigest is twice as long as digest, hence multiplying by 2
-	// 4 extra characters to separate the 5 items
+	// 5 extra characters to separate the 5 items
 	// 1 character for the line feed character
 	// 1 extra character for the null character added by `sprintf'
-	int len = 2 * (e_sitelen + e_unamelen + e_pwlen + e_keylen + e_ivlen) + 4 + 1 + 1;
+	int len = 2 * (e_sitelen + e_unamelen + e_pwlen + e_keylen + e_ivlen) + 5 + 1 + 1;
 	char *line = malloc(len * sizeof *line);
-	sprintf(line, "%s\x1b%s\x1b%s\x1b%s\x1b%s\n", e_site, e_uname, e_pw, e_key, e_iv);
+	sprintf(line, "\x1b%s\x1b%s\x1b%s\x1b%s\x1b%s\n", e_site, e_uname, e_pw, e_key, e_iv);
 	FILE *pw_file = fopen(Slave, "ab");
 	fwrite(line, sizeof *line, len - 1, pw_file);
 	fclose(pw_file);
