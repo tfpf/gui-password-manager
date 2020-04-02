@@ -10,6 +10,7 @@
 void request_choice(void);
 void quit_choice(void);
 void add_password(GtkWidget *widget, gpointer data);
+void populate_search_results(GtkWidget *widget, gpointer data);
 GtkWidget *create_widget_for_add(GtkWidget **window);
 GtkWidget *create_widget_for_chg(GtkWidget **window);
 GtkWidget *create_widget_for_see(GtkWidget **window);
@@ -141,6 +142,26 @@ GtkWidget *create_widget_for_chg(GtkWidget **window)
 GtkWidget *create_widget_for_see(GtkWidget **window)
 {
 
+
+	// scrollable window to be placed at the bottom
+	GtkWidget *bot_scw = gtk_scrolled_window_new(NULL, NULL);
+	gtk_container_set_border_width(GTK_CONTAINER(bot_scw), 0);
+	gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(bot_scw), FALSE);
+	gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(bot_scw), GTK_CORNER_TOP_LEFT);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bot_scw), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+
+	// grid to place in the scrollable window
+	GtkWidget *bot_grd = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 5);
+        gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 5);
+        gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 5);
+        gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
+        gtk_widget_set_hexpand(bot_grd, TRUE);
+
+
+	// put the grid in the scrolled window
+	gtk_container_add(GTK_CONTAINER(bot_scw), bot_grd);
+
 	// grid to be placed at the top
 	GtkWidget *top_grd = gtk_grid_new();
 	gtk_container_set_border_width(GTK_CONTAINER(top_grd), 50);
@@ -158,39 +179,10 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 	GtkWidget *search_label = gtk_label_new("Search Term");
 	gtk_grid_attach(GTK_GRID(top_grd), search_label, 0, 1, 1, 1);
 	GtkWidget *search_entry = gtk_entry_new();
+	int i; int *j = &i;
+	g_signal_connect(search_entry, "changed", G_CALLBACK(populate_search_results), &bot_grd);
+	printf("%p, %p\n", bot_grd, &bot_grd);
 	gtk_grid_attach(GTK_GRID(top_grd), search_entry, 1, 1, 1, 1);
-
-	// scrollable window to be placed at the bottom
-	GtkWidget *bot_scw = gtk_scrolled_window_new(NULL, NULL);
-	gtk_container_set_border_width(GTK_CONTAINER(bot_scw), 0);
-	gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(bot_scw), FALSE);
-	gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(bot_scw), GTK_CORNER_TOP_LEFT);
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bot_scw), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
-
-	// grid to place in the scrollable window
-	GtkWidget *bot_grd = gtk_grid_new();
-	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 5);
-        gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 5);
-        gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 5);
-        gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
-        gtk_widget_set_hexpand(bot_grd, TRUE);
-
-	// obtain the data to be written in this grid
-	int number_of_lines = 0;
-	char ***lines = retrieve_data_from_file(&number_of_lines);
-
-	// put this data in the grid
-	for(int i = 0; i < number_of_lines; ++i)
-	{
-		for(int j = 0; j < 5; ++j)
-		{
-			GtkWidget *l = gtk_label_new(lines[i][j]);
-			gtk_grid_attach(GTK_GRID(bot_grd), l, j, i, 1, 1);
-		}
-	}
-
-	// put the grid in the scrolled window
-	gtk_container_add(GTK_CONTAINER(bot_scw), bot_grd);
 
 	// box which will contain `top_grd' and `bot_scw'
 	GtkWidget *see_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -289,6 +281,29 @@ void add_password(GtkWidget *widget, gpointer data)
 	// display success message
 	gtk_widget_set_tooltip_text(*window, "Password added successfully.");
 	g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void populate_search_results(GtkWidget *widget, gpointer data)
+{
+	// get the grid which has to be populated with search results
+	GtkWidget **bot_grd = data;
+	printf("%p, %p\n", bot_grd, *bot_grd);
+
+	// // obtain the data to be written in this grid
+	// int number_of_lines = 0;
+	// char ***lines = retrieve_data_from_file(&number_of_lines);
+
+	// // put this data in the grid
+	// for(int i = 0; i < number_of_lines; ++i)
+	// {
+	// 	for(int j = 0; j < 5; ++j)
+	// 	{
+	// 		GtkWidget *l = gtk_label_new(lines[i][j]);
+	// 		gtk_grid_attach(GTK_GRID(bot_grd), l, j, i, 1, 1);
+	// 	}
+	// }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
