@@ -152,3 +152,61 @@ char unsigned *generate_random(int key_len)
 	return key;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+// decrypt the website and username from the file
+// leave the password encrypted
+// put it all in a table and return that table
+char ***retrieve_data_from_file(int *number_of_lines)
+{
+	// first, traverse the file and calculate the number of lines in it
+	FILE *pw_file = fopen(Slave, "rb");
+	while(fscanf(pw_file, "%*[^\n]\n") != EOF)
+	{
+		++*number_of_lines;
+	}
+	rewind(pw_file);
+
+	// allocate space to store the table
+	char ***lines = malloc(*number_of_lines * sizeof *lines);
+	for(int i = 0; i < *number_of_lines; ++i)
+	{
+		// get the length of this line
+		// this line is line number `i' of the file
+		off_t current_offset = ftello(pw_file);
+		int len = 0;
+		int ch;
+		while((ch = fgetc(pw_file)) != '\n')
+		{
+			++len;
+		}
+		fseeko(pw_file, current_offset, 0);
+
+		// each row in the table has 6 columns
+		// website, username, password, key and initialisation vector
+		// sixth column is for validity
+		// it will be used to decide if a row matches a search result
+		lines[i] = malloc(6 * sizeof **lines);
+
+		// store the entire line as a string
+		// then break it wherever the separator character occurs
+		// assign the broken pieces to the 5 columns of the table
+		char *line = malloc((len + 2) * sizeof *line);
+		fgets(line, len + 2, pw_file);
+		line[len] = '\0';
+		for(int j = 0, k = 0; j < len; ++j)
+		{
+			if(line[j] == 0x1b)
+			{
+				line[j] = '\0';
+				lines[i][k++] = line + j + 1;
+			}
+		}
+		lines[i][5] = lines[i][0];
+	}
+
+	fclose(pw_file);
+
+	return lines;
+}
+
