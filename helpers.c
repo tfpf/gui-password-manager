@@ -1,13 +1,3 @@
-#include <openssl/conf.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
-///////////////////////////////////////////////////////////////////////////////
-
 // prototypes
 void wait(int unsigned delay);
 gboolean hide_tooltip(gpointer data);

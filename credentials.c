@@ -1,9 +1,3 @@
-#include <gtk/gtk.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-///////////////////////////////////////////////////////////////////////////////
-
 // a convenient way to access and delete the sensitive data from anywhere
 typedef struct
 {
