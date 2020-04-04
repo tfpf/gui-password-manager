@@ -1,7 +1,3 @@
-#define MAX_BUF_SIZ 1024
-
-///////////////////////////////////////////////////////////////////////////////
-
 // prototypes
 void request_choice(void);
 void quit_choice(void);
@@ -68,10 +64,10 @@ GtkWidget *create_widget_for_add(GtkWidget **window)
 	// the grid to return
 	GtkWidget *add_grd = gtk_grid_new();
 	gtk_container_set_border_width(GTK_CONTAINER(add_grd), 50);
-        gtk_grid_set_column_spacing(GTK_GRID(add_grd), 25);
-        gtk_grid_set_row_spacing(GTK_GRID(add_grd), 25);
-        gtk_widget_set_halign(add_grd, GTK_ALIGN_CENTER);
-        gtk_widget_set_hexpand(add_grd, TRUE);
+	gtk_grid_set_column_spacing(GTK_GRID(add_grd), 25);
+	gtk_grid_set_row_spacing(GTK_GRID(add_grd), 25);
+	gtk_widget_set_halign(add_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(add_grd, TRUE);
 
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
@@ -149,10 +145,10 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 	// grid to place in the scrollable window
 	GtkWidget *bot_grd = gtk_grid_new();
 	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 5);
-        gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 5);
-        gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 5);
-        gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
-        gtk_widget_set_hexpand(bot_grd, TRUE);
+	gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 5);
+	gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 5);
+	gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(bot_grd, TRUE);
 
 
 	// put the grid in the scrolled window
@@ -161,10 +157,10 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 	// grid to be placed at the top
 	GtkWidget *top_grd = gtk_grid_new();
 	gtk_container_set_border_width(GTK_CONTAINER(top_grd), 50);
-        gtk_grid_set_column_spacing(GTK_GRID(top_grd), 25);
-        gtk_grid_set_row_spacing(GTK_GRID(top_grd), 25);
-        gtk_widget_set_halign(top_grd, GTK_ALIGN_CENTER);
-        gtk_widget_set_hexpand(top_grd, TRUE);
+	gtk_grid_set_column_spacing(GTK_GRID(top_grd), 25);
+	gtk_grid_set_row_spacing(GTK_GRID(top_grd), 25);
+	gtk_widget_set_halign(top_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(top_grd, TRUE);
 
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
@@ -175,9 +171,9 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 	GtkWidget *search_label = gtk_label_new("Search Term");
 	gtk_grid_attach(GTK_GRID(top_grd), search_label, 0, 1, 1, 1);
 	GtkWidget *search_entry = gtk_entry_new();
-	int i; int *j = &i;
+	// int i; int *j = &i;
 	g_signal_connect(search_entry, "changed", G_CALLBACK(populate_search_results), &bot_grd);
-	printf("%p, %p\n", bot_grd, &bot_grd);
+	// printf("%p, %p\n", bot_grd, &bot_grd);
 	gtk_grid_attach(GTK_GRID(top_grd), search_entry, 1, 1, 1, 1);
 
 	// box which will contain `top_grd' and `bot_scw'
@@ -214,25 +210,25 @@ void add_password(GtkWidget *widget, gpointer data)
 	if(!strcmp(site, ""))
 	{
 		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Website\' field is empty.");
-                g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
-                return;
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		return;
 	}
 	if(!strcmp(uname, ""))
 	{
 		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Username\' field is empty.");
-                g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
-                return;
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		return;
 	}
 	if(!strcmp(pw, ""))
 	{
 		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Password\' field is empty.");
-                g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
-                return;
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		return;
 	}
 
 	// generate encryption key and initialisation vector for AES
-	char unsigned *key = generate_random(32);
-	char unsigned *iv  = generate_random(16);
+	char unsigned *key = generate_random(ENCRYPT_KEY_LENGTH);
+	char unsigned *iv  = generate_random(INIT_VECTOR_LENGTH);
 
 	// encrypt the website, username and password using the AES key
 	char unsigned *e_site, *e_uname, *e_pw;
@@ -243,40 +239,47 @@ void add_password(GtkWidget *widget, gpointer data)
 	digest_to_hexdigest(&e_uname, e_unamelen);
 	digest_to_hexdigest(&e_pw,    e_pwlen);
 
-	// encrypt initialisation vector and AES key using key encryption key
-	char unsigned *kek = credentials->kek;
-	char unsigned *e_key, *e_iv;
-	int e_keylen = encrypt(key, 32, kek, iv, &e_key);
-	int e_ivlen  = encrypt(iv,  16, kek, iv, &e_iv);
+	// encrypt the AES key using key encryption key
+	char unsigned *kek = get_credentials_kek();
+	char unsigned *e_key;
+	int e_keylen = encrypt(key, ENCRYPT_KEY_LENGTH, kek, iv, &e_key);
 	digest_to_hexdigest(&e_key, e_keylen);
-	digest_to_hexdigest(&e_iv,  e_ivlen);
+
+	// initialisation vector is not encypted
+	// because it is required for decryption
+	digest_to_hexdigest(&iv, INIT_VECTOR_LENGTH);
 
 	// combine all of them into a single string
 	// hexdigest is twice as long as digest, hence multiplying by 2
 	// 5 extra characters to separate the 5 items
 	// 1 character for the line feed character
 	// 1 extra character for the null character added by `sprintf'
-	int len = 2 * (e_sitelen + e_unamelen + e_pwlen + e_keylen + e_ivlen) + 5 + 1 + 1;
+	int len = 2 * e_sitelen
+	        + 2 * e_unamelen
+	        + 2 * e_pwlen
+	        + 2 * e_keylen
+	        + 2 * INIT_VECTOR_LENGTH
+	        + 5 + 1 + 1;
 	char *line = malloc(len * sizeof *line);
-	sprintf(line, "\x1b%s\x1b%s\x1b%s\x1b%s\x1b%s\n", e_site, e_uname, e_pw, e_key, e_iv);
+	sprintf(line, "\x1b%s\x1b%s\x1b%s\x1b%s\x1b%s\n", e_site, e_uname, e_pw, e_key, iv);
 	FILE *pw_file = fopen(Slave, "ab");
 	fwrite(line, sizeof *line, len - 1, pw_file);
 	fclose(pw_file);
 
-	// trash all sensitive data
+	// trash all data
 	del_credentials();
-	memset(key,     0, 32);
-	memset(iv,      0, 16);
-	memset(e_site,  0, e_sitelen);
-	memset(e_uname, 0, e_unamelen);
-	memset(e_pw,    0, e_pwlen);
-	memset(e_key,   0, e_keylen);
-	memset(e_iv,    0, e_ivlen);
+	memset(key,     0, ENCRYPT_KEY_LENGTH);
+	memset(iv,      0, 2 * INIT_VECTOR_LENGTH);
+	memset(e_site,  0, 2 * e_sitelen);
+	memset(e_uname, 0, 2 * e_unamelen);
+	memset(e_pw,    0, 2 * e_pwlen);
+	memset(e_key,   0, 2 * e_keylen);
 	memset(line,    0, len);
 
 	// display success message
 	gtk_widget_set_tooltip_text(*window, "Password added successfully.");
 	g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
+	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -284,8 +287,8 @@ void add_password(GtkWidget *widget, gpointer data)
 void populate_search_results(GtkWidget *widget, gpointer data)
 {
 	// get the grid which has to be populated with search results
-	GtkWidget **bot_grd = data;
-	printf("%p, %p\n", bot_grd, *bot_grd);
+	// GtkWidget **bot_grd = data;
+	// printf("%p, %p\n", bot_grd, *bot_grd);
 
 	// // obtain the data to be written in this grid
 	// int number_of_lines = 0;

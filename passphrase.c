@@ -122,6 +122,9 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	memset(pwh,   0, 2 * SHA512_DIGEST_LENGTH + 1);
 	memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
 	gtk_widget_destroy(*window);
+
+	// read all password items into RAM
+	set_list();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

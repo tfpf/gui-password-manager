@@ -8,11 +8,25 @@
 #include <string.h>
 #include <time.h>
 
+// lengths in bytes
+// decryption key is same as encryption key, hence length is same
+#define ENCRYPT_KEY_LENGTH 32
+#define DECRYPT_KEY_LENGTH 32
+#define INIT_VECTOR_LENGTH 16
+
+// time for which a tooltip message is visible
+#define TOOLTIP_MESSAGE_TIMEOUT 8 * G_TIME_SPAN_MILLISECOND
+
+// character which separates columns in password file
+#define COLUMN_SEPARATOR 0x1b
+
+// files which contain the passphrase and other passwords respectively
 char const *Master = ".Master";
 char const *Slave = ".Slave";
 
 #include "credentials.c"
 #include "helpers.c"
+#include "list.c"
 #include "passphrase.c"
 #include "choice.c"
 
