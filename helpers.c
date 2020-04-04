@@ -46,7 +46,6 @@ void hexdigest_to_digest(char unsigned **p, size_t size)
 {
 	char unsigned *hexdigest = *p;
 	char unsigned *digest    = malloc(size * sizeof *digest);
-	printf("I got: %s\n", hexdigest);
 
 	// for every two bytes in `hexdigest', write one byte in `digest'
 	// a warning is expected here

@@ -240,10 +240,12 @@ void add_password(GtkWidget *widget, gpointer data)
 	digest_to_hexdigest(&e_pw,    e_pwlen);
 
 	// encrypt the AES key using key encryption key
+	// no need to check return value of `encrypt' function
+	// encrypted form of 32-byte key is 32 bytes long
 	char unsigned *kek = get_credentials_kek();
 	char unsigned *e_key;
-	int e_keylen = encrypt(key, ENCRYPT_KEY_LENGTH, kek, iv, &e_key);
-	digest_to_hexdigest(&e_key, e_keylen);
+	encrypt(key, ENCRYPT_KEY_LENGTH, kek, iv, &e_key);
+	digest_to_hexdigest(&e_key, ENCRYPT_KEY_LENGTH);
 
 	// initialisation vector is not encypted
 	// because it is required for decryption
@@ -257,7 +259,7 @@ void add_password(GtkWidget *widget, gpointer data)
 	int len = 2 * e_sitelen
 	        + 2 * e_unamelen
 	        + 2 * e_pwlen
-	        + 2 * e_keylen
+	        + 2 * ENCRYPT_KEY_LENGTH
 	        + 2 * INIT_VECTOR_LENGTH
 	        + 5 + 1 + 1;
 	char *line = malloc(len * sizeof *line);
@@ -273,7 +275,7 @@ void add_password(GtkWidget *widget, gpointer data)
 	memset(e_site,  0, 2 * e_sitelen);
 	memset(e_uname, 0, 2 * e_unamelen);
 	memset(e_pw,    0, 2 * e_pwlen);
-	memset(e_key,   0, 2 * e_keylen);
+	memset(e_key,   0, 2 * ENCRYPT_KEY_LENGTH);
 	memset(line,    0, len);
 
 	// display success message
