@@ -9,7 +9,8 @@
 #include <time.h>
 
 // lengths in bytes
-// decryption key is same as encryption key, hence length is same
+// all keys will ne 32 bytes long, and encryption key is same as decryption key
+// because this is symmetric encrypion
 #define ENCRYPT_KEY_LENGTH 32
 #define DECRYPT_KEY_LENGTH 32
 #define INIT_VECTOR_LENGTH 16
@@ -20,9 +21,17 @@
 // character which separates columns in password file
 #define COLUMN_SEPARATOR 0x1b
 
+#define ROWS_PER_ITEM 5
+#define I_SITE  0
+#define I_UNAME 1
+#define I_PW    2
+#define I_KEY   3
+#define I_IV    4
+
 // files which contain the passphrase and other passwords respectively
-char const *Master = ".Master";
-char const *Slave = ".Slave";
+char const *Master = "._Master";
+char const *Slave = "._Slave";
+
 
 #include "credentials.c"
 #include "helpers.c"

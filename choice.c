@@ -253,17 +253,16 @@ void add_password(GtkWidget *widget, gpointer data)
 
 	// combine all of them into a single string
 	// hexdigest is twice as long as digest, hence multiplying by 2
-	// 5 extra characters to separate the 5 items
-	// 1 character for the line feed character
-	// 1 extra character for the null character added by `sprintf'
+	// plus 5 LF characters
+	// plus 1 null character
 	int len = 2 * e_sitelen
 	        + 2 * e_unamelen
 	        + 2 * e_pwlen
 	        + 2 * ENCRYPT_KEY_LENGTH
 	        + 2 * INIT_VECTOR_LENGTH
-	        + 5 + 1 + 1;
+	        + 5 + 1;
 	char *line = malloc(len * sizeof *line);
-	sprintf(line, "\x1b%s\x1b%s\x1b%s\x1b%s\x1b%s\n", e_site, e_uname, e_pw, e_key, iv);
+	sprintf(line, "%s\n%s\n%s\n%s\n%s\n", e_site, e_uname, e_pw, e_key, iv);
 	FILE *pw_file = fopen(Slave, "ab");
 	fwrite(line, sizeof *line, len - 1, pw_file);
 	fclose(pw_file);
