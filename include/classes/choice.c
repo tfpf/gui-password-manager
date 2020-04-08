@@ -138,6 +138,11 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 	gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
 	gtk_widget_set_hexpand(bot_grd, TRUE);
 
+	for(int i = 0; i < 100; ++i)
+	{
+		GtkWidget *btn = gtk_button_new_with_label("Test");
+		gtk_grid_attach(GTK_GRID(bot_grd), btn, 0, i, 1, 1);
+	}
 
 	// put the grid in the scrolled window
 	gtk_container_add(GTK_CONTAINER(bot_scw), bot_grd);
@@ -159,9 +164,7 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 	GtkWidget *search_label = gtk_label_new("Search Term");
 	gtk_grid_attach(GTK_GRID(top_grd), search_label, 0, 1, 1, 1);
 	GtkWidget *search_entry = gtk_entry_new();
-	// int i; int *j = &i;
 	g_signal_connect(search_entry, "changed", G_CALLBACK(populate_search_results), &bot_grd);
-	// printf("%p, %p\n", bot_grd, &bot_grd);
 	gtk_grid_attach(GTK_GRID(top_grd), search_entry, 1, 1, 1, 1);
 
 	// box which will contain `top_grd' and `bot_scw'
@@ -299,6 +302,7 @@ void populate_search_results(GtkWidget *widget, gpointer data)
 void quit_choice(void)
 {
 	del_credentials();
+	memset(credentials->kek, 0, ENCRYPT_KEY_LENGTH);
 	free(credentials);
 	gtk_main_quit();
 	exit(0);
