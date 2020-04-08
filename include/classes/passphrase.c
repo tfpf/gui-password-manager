@@ -1,17 +1,3 @@
-#include <gtk/gtk.h>
-#include <openssl/sha.h>
-#include <stdlib.h>
-#include <string.h>
-
-///////////////////////////////////////////////////////////////////////////////
-
-// prototypes
-void request_passphrase(void);
-void validate_passphrase(GtkWidget *widget, gpointer data);
-void quit_passphrase(void);
-
-///////////////////////////////////////////////////////////////////////////////
-
 // show a window to let the user enter their passphrase
 void request_passphrase(void)
 {

@@ -33,11 +33,11 @@ char const *Master = "._Master";
 char const *Slave = "._Slave";
 
 
-#include "credentials.c"
+#include "credentials.h"
 #include "helpers.c"
 #include "list.c"
-#include "passphrase.c"
-#include "choice.c"
+#include "passphrase.h"
+#include "choice.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
