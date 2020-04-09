@@ -1,4 +1,6 @@
-// show a window to ask the user what they want to do
+/*-----------------------------------------------------------------------------
+Display a window in which the user can choose what they want to do.
+-----------------------------------------------------------------------------*/
 void request_choice(void)
 {
 	// window
@@ -44,9 +46,9 @@ void request_choice(void)
 	gtk_main();
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// populate the notebook tab to add password
+/*-----------------------------------------------------------------------------
+Populate the 'Add Password' page of the notebook.
+-----------------------------------------------------------------------------*/
 GtkWidget *create_widget_for_add(GtkWidget **window)
 {
 	// the grid to return
@@ -100,9 +102,9 @@ GtkWidget *create_widget_for_add(GtkWidget **window)
 	return add_grd;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// populate the notebook tab to change password
+/*-----------------------------------------------------------------------------
+Populate the 'Edit/Delete Password' page of the notebook.
+-----------------------------------------------------------------------------*/
 GtkWidget *create_widget_for_chg(GtkWidget **window)
 {
 	// the scrollable window to return
@@ -123,13 +125,11 @@ GtkWidget *create_widget_for_chg(GtkWidget **window)
 	return chg_scw;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// populate the notebook tab to view password
+/*-----------------------------------------------------------------------------
+Populate the 'View Password' page of the notebook.
+-----------------------------------------------------------------------------*/
 GtkWidget *create_widget_for_see(GtkWidget **window)
 {
-
-
 	// scrollable window to be placed at the bottom
 	GtkWidget *bot_scw = gtk_scrolled_window_new(NULL, NULL);
 	gtk_container_set_border_width(GTK_CONTAINER(bot_scw), 0);
@@ -182,18 +182,21 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 	return see_box;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// populate the notebook tab to change passphrase
+/*-----------------------------------------------------------------------------
+Populate the 'Change Passphrase' page of the notebook.
+-----------------------------------------------------------------------------*/
 GtkWidget *create_widget_for_cpp(GtkWidget **window)
 {
 	GtkWidget *cpp_grd = gtk_grid_new();
 	return cpp_grd;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// write credentials to file
+/*-----------------------------------------------------------------------------
+Write the data provided by the user to the password file. Encrypt the website,
+username and password with the randomly generated key. Then encrypt the key
+using the key encryption key. Store them and the initialisation vector also in
+the file.
+-----------------------------------------------------------------------------*/
 void add_password(GtkWidget *widget, gpointer data)
 {
 	// get the window in which tooltips will be shown
@@ -203,6 +206,7 @@ void add_password(GtkWidget *widget, gpointer data)
 	char const *site  = get_credentials_site();
 	char const *uname = get_credentials_uname();
 	char const *pw    = get_credentials_pw();
+	char const *cp    = get_credentials_cp();
 
 	// sanity
 	if(!strcmp(site, ""))
@@ -220,6 +224,18 @@ void add_password(GtkWidget *widget, gpointer data)
 	if(!strcmp(pw, ""))
 	{
 		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Password\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		return;
+	}
+	if(!strcmp(cp, ""))
+	{
+		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Confirm Password\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		return;
+	}
+	if(strcmp(pw, cp))
+	{
+		gtk_widget_set_tooltip_text(*window, "Cannot add password. Fields \'Password\' and \'Confirm Password\' do not match.");
 		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
 		return;
 	}
@@ -249,20 +265,13 @@ void add_password(GtkWidget *widget, gpointer data)
 	// because it is required for decryption
 	digest_to_hexdigest(&iv, INIT_VECTOR_LENGTH);
 
-	// combine all of them into a single string
-	// hexdigest is twice as long as digest, hence multiplying by 2
-	// plus 5 LF characters
-	// plus 1 null character
-	int len = 2 * e_sitelen
-	        + 2 * e_unamelen
-	        + 2 * e_pwlen
-	        + 2 * ENCRYPT_KEY_LENGTH
-	        + 2 * INIT_VECTOR_LENGTH
-	        + 5 + 1;
-	char *line = malloc(len * sizeof *line);
-	sprintf(line, "%s\n%s\n%s\n%s\n%s\n", e_site, e_uname, e_pw, e_key, iv);
+	// write them all to the file
 	FILE *pw_file = fopen(Slave, "ab");
-	fwrite(line, sizeof *line, len - 1, pw_file);
+	fprintf(pw_file, "%s\n", e_site);
+	fprintf(pw_file, "%s\n", e_uname);
+	fprintf(pw_file, "%s\n", e_pw);
+	fprintf(pw_file, "%s\n", e_key);
+	fprintf(pw_file, "%s\n", iv);
 	fclose(pw_file);
 
 	// trash all data
@@ -273,7 +282,6 @@ void add_password(GtkWidget *widget, gpointer data)
 	memset(e_uname, 0, 2 * e_unamelen);
 	memset(e_pw,    0, 2 * e_pwlen);
 	memset(e_key,   0, 2 * ENCRYPT_KEY_LENGTH);
-	memset(line,    0, len);
 
 	// display success message
 	gtk_widget_set_tooltip_text(*window, "Password added successfully.");
@@ -308,9 +316,10 @@ void populate_search_results(GtkWidget *widget, gpointer data)
 void quit_choice(void)
 {
 	del_credentials();
-	memset(credentials->kek, 0, ENCRYPT_KEY_LENGTH);
-	free(credentials);
 	gtk_main_quit();
+	memset(credentials->kek, 0, ENCRYPT_KEY_LENGTH);
+	free(credentials->kek);
+	free(credentials);
 	exit(0);
 }
 
