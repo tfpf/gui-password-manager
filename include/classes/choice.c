@@ -22,7 +22,7 @@ void request_choice(void)
 	gtk_label_set_markup(GTK_LABEL(chg_lbl), "<span weight=\"normal\">Edit/Delete Password</span>");
 
 	// notebook tab to view password
-	GtkWidget *see_grd = create_widget_for_see(&window);
+	GtkWidget *see_box = create_widget_for_see(&window);
 	GtkWidget *see_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(see_lbl), "<span weight=\"normal\">View Password</span>");
 
@@ -35,7 +35,7 @@ void request_choice(void)
 	GtkWidget *notebook = gtk_notebook_new();
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), add_grd, add_lbl);
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), chg_grd, chg_lbl);
-	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), see_grd, see_lbl);
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), see_box, see_lbl);
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), cpp_grd, cpp_lbl);
 	gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_LEFT);
 	gtk_container_add(GTK_CONTAINER(window), notebook);
@@ -130,30 +130,6 @@ Populate the 'View Password' page of the notebook.
 -----------------------------------------------------------------------------*/
 GtkWidget *create_widget_for_see(GtkWidget **window)
 {
-	// scrollable window to be placed at the bottom
-	GtkWidget *bot_scw = gtk_scrolled_window_new(NULL, NULL);
-	gtk_container_set_border_width(GTK_CONTAINER(bot_scw), 0);
-	gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(bot_scw), FALSE);
-	gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(bot_scw), GTK_CORNER_TOP_LEFT);
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bot_scw), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
-
-	// grid to place in the scrollable window
-	GtkWidget *bot_grd = gtk_grid_new();
-	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 5);
-	gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 5);
-	gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 5);
-	gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
-	gtk_widget_set_hexpand(bot_grd, TRUE);
-
-	for(int i = 0; i < 100; ++i)
-	{
-		GtkWidget *btn = gtk_button_new_with_label("Test");
-		gtk_grid_attach(GTK_GRID(bot_grd), btn, 0, i, 1, 1);
-	}
-
-	// put the grid in the scrolled window
-	gtk_container_add(GTK_CONTAINER(bot_scw), bot_grd);
-
 	// grid to be placed at the top
 	GtkWidget *top_grd = gtk_grid_new();
 	gtk_container_set_border_width(GTK_CONTAINER(top_grd), 50);
@@ -171,13 +147,48 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 	GtkWidget *search_label = gtk_label_new("Search Term");
 	gtk_grid_attach(GTK_GRID(top_grd), search_label, 0, 1, 1, 1);
 	GtkWidget *search_entry = gtk_entry_new();
-	g_signal_connect(search_entry, "changed", G_CALLBACK(populate_search_results), &bot_grd);
 	gtk_grid_attach(GTK_GRID(top_grd), search_entry, 1, 1, 1, 1);
 
-	// box which will contain `top_grd' and `bot_scw'
+	// scrollable window to be placed at the bottom
+	GtkWidget *bot_scw = gtk_scrolled_window_new(NULL, NULL);
+	gtk_container_set_border_width(GTK_CONTAINER(bot_scw), 0);
+	gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(bot_scw), FALSE);
+	gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(bot_scw), GTK_CORNER_TOP_LEFT);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bot_scw), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+
+	// grid to place in the scrollable window
+	GtkWidget *bot_grd = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 5);
+	gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 25);
+	gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 5);
+	gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(bot_grd, TRUE);
+
+	// put the grid in the scrolled window
+	gtk_container_add(GTK_CONTAINER(bot_scw), bot_grd);
+
+	// put both `top_grd' and `bot_scw' into a box
 	GtkWidget *see_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(see_box), top_grd, FALSE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(see_box), bot_scw, TRUE, TRUE, 0);
+
+	// whenever the search term is changed, search results are updated
+	g_signal_connect(search_entry, "changed", G_CALLBACK(populate_search_results), bot_grd);
+	printf("send bot_grd @ %20p, &bot_grd @ %20p ...\n", bot_grd, &bot_grd);
+
+	GtkWidget *site_head_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(site_head_label), "<b>Website</b>");
+	gtk_grid_attach(GTK_GRID(bot_grd), site_head_label, 0, -1, 1, 1);
+	// GtkWidget *uname_head_label = gtk_label_new(NULL);
+	// gtk_label_set_markup(GTK_LABEL(uname_head_label), "<b>Username</b>");
+	// gtk_grid_attach(GTK_GRID(bot_grd), uname_head_label, 1, -1, 1, 1);
+	// for(int i = 0; i < num_of_items; ++i)
+	// {
+	// 	GtkWidget *l1 = gtk_label_new(items[i].ptrs[I_SITE]);
+	// 	GtkWidget *l2 = gtk_label_new(items[i].ptrs[I_UNAME]);
+	// 	gtk_grid_attach(GTK_GRID(bot_grd), l1, 0, i, 1, 1);
+	// 	gtk_grid_attach(GTK_GRID(bot_grd), l2, 1, i, 1, 1);
+	// }
 
 	return see_box;
 }
@@ -292,6 +303,11 @@ void add_password(GtkWidget *widget, gpointer data)
 
 void populate_search_results(GtkWidget *widget, gpointer data)
 {
+	GtkWidget *bot_grd = data;
+	printf("read bot_grd @ %20p, *bot_grd @ %20p ...\n", bot_grd, bot_grd);
+	GtkWidget *uname_head_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(uname_head_label), "<b>Username</b>");
+	gtk_grid_attach(GTK_GRID(bot_grd), uname_head_label, 1, -1, 1, 1);
 	// get the grid which has to be populated with search results
 	// GtkWidget **bot_grd = data;
 	// printf("%p, %p\n", bot_grd, *bot_grd);
