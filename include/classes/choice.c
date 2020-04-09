@@ -12,22 +12,22 @@ void request_choice(void)
 	gtk_window_set_title(GTK_WINDOW(window), "Password Manager");
 
 	// notebook tab to add password
-	GtkWidget *add_grd = create_widget_for_add(&window);
+	GtkWidget *add_grd = create_widget_for_add(window);
 	GtkWidget *add_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(add_lbl), "<span weight=\"normal\">Add Password</span>");
 
 	// notebook tab to edit or delete password
-	GtkWidget *chg_grd = create_widget_for_chg(&window);
+	GtkWidget *chg_grd = create_widget_for_chg(window);
 	GtkWidget *chg_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(chg_lbl), "<span weight=\"normal\">Edit/Delete Password</span>");
 
 	// notebook tab to view password
-	GtkWidget *see_box = create_widget_for_see(&window);
+	GtkWidget *see_box = create_widget_for_see(window);
 	GtkWidget *see_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(see_lbl), "<span weight=\"normal\">View Password</span>");
 
 	// notebook tab to change passphrase
-	GtkWidget *cpp_grd = create_widget_for_cpp(&window);
+	GtkWidget *cpp_grd = create_widget_for_cpp(window);
 	GtkWidget *cpp_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(cpp_lbl), "<span weight=\"normal\">Change Passphrase</span>");
 
@@ -49,7 +49,7 @@ void request_choice(void)
 /*-----------------------------------------------------------------------------
 Populate the 'Add Password' page of the notebook.
 -----------------------------------------------------------------------------*/
-GtkWidget *create_widget_for_add(GtkWidget **window)
+GtkWidget *create_widget_for_add(GtkWidget *window)
 {
 	// the grid to return
 	GtkWidget *add_grd = gtk_grid_new();
@@ -105,7 +105,7 @@ GtkWidget *create_widget_for_add(GtkWidget **window)
 /*-----------------------------------------------------------------------------
 Populate the 'Edit/Delete Password' page of the notebook.
 -----------------------------------------------------------------------------*/
-GtkWidget *create_widget_for_chg(GtkWidget **window)
+GtkWidget *create_widget_for_chg(GtkWidget *window)
 {
 	// the scrollable window to return
 	GtkWidget *chg_scw = gtk_scrolled_window_new(NULL, NULL);
@@ -128,7 +128,7 @@ GtkWidget *create_widget_for_chg(GtkWidget **window)
 /*-----------------------------------------------------------------------------
 Populate the 'View Password' page of the notebook.
 -----------------------------------------------------------------------------*/
-GtkWidget *create_widget_for_see(GtkWidget **window)
+GtkWidget *create_widget_for_see(GtkWidget *window)
 {
 	// grid to be placed at the top
 	GtkWidget *top_grd = gtk_grid_new();
@@ -174,21 +174,20 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 
 	// whenever the search term is changed, search results are updated
 	g_signal_connect(search_entry, "changed", G_CALLBACK(populate_search_results), bot_grd);
-	printf("send bot_grd @ %20p, &bot_grd @ %20p ...\n", bot_grd, &bot_grd);
 
 	GtkWidget *site_head_label = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(site_head_label), "<b>Website</b>");
 	gtk_grid_attach(GTK_GRID(bot_grd), site_head_label, 0, -1, 1, 1);
-	// GtkWidget *uname_head_label = gtk_label_new(NULL);
-	// gtk_label_set_markup(GTK_LABEL(uname_head_label), "<b>Username</b>");
-	// gtk_grid_attach(GTK_GRID(bot_grd), uname_head_label, 1, -1, 1, 1);
-	// for(int i = 0; i < num_of_items; ++i)
-	// {
-	// 	GtkWidget *l1 = gtk_label_new(items[i].ptrs[I_SITE]);
-	// 	GtkWidget *l2 = gtk_label_new(items[i].ptrs[I_UNAME]);
-	// 	gtk_grid_attach(GTK_GRID(bot_grd), l1, 0, i, 1, 1);
-	// 	gtk_grid_attach(GTK_GRID(bot_grd), l2, 1, i, 1, 1);
-	// }
+	GtkWidget *uname_head_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(uname_head_label), "<b>Username</b>");
+	gtk_grid_attach(GTK_GRID(bot_grd), uname_head_label, 1, -1, 1, 1);
+	for(int i = 0; i < num_of_items; ++i)
+	{
+		GtkWidget *l1 = gtk_label_new(items[i].ptrs[I_SITE]);
+		GtkWidget *l2 = gtk_label_new(items[i].ptrs[I_UNAME]);
+		gtk_grid_attach(GTK_GRID(bot_grd), l1, 0, i, 1, 1);
+		gtk_grid_attach(GTK_GRID(bot_grd), l2, 1, i, 1, 1);
+	}
 
 	return see_box;
 }
@@ -196,7 +195,7 @@ GtkWidget *create_widget_for_see(GtkWidget **window)
 /*-----------------------------------------------------------------------------
 Populate the 'Change Passphrase' page of the notebook.
 -----------------------------------------------------------------------------*/
-GtkWidget *create_widget_for_cpp(GtkWidget **window)
+GtkWidget *create_widget_for_cpp(GtkWidget *window)
 {
 	GtkWidget *cpp_grd = gtk_grid_new();
 	return cpp_grd;
@@ -211,7 +210,7 @@ the file.
 void add_password(GtkWidget *widget, gpointer data)
 {
 	// get the window in which tooltips will be shown
-	GtkWidget **window = data;
+	GtkWidget *window = data;
 
 	// read provided information
 	char const *site  = get_credentials_site();
@@ -222,32 +221,32 @@ void add_password(GtkWidget *widget, gpointer data)
 	// sanity
 	if(!strcmp(site, ""))
 	{
-		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Website\' field is empty.");
-		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		gtk_widget_set_tooltip_text(window, "Cannot add password. \'Website\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 		return;
 	}
 	if(!strcmp(uname, ""))
 	{
-		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Username\' field is empty.");
-		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		gtk_widget_set_tooltip_text(window, "Cannot add password. \'Username\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 		return;
 	}
 	if(!strcmp(pw, ""))
 	{
-		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Password\' field is empty.");
-		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		gtk_widget_set_tooltip_text(window, "Cannot add password. \'Password\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 		return;
 	}
 	if(!strcmp(cp, ""))
 	{
-		gtk_widget_set_tooltip_text(*window, "Cannot add password. \'Confirm Password\' field is empty.");
-		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		gtk_widget_set_tooltip_text(window, "Cannot add password. \'Confirm Password\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 		return;
 	}
 	if(strcmp(pw, cp))
 	{
-		gtk_widget_set_tooltip_text(*window, "Cannot add password. Fields \'Password\' and \'Confirm Password\' do not match.");
-		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		gtk_widget_set_tooltip_text(window, "Cannot add password. Fields \'Password\' and \'Confirm Password\' do not match.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 		return;
 	}
 
@@ -295,8 +294,8 @@ void add_password(GtkWidget *widget, gpointer data)
 	memset(e_key,   0, 2 * ENCRYPT_KEY_LENGTH);
 
 	// display success message
-	gtk_widget_set_tooltip_text(*window, "Password added successfully.");
-	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+	gtk_widget_set_tooltip_text(window, "Password added successfully.");
+	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -304,27 +303,7 @@ void add_password(GtkWidget *widget, gpointer data)
 void populate_search_results(GtkWidget *widget, gpointer data)
 {
 	GtkWidget *bot_grd = data;
-	printf("read bot_grd @ %20p, *bot_grd @ %20p ...\n", bot_grd, bot_grd);
-	GtkWidget *uname_head_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(uname_head_label), "<b>Username</b>");
-	gtk_grid_attach(GTK_GRID(bot_grd), uname_head_label, 1, -1, 1, 1);
-	// get the grid which has to be populated with search results
-	// GtkWidget **bot_grd = data;
-	// printf("%p, %p\n", bot_grd, *bot_grd);
-
-	// // obtain the data to be written in this grid
-	// int number_of_lines = 0;
-	// char ***lines = retrieve_data_from_file(&number_of_lines);
-
-	// // put this data in the grid
-	// for(int i = 0; i < number_of_lines; ++i)
-	// {
-	// 	for(int j = 0; j < 5; ++j)
-	// 	{
-	// 		GtkWidget *l = gtk_label_new(lines[i][j]);
-	// 		gtk_grid_attach(GTK_GRID(bot_grd), l, j, i, 1, 1);
-	// 	}
-	// }
+	// gtk_widget_show_all(bot_grd);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

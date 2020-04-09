@@ -38,7 +38,7 @@ void request_passphrase(void)
 
 	// button
 	GtkWidget *login_button = gtk_button_new_with_label("Log In");
-	g_signal_connect(GTK_BUTTON(login_button), "clicked", G_CALLBACK(validate_passphrase), &window);
+	g_signal_connect(GTK_BUTTON(login_button), "clicked", G_CALLBACK(validate_passphrase), window);
 	gtk_grid_attach(GTK_GRID(grid), login_button, 0, 2, 2, 1);
 
 	// display everything
@@ -58,7 +58,7 @@ member of the global struct variable.
 void validate_passphrase(GtkWidget *widget, gpointer data)
 {
 	// get the window in which tooltips will be shown
-	GtkWidget **window = data;
+	GtkWidget *window = data;
 
 	// read provided information
 	// `get_credentials_pw' returns `gchar const *'
@@ -68,8 +68,8 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	// sanity
 	if(!strcmp(pw, ""))
 	{
-		gtk_widget_set_tooltip_text(*window, "Cannot log in. \'Passphrase\' field is empty.");
-		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		gtk_widget_set_tooltip_text(window, "Cannot log in. \'Passphrase\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 		return;
 	}
 
@@ -98,8 +98,8 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 		memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
 		free(pwh);
 		free(pwh_s);
-		gtk_widget_set_tooltip_text(*window, "Cannot log in. Wrong passphrase entered.");
-		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
+		gtk_widget_set_tooltip_text(window, "Cannot log in. Wrong passphrase entered.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 		return;
 	}
 
@@ -115,7 +115,7 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
 	free(pwh);
 	free(pwh_s);
-	gtk_widget_destroy(*window);
+	gtk_widget_destroy(window);
 
 	// read all items into RAM
 	set_list();
