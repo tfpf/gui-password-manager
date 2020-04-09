@@ -1,5 +1,5 @@
 SHELL  = /bin/sh
-RM     = rm
+RM     = rm -f
 PRINT  = printf
 CC     = gcc
 WC     = x86_64-w64-mingw32-gcc
@@ -23,11 +23,11 @@ Executable = main.exe
 
 
 clean:
-	$(RM) -f $(Binary) $(Assembly)
+	$(RM) $(Binary) $(Assembly)
 
 asm:
-	clear
-	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(LFLAGS) $(INCLD) -s -o $(Assembly) $(Source)
+	@clear
+	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(LFLAGS) $(INCLD) $(SEARCH) -s -o $(Assembly) $(Source)
 
 comp:
 	@$(PRINT) "Compiling ...\n"
