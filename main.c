@@ -9,7 +9,7 @@
 #include <time.h>
 
 // lengths in bytes
-// all keys will ne 32 bytes long, and encryption key is same as decryption key
+// all keys will be 32 bytes long, and encryption key is same as decryption key
 // because this is symmetric encrypion
 #define ENCRYPT_KEY_LENGTH 32
 #define DECRYPT_KEY_LENGTH 32
@@ -32,9 +32,9 @@
 char const *Master = "._Master";
 char const *Slave = "._Slave";
 
-
 #include "credentials.h"
 #include "helpers.c"
+#include "cipher.c"
 #include "list.c"
 #include "passphrase.h"
 #include "choice.h"
@@ -47,10 +47,9 @@ int main(int const argc, char const *argv[])
 	setvbuf(stdout, NULL, _IONBF, 0);
 
 	// seed the random number generator
-	struct timespec *t = malloc(sizeof *t);
-	timespec_get(t, TIME_UTC);
-	srandom(t->tv_nsec ^ t->tv_sec);
-	free(t);
+	struct timespec t;
+	timespec_get(&t, TIME_UTC);
+	srandom(t.tv_nsec ^ t.tv_sec);
 
 	// must be called before any other GTK functions
 	// normally, arguments are pointers to `argc' and `argv'
