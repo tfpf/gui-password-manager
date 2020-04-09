@@ -12,7 +12,7 @@ typedef struct
 	char unsigned *kek;
 }
 credentials_t;
-credentials_t *credentials;
+credentials_t *credentials = NULL;
 
 ///////////////////////////////////////////////////////////////////////////////
 

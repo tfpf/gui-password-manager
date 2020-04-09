@@ -1,4 +1,6 @@
-// show a window to let the user enter their passphrase
+/*-----------------------------------------------------------------------------
+Displays a window in which the user can enter their passphrase.
+-----------------------------------------------------------------------------*/
 void request_passphrase(void)
 {
 	// window
@@ -46,9 +48,13 @@ void request_passphrase(void)
 	gtk_main();
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// compare the provided information with the stored information
+/*-----------------------------------------------------------------------------
+Compare repeated SHA512 hashed of the passphrase entered by the user against
+the SHA512 stored on the drive. If nothing is entered, or if the wrong
+passphrase is entered, display a tooltip as an error message. If the correct
+passphrase is entered, the key encryption key is determined and stored as a
+member of the global struct variable.
+-----------------------------------------------------------------------------*/
 void validate_passphrase(GtkWidget *widget, gpointer data)
 {
 	// get the window in which tooltips will be shown
@@ -107,22 +113,24 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	del_credentials();
 	memset(pwh,   0, 2 * SHA512_DIGEST_LENGTH + 1);
 	memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
+	free(pwh);
+	free(pwh_s);
 	gtk_widget_destroy(*window);
 
-	// read all password items into RAM
+	// read all items into RAM
 	set_list();
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// called automatically when the window is destroyed
+/*-----------------------------------------------------------------------------
+Clear the data stored in the global struct variable and exit from the GTK
+window loop. Find out the status (whether the user entered the correct
+passphrase or not) by checking whether the key encryption key has been set or
+not. If user failed to log in, quit the application.
+-----------------------------------------------------------------------------*/
 void quit_passphrase(void)
 {
-	// trash sensitive data, then exit the GTK loop
 	del_credentials();
 	gtk_main_quit();
-
-	// if user failed to enter correct passphrase, quit the program
 	if(credentials->kek == NULL)
 	{
 		free(credentials);

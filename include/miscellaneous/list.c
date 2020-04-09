@@ -1,18 +1,24 @@
-// this is a table to store the list of passwords in RAM
-// sensitive information will be decrypted on demand
-// remaining information will be held in RAM in decrypted form
+/*-----------------------------------------------------------------------------
+This is a global variable which will store the password items in RAM. The
+website and username will be decrypted, but the password will be stored under
+a layer of encryption. Instead of creating five members (two character pointers
+and three unsigned character pointers), an array of five void pointers is
+created for convenience. The lengths of these character arrays is stored in
+another array.
+-----------------------------------------------------------------------------*/
 int num_of_items;
-typedef struct
+struct
 {
 	void *ptrs[5];
 	int lens[5];
 	gboolean valid;
 }
-item_t;
-item_t *items;
+*items;
 
-///////////////////////////////////////////////////////////////////////////////
-
+/*-----------------------------------------------------------------------------
+Display the username and website. This is only for debugging. It is not
+supposed to be used in the final code.
+-----------------------------------------------------------------------------*/
 void see_list(void)
 {
 	for(int i = 0; i < num_of_items; ++i)
@@ -26,19 +32,17 @@ void see_list(void)
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// read the data from the file into RAM
-// arrange it into the table
+/*-----------------------------------------------------------------------------
+Read the data stored in the user's file and store it into RAM. Then decrypt
+only the website and username, leaving everything else as it is.
+-----------------------------------------------------------------------------*/
 void set_list(void)
 {
-	num_of_items = 0;
-	items = NULL;
-
 	// count the number of lines in the password file
 	// there are 5 lines for each password item
+	num_of_items = 0;
 	FILE *pw_file = fopen(Slave, "rb");
-	while(fscanf(pw_file, "%*[^\n]\n") != EOF)
+	while(fscanf(pw_file, "%*s") != EOF)
 	{
 		++num_of_items;
 	}
@@ -87,5 +91,6 @@ void set_list(void)
 		items[i].valid = TRUE;
 	}
 	fclose(pw_file);
+	see_list();
 }
 
