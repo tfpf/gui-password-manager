@@ -31,7 +31,7 @@ void request_passphrase(void)
 	gtk_grid_attach(GTK_GRID(grid), pw_entry, 1, 1, 1, 1);
 
 	// set the information in the global struct variable
-	set_credentials(NULL, NULL, pw_entry);
+	set_credentials(NULL, NULL, pw_entry, NULL);
 	credentials->kek = NULL;
 
 	// button
@@ -63,7 +63,7 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	if(!strcmp(pw, ""))
 	{
 		gtk_widget_set_tooltip_text(*window, "Cannot log in. \'Passphrase\' field is empty.");
-		g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
 		return;
 	}
 
@@ -93,7 +93,7 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 		free(pwh);
 		free(pwh_s);
 		gtk_widget_set_tooltip_text(*window, "Cannot log in. Wrong passphrase entered.");
-		g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
 		return;
 	}
 

@@ -66,7 +66,7 @@ GtkWidget *create_widget_for_add(GtkWidget **window)
 	GtkWidget *site_label = gtk_label_new("Website");
 	gtk_grid_attach(GTK_GRID(add_grd), site_label, 0, 1, 1, 1);
 	GtkWidget *site_entry = gtk_entry_new();
-	gtk_entry_set_placeholder_text(GTK_ENTRY(site_entry), "e.g. Facebook, Stack Overflow");
+	gtk_entry_set_placeholder_text(GTK_ENTRY(site_entry), "e.g. FB, Twitter");
 	gtk_grid_attach(GTK_GRID(add_grd), site_entry, 1, 1, 1, 1);
 
 	// username
@@ -82,13 +82,20 @@ GtkWidget *create_widget_for_add(GtkWidget **window)
 	gtk_entry_set_visibility(GTK_ENTRY(pw_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(add_grd), pw_entry, 1, 3, 1, 1);
 
+	// confirm password
+	GtkWidget *cp_label = gtk_label_new("Confirm Password");
+	gtk_grid_attach(GTK_GRID(add_grd), cp_label, 0, 4, 1, 1);
+	GtkWidget *cp_entry = gtk_entry_new();
+	gtk_entry_set_visibility(GTK_ENTRY(cp_entry), FALSE);
+	gtk_grid_attach(GTK_GRID(add_grd), cp_entry, 1, 4, 1, 1);
+
 	// set the information in the global struct variable
-	set_credentials(site_entry, uname_entry, pw_entry);
+	set_credentials(site_entry, uname_entry, pw_entry, cp_entry);
 
 	// button
 	GtkWidget *add_btn = gtk_button_new_with_label("Add Password");
 	g_signal_connect(GTK_BUTTON(add_btn), "clicked", G_CALLBACK(add_password), window);
-	gtk_grid_attach(GTK_GRID(add_grd), add_btn, 0, 4, 2, 1);
+	gtk_grid_attach(GTK_GRID(add_grd), add_btn, 0, 5, 2, 1);
 
 	return add_grd;
 }
@@ -270,7 +277,6 @@ void add_password(GtkWidget *widget, gpointer data)
 
 	// display success message
 	gtk_widget_set_tooltip_text(*window, "Password added successfully.");
-	g_timeout_add(8 * G_TIME_SPAN_MILLISECOND, hide_tooltip, *window);
 	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, *window);
 }
 

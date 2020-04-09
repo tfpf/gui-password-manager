@@ -2,7 +2,7 @@
 // this is like an initialiser of sorts--a constructor, if you will
 // inputs are entries
 // however, the struct stores entry buffers, not entries
-void set_credentials(GtkWidget *site_entry, GtkWidget *uname_entry, GtkWidget *pw_entry)
+void set_credentials(GtkWidget *site_entry, GtkWidget *uname_entry, GtkWidget *pw_entry, GtkWidget *cp_entry)
 {
 	// if the struct previously held some data, remove it
 	if(credentials != NULL)
@@ -15,6 +15,7 @@ void set_credentials(GtkWidget *site_entry, GtkWidget *uname_entry, GtkWidget *p
 	credentials->site   =  site_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(site_entry));
 	credentials->uname  = uname_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(uname_entry));
 	credentials->pw     =    pw_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(pw_entry));
+	credentials->cp     =    cp_entry == NULL ? NULL : gtk_entry_get_buffer(GTK_ENTRY(cp_entry));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -54,6 +55,19 @@ gchar const *get_credentials_pw(void)
 	}
 
 	return gtk_entry_buffer_get_text(GTK_ENTRY_BUFFER(credentials->pw));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+// get the password confirmation of the login
+gchar const *get_credentials_cp(void)
+{
+	if(credentials->cp == NULL)
+	{
+		return "";
+	}
+
+	return gtk_entry_buffer_get_text(GTK_ENTRY_BUFFER(credentials->cp));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -98,5 +112,6 @@ void del_credentials(void)
 	if(credentials->site  != NULL) gtk_entry_buffer_delete_text(credentials->site,  0, -1);
 	if(credentials->uname != NULL) gtk_entry_buffer_delete_text(credentials->uname, 0, -1);
 	if(credentials->pw    != NULL) gtk_entry_buffer_delete_text(credentials->pw,    0, -1);
+	if(credentials->cp    != NULL) gtk_entry_buffer_delete_text(credentials->cp,    0, -1);
 }
 

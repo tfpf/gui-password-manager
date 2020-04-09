@@ -5,6 +5,7 @@ typedef struct
 	GtkEntryBuffer *site;
 	GtkEntryBuffer *uname;
 	GtkEntryBuffer *pw;
+	GtkEntryBuffer *cp;
 
 	// key encryption key which will be used to encrypt the AES keys
 	// which themselves will be used to encrypt the data
@@ -16,7 +17,7 @@ credentials_t *credentials;
 ///////////////////////////////////////////////////////////////////////////////
 
 // prototypes
-void set_credentials(GtkWidget *site_entry, GtkWidget *uname_entry, GtkWidget *pw_entry);
+void set_credentials(GtkWidget *site_entry, GtkWidget *uname_entry, GtkWidget *pw_entry, GtkWidget *cp_entry);
 void see_credentials(void);
 void del_credentials(void);
 gchar const *get_credentials_site(void);
