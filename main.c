@@ -18,9 +18,6 @@
 // time for which a tooltip message is visible
 #define TOOLTIP_MESSAGE_TIMEOUT 8 * G_TIME_SPAN_MILLISECOND
 
-// character which separates columns in password file
-#define COLUMN_SEPARATOR 0x1b
-
 #define ROWS_PER_ITEM 5
 #define I_SITE  0
 #define I_UNAME 1
