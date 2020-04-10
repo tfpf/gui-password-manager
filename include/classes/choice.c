@@ -41,6 +41,7 @@ void request_choice(void)
 	gtk_container_add(GTK_CONTAINER(window), notebook);
 
 	// show everything
+	gtk_window_maximize(GTK_WINDOW(window));
 	gtk_widget_show_all(window);
 	g_signal_connect(window, "destroy", G_CALLBACK(quit_choice), NULL);
 	gtk_main();
@@ -172,38 +173,24 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 	gtk_box_pack_start(GTK_BOX(see_box), top_grd, FALSE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(see_box), bot_scw, TRUE, TRUE, 0);
 
-	// initially, all password items should be displayed
+	// website header
 	GtkWidget *site_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(site_label), "<b>Website</b>");
+	gtk_label_set_markup(GTK_LABEL(site_label), "<b>                    Website                    </b>");
 	gtk_grid_attach(GTK_GRID(bot_grd), site_label, 0, -1, 1, 1);
+
+	// username header
 	GtkWidget *uname_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(uname_label), "<b>Username</b>");
+	gtk_label_set_markup(GTK_LABEL(uname_label), "<b>                    Username                    </b>");
 	gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, -1, 1, 1);
+
+	// password header
 	GtkWidget *pw_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(pw_label), "<b>Password</b>");
+	gtk_label_set_markup(GTK_LABEL(pw_label), "<b>                    Password                    </b>");
 	gtk_grid_attach(GTK_GRID(bot_grd), pw_label, 2, -1, 1, 1);
-	for(int i = 0; i < num_of_items; ++i)
-	{
-		// local copy of `i'
-		// this is required to pass the correct data on button click
-		int *j = malloc(sizeof *j);
-		*j = i;
 
-		// website
-		GtkWidget *site_label = gtk_label_new(items[i].ptrs[I_SITE]);
-		gtk_grid_attach(GTK_GRID(bot_grd), site_label, 0, i, 1, 1);
-
-		// username
-		GtkWidget *uname_label = gtk_label_new(items[i].ptrs[I_UNAME]);
-		gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, i, 1, 1);
-
-		// password
-		GtkWidget *pw_button = gtk_button_new_with_label(HIDDEN_PASSWORD_PLACEHOLDER);
-		gtk_widget_set_tooltip_text(pw_button, "Click to show password.");
-		g_signal_connect(pw_button, "clicked",            G_CALLBACK(show_password), j);
-		g_signal_connect(pw_button, "leave-notify-event", G_CALLBACK(hide_password), j);
-		gtk_grid_attach(GTK_GRID(bot_grd), pw_button, 2, i, 1, 1);
-	}
+	// initially, all the items in the password file should be displayed
+	// for this, artifically, trigger the callback function
+	populate_search_results(search_entry, bot_grd);
 
 	return see_box;
 }
@@ -338,8 +325,39 @@ void populate_search_results(GtkWidget *widget, gpointer data)
 	}
 	g_list_free(children);
 
-	// display only those widgets which match the search term
-	// gtk_widget_show_all(bot_grd);
+	// find out which items match the search term
+	for(int i = 0, j = 0; i < num_of_items; ++i)
+	{
+		if(!strcasestr(items[i].ptrs[I_SITE], search_term) && !strstr(items[i].ptrs[I_UNAME], search_term))
+		{
+			continue;
+		}
+
+		// local copy of `i'
+		// this is required to pass the correct data on button click
+		int *k = malloc(sizeof *k);
+		*k = i;
+
+		// website
+		GtkWidget *site_label = gtk_label_new(items[i].ptrs[I_SITE]);
+		gtk_grid_attach(GTK_GRID(bot_grd), site_label, 0, j, 1, 1);
+
+		// username
+		GtkWidget *uname_label = gtk_label_new(items[i].ptrs[I_UNAME]);
+		gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, j, 1, 1);
+
+		// password
+		GtkWidget *pw_button = gtk_button_new_with_label(HIDDEN_PASSWORD_PLACEHOLDER);
+		gtk_widget_set_tooltip_text(pw_button, "Click to show password. Move mouse to hide password.");
+		g_signal_connect(pw_button, "clicked",            G_CALLBACK(show_password), k);
+		g_signal_connect(pw_button, "leave-notify-event", G_CALLBACK(hide_password), k);
+		gtk_grid_attach(GTK_GRID(bot_grd), pw_button, 2, j, 1, 1);
+
+		// `j' is the row in which these widgets were added
+		// so, increment it because this item matches the search term
+		++j;
+	}
+	gtk_widget_show_all(bot_grd);
 }
 
 /*-----------------------------------------------------------------------------
