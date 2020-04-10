@@ -1,5 +1,5 @@
 // a convenient way to access and delete the sensitive data from anywhere
-typedef struct
+struct
 {
 	// entry buffers of entries which contain data
 	GtkEntryBuffer *site;
@@ -11,8 +11,7 @@ typedef struct
 	// which themselves will be used to encrypt the data
 	char unsigned *kek;
 }
-credentials_t;
-credentials_t *credentials = NULL;
+*credentials = NULL;
 
 ///////////////////////////////////////////////////////////////////////////////
 
