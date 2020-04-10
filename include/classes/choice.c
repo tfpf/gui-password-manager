@@ -186,7 +186,7 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 	{
 		// local copy of `i'
 		// this is required to pass the correct data on button click
-		auto int *j;
+		int *j = malloc(sizeof *j);
 		*j = i;
 
 		// website
@@ -198,9 +198,10 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 		gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, i, 1, 1);
 
 		// password
-		GtkWidget *pw_button = gtk_button_new_with_label("**************************************************");
+		GtkWidget *pw_button = gtk_button_new_with_label(HIDDEN_PASSWORD_PLACEHOLDER);
 		gtk_widget_set_tooltip_text(pw_button, "Click to show password.");
-		g_signal_connect(pw_button, "clicked", G_CALLBACK(show_password), j);
+		g_signal_connect(pw_button, "clicked",            G_CALLBACK(show_password), j);
+		g_signal_connect(pw_button, "leave-notify-event", G_CALLBACK(hide_password), j);
 		gtk_grid_attach(GTK_GRID(bot_grd), pw_button, 2, i, 1, 1);
 	}
 
@@ -349,15 +350,28 @@ void show_password(GtkWidget *button, gpointer data)
 {
 	// get the index of the item to show
 	int *i = data;
-	printf("%d\n", *i);
 
+	// decrypt the password
 	char unsigned *kek = get_credentials_kek();
 	char unsigned *iv = items[*i].ptrs[I_IV];
 	char unsigned *key;
 	char *pw;
-	// decrypt(items[*i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
-	// decrypt(items[*i].ptrs[I_PW], items[*i].lens[I_PW], key, iv, (char unsigned **)&pw);
-	// printf("%s\n", pw);
+	decrypt(items[*i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
+	decrypt(items[*i].ptrs[I_PW], items[*i].lens[I_PW], key, iv, (char unsigned **)&pw);
+	gtk_button_set_label(button, pw);
+	memset(pw, 0, items[*i].lens[I_PW]);
+	char *p = gtk_button_get_label(button);
+	printf("set: %p\n", p);
+}
+
+/*-----------------------------------------------------------------------------
+Modify the label of a button. Replace the password text with placeholder text.
+-----------------------------------------------------------------------------*/
+void hide_password(GtkWidget *button, gpointer data)
+{
+	gtk_button_set_label(button, HIDDEN_PASSWORD_PLACEHOLDER);
+	char *p = gtk_button_get_label(button);
+	printf("clr: %p\n", p);
 }
 
 /*-----------------------------------------------------------------------------

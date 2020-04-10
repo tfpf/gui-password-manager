@@ -91,6 +91,5 @@ void set_list(void)
 		items[i].valid = TRUE;
 	}
 	fclose(pw_file);
-	see_list();
 }
 
