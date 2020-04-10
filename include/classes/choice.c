@@ -133,9 +133,9 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 {
 	// grid which will be placed in a scrollable window
 	GtkWidget *bot_grd = gtk_grid_new();
-	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 5);
-	gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 25);
-	gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 5);
+	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 25);
+	gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 15);
+	gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 15);
 	gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
 	gtk_widget_set_hexpand(bot_grd, TRUE);
 
@@ -190,7 +190,7 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 
 	// initially, all the items in the password file should be displayed
 	// for this, artifically, trigger the callback function
-	populate_search_results(search_entry, bot_grd);
+	// populate_search_results(search_entry, bot_grd);
 
 	return see_box;
 }
@@ -253,15 +253,34 @@ void add_password(GtkWidget *widget, gpointer data)
 		return;
 	}
 
+	// allocate memory to store this additional password item
+	// it will be appended to the array maintained in RAM
+	items = realloc(items, (num_of_items + 1) * sizeof *items);
+	items[num_of_items].lens[I_SITE]  = strlen(site);
+	items[num_of_items].lens[I_UNAME] = strlen(uname);
+	items[num_of_items].lens[I_PW]    = strlen(pw);
+	items[num_of_items].lens[I_KEY]   = ENCRYPT_KEY_LENGTH;
+	items[num_of_items].lens[I_IV]    = INIT_VECTOR_LENGTH;
+	for(int i = 0; i < 5; ++i)
+	{
+		items[num_of_items].ptrs[i] = malloc((items[num_of_items].lens[i] + 1) * sizeof(char));
+	}
+
+	// the array keeps website and username unencrypted, so write them now
+	strcpy(items[num_of_items].ptrs[I_SITE],  site);
+	strcpy(items[num_of_items].ptrs[I_UNAME], uname);
+
 	// generate encryption key and initialisation vector for AES
 	char unsigned *key = generate_random(ENCRYPT_KEY_LENGTH);
 	char unsigned *iv  = generate_random(INIT_VECTOR_LENGTH);
 
 	// encrypt the website, username and password using the AES key
+	// store the encrypted password in the table
 	char unsigned *e_site, *e_uname, *e_pw;
 	int e_sitelen  = encrypt((char unsigned *)site,  strlen(site),  key, iv, &e_site);
 	int e_unamelen = encrypt((char unsigned *)uname, strlen(uname), key, iv, &e_uname);
 	int e_pwlen    = encrypt((char unsigned *)pw,    strlen(pw),    key, iv, &e_pw);
+	memcpy(items[num_of_items].ptrs[I_PW], e_pw, items[num_of_items].lens[I_PW]);
 	digest_to_hexdigest(&e_site,  e_sitelen);
 	digest_to_hexdigest(&e_uname, e_unamelen);
 	digest_to_hexdigest(&e_pw,    e_pwlen);
@@ -269,13 +288,17 @@ void add_password(GtkWidget *widget, gpointer data)
 	// encrypt the AES key using key encryption key
 	// no need to check return value of `encrypt' function
 	// encrypted form of 32-byte key is 32 bytes long
+	// store the encrypted key in the table
 	char unsigned *kek = get_credentials_kek();
 	char unsigned *e_key;
 	encrypt(key, ENCRYPT_KEY_LENGTH, kek, iv, &e_key);
+	memcpy(items[num_of_items].ptrs[I_KEY], e_key, ENCRYPT_KEY_LENGTH);
 	digest_to_hexdigest(&e_key, ENCRYPT_KEY_LENGTH);
 
 	// initialisation vector is not encypted
 	// because it is required for decryption
+	// store it as is in the table
+	memcpy(items[num_of_items].ptrs[I_IV], iv, INIT_VECTOR_LENGTH);
 	digest_to_hexdigest(&iv, INIT_VECTOR_LENGTH);
 
 	// write them all to the file
@@ -286,6 +309,7 @@ void add_password(GtkWidget *widget, gpointer data)
 	fprintf(pw_file, "%s\n", e_key);
 	fprintf(pw_file, "%s\n", iv);
 	fclose(pw_file);
+	++num_of_items;
 
 	// trash all data
 	del_credentials();
@@ -328,7 +352,7 @@ void populate_search_results(GtkWidget *widget, gpointer data)
 	// find out which items match the search term
 	for(int i = 0, j = 0; i < num_of_items; ++i)
 	{
-		if(!strcasestr(items[i].ptrs[I_SITE], search_term) && !strstr(items[i].ptrs[I_UNAME], search_term))
+		if(!strstr(items[i].ptrs[I_SITE], search_term) && !strstr(items[i].ptrs[I_UNAME], search_term))
 		{
 			continue;
 		}
