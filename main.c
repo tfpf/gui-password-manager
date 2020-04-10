@@ -25,6 +25,8 @@
 #define I_KEY   3
 #define I_IV    4
 
+#define HIDDEN_PASSWORD_PLACEHOLDER "******************************"
+
 // files which contain the passphrase and other passwords respectively
 char const *Master = "._Master";
 char const *Slave = "._Slave";
