@@ -8,7 +8,7 @@ void request_choice(void)
 	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
 	gtk_window_set_icon_from_file(GTK_WINDOW(window), "favicon.png", NULL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+	// gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 	gtk_window_set_title(GTK_WINDOW(window), "Password Manager");
 
 	// notebook tab to add password
@@ -130,6 +130,22 @@ Populate the 'View Password' page of the notebook.
 -----------------------------------------------------------------------------*/
 GtkWidget *create_widget_for_see(GtkWidget *window)
 {
+	// grid which will be placed in a scrollable window
+	GtkWidget *bot_grd = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 5);
+	gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 25);
+	gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 5);
+	gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(bot_grd, TRUE);
+
+	// scrollable window to be placed at the bottom
+	GtkWidget *bot_scw = gtk_scrolled_window_new(NULL, NULL);
+	gtk_container_set_border_width(GTK_CONTAINER(bot_scw), 0);
+	gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(bot_scw), FALSE);
+	gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(bot_scw), GTK_CORNER_TOP_LEFT);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bot_scw), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+	gtk_container_add(GTK_CONTAINER(bot_scw), bot_grd);
+
 	// grid to be placed at the top
 	GtkWidget *top_grd = gtk_grid_new();
 	gtk_container_set_border_width(GTK_CONTAINER(top_grd), 50);
@@ -147,46 +163,45 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 	GtkWidget *search_label = gtk_label_new("Search Term");
 	gtk_grid_attach(GTK_GRID(top_grd), search_label, 0, 1, 1, 1);
 	GtkWidget *search_entry = gtk_entry_new();
+	g_signal_connect(search_entry, "changed", G_CALLBACK(populate_search_results), bot_grd);
 	gtk_grid_attach(GTK_GRID(top_grd), search_entry, 1, 1, 1, 1);
 
-	// scrollable window to be placed at the bottom
-	GtkWidget *bot_scw = gtk_scrolled_window_new(NULL, NULL);
-	gtk_container_set_border_width(GTK_CONTAINER(bot_scw), 0);
-	gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(bot_scw), FALSE);
-	gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(bot_scw), GTK_CORNER_TOP_LEFT);
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bot_scw), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
-
-	// grid to place in the scrollable window
-	GtkWidget *bot_grd = gtk_grid_new();
-	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 5);
-	gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 25);
-	gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 5);
-	gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
-	gtk_widget_set_hexpand(bot_grd, TRUE);
-
-	// put the grid in the scrolled window
-	gtk_container_add(GTK_CONTAINER(bot_scw), bot_grd);
-
 	// put both `top_grd' and `bot_scw' into a box
+	// this box will be returned so that it can be placed in a notebook
 	GtkWidget *see_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(see_box), top_grd, FALSE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(see_box), bot_scw, TRUE, TRUE, 0);
 
-	// whenever the search term is changed, search results are updated
-	g_signal_connect(search_entry, "changed", G_CALLBACK(populate_search_results), bot_grd);
-
-	GtkWidget *site_head_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(site_head_label), "<b>Website</b>");
-	gtk_grid_attach(GTK_GRID(bot_grd), site_head_label, 0, -1, 1, 1);
-	GtkWidget *uname_head_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(uname_head_label), "<b>Username</b>");
-	gtk_grid_attach(GTK_GRID(bot_grd), uname_head_label, 1, -1, 1, 1);
+	// initially, all password items should be displayed
+	GtkWidget *site_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(site_label), "<b>Website</b>");
+	gtk_grid_attach(GTK_GRID(bot_grd), site_label, 0, -1, 1, 1);
+	GtkWidget *uname_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(uname_label), "<b>Username</b>");
+	gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, -1, 1, 1);
+	GtkWidget *pw_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(pw_label), "<b>Password</b>");
+	gtk_grid_attach(GTK_GRID(bot_grd), pw_label, 2, -1, 1, 1);
 	for(int i = 0; i < num_of_items; ++i)
 	{
-		GtkWidget *l1 = gtk_label_new(items[i].ptrs[I_SITE]);
-		GtkWidget *l2 = gtk_label_new(items[i].ptrs[I_UNAME]);
-		gtk_grid_attach(GTK_GRID(bot_grd), l1, 0, i, 1, 1);
-		gtk_grid_attach(GTK_GRID(bot_grd), l2, 1, i, 1, 1);
+		// local copy of `i'
+		// this is required to pass the correct data on button click
+		auto int *j;
+		*j = i;
+
+		// website
+		GtkWidget *site_label = gtk_label_new(items[i].ptrs[I_SITE]);
+		gtk_grid_attach(GTK_GRID(bot_grd), site_label, 0, i, 1, 1);
+
+		// username
+		GtkWidget *uname_label = gtk_label_new(items[i].ptrs[I_UNAME]);
+		gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, i, 1, 1);
+
+		// password
+		GtkWidget *pw_button = gtk_button_new_with_label("**************************************************");
+		gtk_widget_set_tooltip_text(pw_button, "Click to show password.");
+		g_signal_connect(pw_button, "clicked", G_CALLBACK(show_password), j);
+		gtk_grid_attach(GTK_GRID(bot_grd), pw_button, 2, i, 1, 1);
 	}
 
 	return see_box;
@@ -298,16 +313,57 @@ void add_password(GtkWidget *widget, gpointer data)
 	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
+/*-----------------------------------------------------------------------------
+Fill the GTK grid with GTK labels containing the website and username of those
+items in the password file which match the search term. The contents of the
+password file are already loaded in memory, so the file need not be read from
+the drive.
+-----------------------------------------------------------------------------*/
 void populate_search_results(GtkWidget *widget, gpointer data)
 {
+	// get the entry text and the grid whose children have to be modified
+	gchar const *search_term = gtk_entry_get_text(GTK_ENTRY(widget));
 	GtkWidget *bot_grd = data;
+
+	// destroy all labels, except the header labels
+	GList *children = gtk_container_get_children(GTK_CONTAINER(bot_grd));
+	for(GList *child = children;; child = g_list_next(child))
+	{
+		if(g_list_next(g_list_next(g_list_next(child))) == NULL)
+		{
+			break;
+		}
+		gtk_widget_destroy(child->data);
+	}
+	g_list_free(children);
+
+	// display only those widgets which match the search term
 	// gtk_widget_show_all(bot_grd);
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/*-----------------------------------------------------------------------------
+Modify the label of a button. Find the password corresponding to the website
+and username. Set it as the button label text.
+-----------------------------------------------------------------------------*/
+void show_password(GtkWidget *button, gpointer data)
+{
+	// get the index of the item to show
+	int *i = data;
+	printf("%d\n", *i);
 
+	char unsigned *kek = get_credentials_kek();
+	char unsigned *iv = items[*i].ptrs[I_IV];
+	char unsigned *key;
+	char *pw;
+	// decrypt(items[*i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
+	// decrypt(items[*i].ptrs[I_PW], items[*i].lens[I_PW], key, iv, (char unsigned **)&pw);
+	// printf("%s\n", pw);
+}
+
+/*-----------------------------------------------------------------------------
+Clear the data in the global struct variable. Also clear the key encryption
+key. Deallocate all memory and quit.
+-----------------------------------------------------------------------------*/
 void quit_choice(void)
 {
 	del_credentials();
@@ -315,6 +371,15 @@ void quit_choice(void)
 	memset(credentials->kek, 0, ENCRYPT_KEY_LENGTH);
 	free(credentials->kek);
 	free(credentials);
+	for(int i = 0; i < num_of_items; ++i)
+	{
+		for(int j = 0; j < 5; ++j)
+		{
+			memset(items[i].ptrs[j], 0, items[i].lens[j]);
+			free(items[i].ptrs[j]);
+		}
+	}
+	free(items);
 	exit(0);
 }
 
