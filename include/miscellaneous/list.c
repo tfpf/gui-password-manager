@@ -11,7 +11,6 @@ struct
 {
 	void *ptrs[5];
 	int lens[5];
-	gboolean valid;
 }
 *items;
 
@@ -85,10 +84,6 @@ void set_list(void)
 		free(items[i].ptrs[I_UNAME]);
 		items[i].ptrs[I_SITE] = site;
 		items[i].ptrs[I_UNAME] = uname;
-
-		// mark this item as valid
-		// this will be used to populate search results
-		items[i].valid = TRUE;
 	}
 	fclose(pw_file);
 }
