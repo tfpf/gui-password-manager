@@ -358,20 +358,39 @@ void show_password(GtkWidget *button, gpointer data)
 	char *pw;
 	decrypt(items[*i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
 	decrypt(items[*i].ptrs[I_PW], items[*i].lens[I_PW], key, iv, (char unsigned **)&pw);
-	gtk_button_set_label(button, pw);
-	memset(pw, 0, items[*i].lens[I_PW]);
-	char *p = gtk_button_get_label(button);
-	printf("set: %p\n", p);
+	gtk_button_set_label(GTK_BUTTON(button), pw);
+
+	// clean up
+	memset(key, 0, ENCRYPT_KEY_LENGTH);
+	memset(pw,  0, items[*i].lens[I_PW]);
+	free(key);
+	free(pw);
 }
 
 /*-----------------------------------------------------------------------------
 Modify the label of a button. Replace the password text with placeholder text.
+The contents of the pointer to the password text are trashed before the label
+is changed. If the text is already the placeholder text, do nothing.
 -----------------------------------------------------------------------------*/
 void hide_password(GtkWidget *button, gpointer data)
 {
-	gtk_button_set_label(button, HIDDEN_PASSWORD_PLACEHOLDER);
-	char *p = gtk_button_get_label(button);
-	printf("clr: %p\n", p);
+	char *pw = (char *)gtk_button_get_label(GTK_BUTTON(button));
+	if(!strcmp(pw, HIDDEN_PASSWORD_PLACEHOLDER))
+	{
+		return;
+	}
+
+	// question:
+	// why did I call `strlen' when I already know the length of `pw'
+	// length of `pw' is stored in `items[*data].lens[I_PW]'
+	// answer:
+	// there seems to be a bug in GTK3 which sends wrong data to callbacks
+	// in `show_password', dereferencing `data' gives the correct value
+	// i.e. the value of the `int' which was passed from the callback
+	// in `hide password', dereferencing `data' gives a wrong value
+	// even though the callback syntax is identical
+	memset(pw, 0, strlen(pw));
+	gtk_button_set_label(GTK_BUTTON(button), HIDDEN_PASSWORD_PLACEHOLDER);
 }
 
 /*-----------------------------------------------------------------------------
