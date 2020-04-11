@@ -3,7 +3,7 @@ void quit_choice(void);
 void add_password(GtkWidget *widget, gpointer data);
 void populate_search_results(GtkWidget *widget, gpointer data);
 void show_password(GtkWidget *widget, gpointer data);
-void hide_password(GtkWidget *button, gpointer data);
+gboolean hide_password(gpointer data);
 GtkWidget *create_widget_for_add(GtkWidget *window);
 GtkWidget *create_widget_for_chg(GtkWidget *window);
 GtkWidget *create_widget_for_see(GtkWidget *window);

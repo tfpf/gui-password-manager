@@ -6,6 +6,7 @@ void request_choice(void)
 	// window
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
+	gtk_window_maximize(GTK_WINDOW(window));
 	gtk_window_set_icon_from_file(GTK_WINDOW(window), "favicon.png", NULL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	// gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
@@ -41,7 +42,6 @@ void request_choice(void)
 	gtk_container_add(GTK_CONTAINER(window), notebook);
 
 	// show everything
-	gtk_window_maximize(GTK_WINDOW(window));
 	gtk_widget_show_all(window);
 	g_signal_connect(window, "destroy", G_CALLBACK(quit_choice), NULL);
 	gtk_main();
@@ -157,11 +157,11 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(main_label), "<b>Enter a search term to narrow down the list.</b>");
+	gtk_label_set_markup(GTK_LABEL(main_label), "<b>Start typing to display a list of matching items.</b>");
 	gtk_grid_attach(GTK_GRID(top_grd), main_label, 0, 0, 2, 1);
 
 	// label
-	GtkWidget *search_label = gtk_label_new("Search Term");
+	GtkWidget *search_label = gtk_label_new("Search");
 	gtk_grid_attach(GTK_GRID(top_grd), search_label, 0, 1, 1, 1);
 	GtkWidget *search_entry = gtk_entry_new();
 	g_signal_connect(search_entry, "changed", G_CALLBACK(populate_search_results), bot_grd);
@@ -187,10 +187,6 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 	GtkWidget *pw_label = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(pw_label), "<b>                    Password                    </b>");
 	gtk_grid_attach(GTK_GRID(bot_grd), pw_label, 2, -1, 1, 1);
-
-	// initially, all the items in the password file should be displayed
-	// for this, artifically, trigger the callback function
-	// populate_search_results(search_entry, bot_grd);
 
 	return see_box;
 }
@@ -373,8 +369,7 @@ void populate_search_results(GtkWidget *widget, gpointer data)
 		// password
 		GtkWidget *pw_button = gtk_button_new_with_label(HIDDEN_PASSWORD_PLACEHOLDER);
 		gtk_widget_set_tooltip_text(pw_button, "Click to show password. Move mouse to hide password.");
-		g_signal_connect(pw_button, "clicked",            G_CALLBACK(show_password), k);
-		g_signal_connect(pw_button, "leave-notify-event", G_CALLBACK(hide_password), k);
+		g_signal_connect(pw_button, "clicked", G_CALLBACK(show_password), k);
 		gtk_grid_attach(GTK_GRID(bot_grd), pw_button, 2, j, 1, 1);
 
 		// `j' is the row in which these widgets were added
@@ -407,6 +402,9 @@ void show_password(GtkWidget *button, gpointer data)
 	memset(pw,  0, items[*i].lens[I_PW]);
 	free(key);
 	free(pw);
+
+	// schedule the password to be hidden after some time
+	g_timeout_add(PASSWORD_DISPLAY_TIMEOUT, hide_password, button);
 }
 
 /*-----------------------------------------------------------------------------
@@ -414,25 +412,19 @@ Modify the label of a button. Replace the password text with placeholder text.
 The contents of the pointer to the password text are trashed before the label
 is changed. If the text is already the placeholder text, do nothing.
 -----------------------------------------------------------------------------*/
-void hide_password(GtkWidget *button, gpointer data)
+gboolean hide_password(gpointer data)
 {
+	GtkWidget *button = data;
 	char *pw = (char *)gtk_button_get_label(GTK_BUTTON(button));
 	if(!strcmp(pw, HIDDEN_PASSWORD_PLACEHOLDER))
 	{
-		return;
+		return G_SOURCE_REMOVE;
 	}
 
-	// question:
-	// why did I call `strlen' when I already know the length of `pw'
-	// length of `pw' is stored in `items[*data].lens[I_PW]'
-	// answer:
-	// there seems to be a bug in GTK3 which sends wrong data to callbacks
-	// in `show_password', dereferencing `data' gives the correct value
-	// i.e. the value of the `int' which was passed from the callback
-	// in `hide password', dereferencing `data' gives a wrong value
-	// even though the callback syntax is identical
+	// clean up
 	memset(pw, 0, strlen(pw));
 	gtk_button_set_label(GTK_BUTTON(button), HIDDEN_PASSWORD_PLACEHOLDER);
+	return G_SOURCE_REMOVE;
 }
 
 /*-----------------------------------------------------------------------------
