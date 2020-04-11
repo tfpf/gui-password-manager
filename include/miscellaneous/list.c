@@ -38,21 +38,21 @@ only the website and username, leaving everything else as it is.
 void set_list(void)
 {
 	// count the number of lines in the password file
-	// there are 5 lines for each password item
+	// there are `PTRS_PER_ITEM' lines for each password item
 	num_of_items = 0;
 	FILE *pw_file = fopen(Slave, "rb");
 	while(fscanf(pw_file, "%*s") != EOF)
 	{
 		++num_of_items;
 	}
-	num_of_items /= 5;
+	num_of_items /= PTRS_PER_ITEM;
 	items = malloc(num_of_items * sizeof *items);
 	rewind(pw_file);
 
 	// store the five parts of each item in the struct defined above
 	for(int i = 0; i < num_of_items; ++i)
 	{
-		for(int j = 0; j < 5; ++j)
+		for(int j = 0; j < PTRS_PER_ITEM; ++j)
 		{
 			char *ptr = NULL;
 			size_t len = 0;
