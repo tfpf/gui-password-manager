@@ -9,14 +9,12 @@
 #include <time.h>
 
 // lengths in bytes
-// all keys will be 32 bytes long, and encryption key is same as decryption key
-// because this is symmetric encrypion
 #define ENCRYPT_KEY_LENGTH 32
 #define DECRYPT_KEY_LENGTH 32
 #define INIT_VECTOR_LENGTH 16
 
-// time for which a tooltip message is visible
-#define TOOLTIP_MESSAGE_TIMEOUT 8 * G_TIME_SPAN_MILLISECOND
+#define TOOLTIP_MESSAGE_TIMEOUT   8 * G_TIME_SPAN_MILLISECOND
+#define PASSWORD_DISPLAY_TIMEOUT 10 * G_TIME_SPAN_MILLISECOND
 
 #define ROWS_PER_ITEM 5
 #define I_SITE  0
@@ -38,8 +36,9 @@ char const *Slave = "._Slave";
 #include "passphrase.h"
 #include "choice.h"
 
-///////////////////////////////////////////////////////////////////////////////
-
+/*-----------------------------------------------------------------------------
+Main function.
+-----------------------------------------------------------------------------*/
 int main(int const argc, char const *argv[])
 {
 	// disable output buffering
@@ -50,8 +49,6 @@ int main(int const argc, char const *argv[])
 	timespec_get(&t, TIME_UTC);
 	srandom(t.tv_nsec ^ t.tv_sec);
 
-	// must be called before any other GTK functions
-	// normally, arguments are pointers to `argc' and `argv'
 	gtk_init(0, NULL);
 
 	// get the passphrase
@@ -59,7 +56,6 @@ int main(int const argc, char const *argv[])
 	// otherwise, program will terminate here
 	request_passphrase();
 
-	// ask what the user wants to do
 	request_choice();
 
 	return 0;
