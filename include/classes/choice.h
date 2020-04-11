@@ -1,9 +1,11 @@
 void request_choice(void);
 void quit_choice(void);
 void add_password(GtkWidget *widget, gpointer data);
+void delete_previous_search_results(GtkWidget *bot_grd);
 void populate_search_results(GtkWidget *widget, gpointer data);
 void show_password(GtkWidget *widget, gpointer data);
 gboolean hide_password(gpointer data);
+void change_passphrase(GtkWidget *widget, gpointer data);
 GtkWidget *create_widget_for_add(GtkWidget *window);
 GtkWidget *create_widget_for_chg(GtkWidget *window);
 GtkWidget *create_widget_for_see(GtkWidget *window);
