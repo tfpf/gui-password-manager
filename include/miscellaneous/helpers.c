@@ -1,8 +1,8 @@
 // prototypes
 void wait(int unsigned delay);
 gboolean hide_tooltip(gpointer data);
-void digest_to_hexdigest(char unsigned **p, size_t size);
-void hexdigest_to_digest(char unsigned **p, size_t size);
+char *digest_to_hexdigest(char unsigned *digest, size_t size);
+char unsigned *hexdigest_to_digest(char *hexdigest, size_t size);
 
 /*-----------------------------------------------------------------------------
 Block program execution for aome amount of time. This will not be used in the
@@ -19,41 +19,34 @@ Represent a sequence of bits as a hexadecimal number. The input is an array of
 bytes. Each byte in this array can be represented using two hexadecimal
 symbols. Thus, the hexadecimal result is a string whose length is twice that
 of the input array. This result is supposed to be in printable form, so a null
-character is appended at the end. Clear the bytes of the input array to zeros.
+character is appended at the end.
 -----------------------------------------------------------------------------*/
-void digest_to_hexdigest(char unsigned **p, size_t size)
+char *digest_to_hexdigest(char unsigned *digest, size_t size)
 {
-	char unsigned *digest    = *p;
-	char unsigned *hexdigest = malloc((2 * size + 1) * sizeof *hexdigest);
+	char *hexdigest = malloc((2 * size + 1) * sizeof *hexdigest);
 	for(size_t i = 0; i < size; ++i)
 	{
-		sprintf((char *)hexdigest + 2 * i, "%02x", digest[i]);
+		sprintf(hexdigest + 2 * i, "%02x", digest[i]);
 	}
-	memset(digest, 0, size);
-	free(digest);
-	*p = hexdigest;
+	return hexdigest;
 }
 
 /*-----------------------------------------------------------------------------
 Reverse whatever `digest_to_hexdigest' does. The input array is the hexadecimal
 representation of some sequence of bits. Every two characters in it can be
 written as a single byte. This result is not expected to be printed. Do not
-append a null character at the end. Clear the bytes of the input array to
-zeros.
+append a null character at the end.
 -----------------------------------------------------------------------------*/
-void hexdigest_to_digest(char unsigned **p, size_t size)
+char unsigned *hexdigest_to_digest(char *hexdigest, size_t size)
 {
-	char unsigned *hexdigest = *p;
-	char unsigned *digest    = malloc(size * sizeof *digest);
+	char unsigned *digest = malloc(size * sizeof *digest);
 	for(size_t i = 0; i < size; ++i)
 	{
 		#pragma GCC diagnostic ignored "-Wformat"
-		sscanf((char *)hexdigest + 2 * i, "%2x", digest + i);
+		sscanf(hexdigest + 2 * i, "%2x", digest + i);
 		#pragma GCC diagnostic error "-Wformat"
 	}
-	memset(hexdigest, 0, 2 * size + 1);
-	free(hexdigest);
-	*p = digest;
+	return digest;
 }
 
 /*-----------------------------------------------------------------------------

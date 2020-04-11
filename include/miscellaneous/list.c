@@ -54,12 +54,13 @@ void set_list(void)
 	{
 		for(int j = 0; j < PTRS_PER_ITEM; ++j)
 		{
-			char *ptr = NULL;
+			char *ptr_hex = NULL;
 			size_t len = 0;
-			len = getline(&ptr, &len, pw_file) - 1;
-			ptr[len] = '\0'; // replacing LF with NUL
+			len = getline(&ptr_hex, &len, pw_file) - 1;
+			ptr_hex[len] = '\0'; // replacing LF with NUL
 			items[i].lens[j] = len / 2;
-			hexdigest_to_digest((char unsigned **)&ptr, items[i].lens[j]);
+			char unsigned *ptr = hexdigest_to_digest(ptr_hex, items[i].lens[j]);
+			free(ptr_hex);
 			items[i].ptrs[j] = ptr;
 		}
 

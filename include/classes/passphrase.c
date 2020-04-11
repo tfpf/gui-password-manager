@@ -63,10 +63,10 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	// read provided information
 	// `get_credentials_pw' returns `gchar const *'
 	// but `gchar' is typedef'd to `char' in GTK
-	char const *pw = get_credentials_pw();
+	char const *pp = get_credentials_pw();
 
 	// sanity
-	if(!strcmp(pw, ""))
+	if(!strcmp(pp, ""))
 	{
 		gtk_widget_set_tooltip_text(window, "Cannot log in. \'Passphrase\' field is empty.");
 		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
@@ -74,30 +74,29 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	}
 
 	// hash the passphrase multiple times
-	char unsigned *pwh = malloc(SHA512_DIGEST_LENGTH * sizeof *pwh);
-	SHA512((char unsigned *)pw, strlen(pw), pwh);
+	char unsigned *pph = malloc(SHA512_DIGEST_LENGTH * sizeof *pph);
+	SHA512((char unsigned *)pp, strlen(pp), pph);
 	for(int i = 0; i < 65535; ++i)
 	{
-		SHA512(pwh, SHA512_DIGEST_LENGTH, pwh);
+		SHA512(pph, SHA512_DIGEST_LENGTH, pph);
 	}
-	digest_to_hexdigest(&pwh, SHA512_DIGEST_LENGTH);
+	char *pph_hex = digest_to_hexdigest(pph, SHA512_DIGEST_LENGTH);
 
 	// read stored information
-	// `pwh_s' is the stored hexdigest of the SHA512 of the passphrase
+	// `pph_s' is the stored hexdigest of the SHA512 of the passphrase
 	// hence, it must be 257 characters long (remember null byte)
-	char *pwh_s = malloc((2 * SHA512_DIGEST_LENGTH + 1) * sizeof *pwh_s);
+	char *pph_s = malloc((2 * SHA512_DIGEST_LENGTH + 1) * sizeof *pph_s);
 	FILE *pp_file = fopen(Master, "r");
-	fgets(pwh_s, 2 * SHA512_DIGEST_LENGTH + 1, pp_file);
+	fgets(pph_s, 2 * SHA512_DIGEST_LENGTH + 1, pp_file);
 	fclose(pp_file);
 
 	// compare
-	if(strcmp((char *)pwh, pwh_s))
+	if(strcmp(pph_hex, pph_s))
 	{
 		del_credentials();
-		memset(pwh,   0, 2 * SHA512_DIGEST_LENGTH + 1);
-		memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
-		free(pwh);
-		free(pwh_s);
+		free(pph);
+		free(pph_hex);
+		free(pph_s);
 		gtk_widget_set_tooltip_text(window, "Cannot log in. Wrong passphrase entered.");
 		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 		return;
@@ -106,15 +105,14 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	// on success, store a hash of the passphrase
 	// it will be used as the key encryption key
 	char unsigned *kek = malloc(SHA256_DIGEST_LENGTH * sizeof *kek);
-	SHA256((char unsigned *)pw, strlen(pw), kek);
+	SHA256((char unsigned *)pp, strlen(pp), kek);
 	credentials->kek = kek;
 
 	// trash the data and close the login so that the program can proceed
 	del_credentials();
-	memset(pwh,   0, 2 * SHA512_DIGEST_LENGTH + 1);
-	memset(pwh_s, 0, 2 * SHA512_DIGEST_LENGTH + 1);
-	free(pwh);
-	free(pwh_s);
+	free(pph);
+	free(pph_hex);
+	free(pph_s);
 	gtk_widget_destroy(window);
 
 	// read all items into RAM

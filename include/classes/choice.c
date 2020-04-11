@@ -310,10 +310,10 @@ void add_password(GtkWidget *widget, gpointer data)
 	int e_sitelen  = encrypt((char unsigned *)site,  strlen(site),  key, iv, &e_site);
 	int e_unamelen = encrypt((char unsigned *)uname, strlen(uname), key, iv, &e_uname);
 	int e_pwlen    = encrypt((char unsigned *)pw,    strlen(pw),    key, iv, &e_pw);
-	memcpy(items[num_of_items].ptrs[I_PW], e_pw, items[num_of_items].lens[I_PW]);
-	digest_to_hexdigest(&e_site,  e_sitelen);
-	digest_to_hexdigest(&e_uname, e_unamelen);
-	digest_to_hexdigest(&e_pw,    e_pwlen);
+	items[num_of_items].ptrs[I_PW] = e_pw;
+	char *e_site_hex  = digest_to_hexdigest(e_site,  e_sitelen);
+	char *e_uname_hex = digest_to_hexdigest(e_uname, e_unamelen);
+	char *e_pw_hex    = digest_to_hexdigest(e_pw,    e_pwlen);
 
 	// encrypt the AES key using key encryption key
 	// no need to check return value of `encrypt' function
@@ -322,33 +322,35 @@ void add_password(GtkWidget *widget, gpointer data)
 	char unsigned *kek = get_credentials_kek();
 	char unsigned *e_key;
 	encrypt(key, ENCRYPT_KEY_LENGTH, kek, iv, &e_key);
-	memcpy(items[num_of_items].ptrs[I_KEY], e_key, ENCRYPT_KEY_LENGTH);
-	digest_to_hexdigest(&e_key, ENCRYPT_KEY_LENGTH);
+	// memcpy(items[num_of_items].ptrs[I_KEY], e_key, ENCRYPT_KEY_LENGTH);
+	items[num_of_items].ptrs[I_KEY] = e_key;
+	char *e_key_hex = digest_to_hexdigest(e_key, ENCRYPT_KEY_LENGTH);
 
 	// initialisation vector is not encypted
 	// because it is required for decryption
 	// store it as is in the table
-	memcpy(items[num_of_items].ptrs[I_IV], iv, INIT_VECTOR_LENGTH);
-	digest_to_hexdigest(&iv, INIT_VECTOR_LENGTH);
+	// memcpy(items[num_of_items].ptrs[I_IV], iv, INIT_VECTOR_LENGTH);
+	items[num_of_items].ptrs[I_IV] = iv;
+	char *iv_hex = digest_to_hexdigest(iv, INIT_VECTOR_LENGTH);
 
 	// write them all to the file
 	FILE *pw_file = fopen(Slave, "ab");
-	fprintf(pw_file, "%s\n", e_site);
-	fprintf(pw_file, "%s\n", e_uname);
-	fprintf(pw_file, "%s\n", e_pw);
-	fprintf(pw_file, "%s\n", e_key);
-	fprintf(pw_file, "%s\n", iv);
+	fprintf(pw_file, "%s\n", e_site_hex);
+	fprintf(pw_file, "%s\n", e_uname_hex);
+	fprintf(pw_file, "%s\n", e_pw_hex);
+	fprintf(pw_file, "%s\n", e_key_hex);
+	fprintf(pw_file, "%s\n", iv_hex);
 	fclose(pw_file);
 	++num_of_items;
 
 	// trash all data
 	del_credentials();
-	memset(key,     0, ENCRYPT_KEY_LENGTH);
-	memset(iv,      0, 2 * INIT_VECTOR_LENGTH);
-	memset(e_site,  0, 2 * e_sitelen);
-	memset(e_uname, 0, 2 * e_unamelen);
-	memset(e_pw,    0, 2 * e_pwlen);
-	memset(e_key,   0, 2 * ENCRYPT_KEY_LENGTH);
+	// memset(key,     0, ENCRYPT_KEY_LENGTH);
+	// memset(iv,      0, 2 * INIT_VECTOR_LENGTH);
+	// memset(e_site,  0, 2 * e_sitelen);
+	// memset(e_uname, 0, 2 * e_unamelen);
+	// memset(e_pw,    0, 2 * e_pwlen);
+	// memset(e_key,   0, 2 * ENCRYPT_KEY_LENGTH);
 
 	// display success message
 	gtk_widget_set_tooltip_text(window, "Password added successfully.");
