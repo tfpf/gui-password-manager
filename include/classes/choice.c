@@ -6,7 +6,7 @@ void request_choice(void)
 	// window
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
-	gtk_window_maximize(GTK_WINDOW(window));
+	// gtk_window_maximize(GTK_WINDOW(window));
 	gtk_window_set_icon_from_file(GTK_WINDOW(window), "favicon.png", NULL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
@@ -92,12 +92,17 @@ GtkWidget *create_widget_for_add(GtkWidget *window)
 	gtk_entry_set_visibility(GTK_ENTRY(cp_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(add_grd), cp_entry, 1, 4, 1, 1);
 
-	// set the information in the global struct variable
-	set_credentials(site_entry, uname_entry, pw_entry, cp_entry);
+	// prepare data to be sent to callback function
+	GtkWidget **data = malloc(5 * sizeof *data);
+	data[0] = window;
+	data[1] = site_entry;
+	data[2] = uname_entry;
+	data[3] = pw_entry;
+	data[4] = cp_entry;
 
 	// button
 	GtkWidget *add_btn = gtk_button_new_with_label("Add Password");
-	g_signal_connect(GTK_BUTTON(add_btn), "clicked", G_CALLBACK(add_password), window);
+	g_signal_connect(GTK_BUTTON(add_btn), "clicked", G_CALLBACK(add_password), data);
 	gtk_grid_attach(GTK_GRID(add_grd), add_btn, 0, 5, 2, 1);
 
 	return add_grd;
@@ -224,7 +229,7 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 	gtk_grid_attach(GTK_GRID(cpp_grd), cp_entry, 1, 2, 1, 1);
 
 	// set the information in the global struct variable
-	set_credentials(NULL, NULL, pp_entry, cp_entry);
+	// set_credentials(NULL, NULL, pp_entry, cp_entry);
 
 	// button
 	GtkWidget *cpp_btn = gtk_button_new_with_label("Change Passphrase");
@@ -242,8 +247,13 @@ the file.
 -----------------------------------------------------------------------------*/
 void add_password(GtkWidget *widget, gpointer data)
 {
-	// get the window in which tooltips will be shown
-	GtkWidget *window = data;
+	GtkWidget **callback_data = data;
+	GtkWidget *window      = callback_data[0];
+	GtkWidget *site_entry  = callback_data[1];
+	GtkWidget *uname_entry = callback_data[2];
+	GtkWidget *pw_entry    = callback_data[3];
+	GtkWidget *cp_entry    = callback_data[4];
+	set_credentials(site_entry, uname_entry, pw_entry, cp_entry);
 
 	// read provided information
 	char const *site  = get_credentials_site();
@@ -291,10 +301,11 @@ void add_password(GtkWidget *widget, gpointer data)
 	items[num_of_items].lens[I_PW]    = strlen(pw);
 	items[num_of_items].lens[I_KEY]   = ENCRYPT_KEY_LENGTH;
 	items[num_of_items].lens[I_IV]    = INIT_VECTOR_LENGTH;
-	for(int i = 0; i < PTRS_PER_ITEM; ++i)
-	{
-		items[num_of_items].ptrs[i] = malloc((items[num_of_items].lens[i] + 1) * sizeof(char));
-	}
+
+	// for website and username, mamory has to be allocated
+	// because a copy of the text in the entry will be put in `items'
+	items[num_of_items].ptrs[I_SITE]  = malloc((items[num_of_items].lens[I_SITE]  + 1) * sizeof(char));
+	items[num_of_items].ptrs[I_UNAME] = malloc((items[num_of_items].lens[I_UNAME] + 1) * sizeof(char));
 
 	// the array keeps website and username unencrypted, so write them now
 	strcpy(items[num_of_items].ptrs[I_SITE],  site);

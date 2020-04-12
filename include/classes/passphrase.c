@@ -38,8 +38,12 @@ void request_passphrase(void)
 	gtk_widget_grab_focus(pp_entry);
 	gtk_grid_attach(GTK_GRID(grid), pp_entry, 1, 1, 1, 1);
 
+	// prepare data to be sent to callback function
+	GtkWidget **data = malloc(2 * sizeof *data);
+	data[0] = window;
+	data[1] = pp_entry;
+
 	// button
-	GtkWidget *data[] = {window, pp_entry};
 	GtkWidget *login_button = gtk_button_new_with_label("Log In");
 	g_signal_connect(GTK_BUTTON(login_button), "clicked", G_CALLBACK(validate_passphrase), data);
 	gtk_grid_attach(GTK_GRID(grid), login_button, 0, 2, 2, 1);
