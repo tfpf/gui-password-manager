@@ -50,13 +50,11 @@ char unsigned *hexdigest_to_digest(char *hexdigest, size_t size)
 }
 
 /*-----------------------------------------------------------------------------
-Hide the tooltip (if any) associated with the input GTK widget.
+Check if the input is a valid GTK widget. If it is, hide the tooltip (if any)
+associated with the widget.
 -----------------------------------------------------------------------------*/
 gboolean hide_tooltip(gpointer data)
 {
-	// the widget on which the tooltip was displayed may not exist any more
-	// because user may have destroyed it during the timeout duration
-	// in such a case, do nothing (otherwise, a GTK assertion will fail)
 	GtkWidget *window = data;
 	if(GTK_IS_WIDGET(window) == FALSE)
 	{
