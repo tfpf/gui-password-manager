@@ -455,28 +455,28 @@ void show_password(GtkWidget *button, gpointer data)
 }
 
 /*-----------------------------------------------------------------------------
-Modify the label of a button. Replace the password text with placeholder text.
-The contents of the pointer to the password text are trashed before the label
-is changed. If the text is already the placeholder text, do nothing.
+Check if the input is a valid GTK button. If it is, modify its label: replace
+the password text with placeholder text and trash the password in memory. If
+the text is already the placeholder text, do nothing.
 -----------------------------------------------------------------------------*/
 gboolean hide_password(gpointer data)
 {
 	GtkWidget *button = data;
-	if(!GTK_IS_BUTTON(button))
+	if(GTK_IS_BUTTON(button) == FALSE)
 	{
-		return G_SOURCE_REMOVE;
+		return FALSE;
 	}
 
 	char *pw = (char *)gtk_button_get_label(GTK_BUTTON(button));
 	if(!strcmp(pw, HIDDEN_PASSWORD_PLACEHOLDER))
 	{
-		return G_SOURCE_REMOVE;
+		return FALSE;
 	}
 
 	// clean up
 	memset(pw, 0, strlen(pw));
 	gtk_button_set_label(GTK_BUTTON(button), HIDDEN_PASSWORD_PLACEHOLDER);
-	return G_SOURCE_REMOVE;
+	return FALSE;
 }
 
 /*-----------------------------------------------------------------------------
