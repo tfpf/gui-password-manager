@@ -54,8 +54,16 @@ Hide the tooltip (if any) associated with the input GTK widget.
 -----------------------------------------------------------------------------*/
 gboolean hide_tooltip(gpointer data)
 {
+	// the widget on which the tooltip was displayed may not exist any more
+	// because user may have destroyed it during the timeout duration
+	// in such a case, do nothing (otherwise, a GTK assertion will fail)
 	GtkWidget *window = data;
+	if(GTK_IS_WIDGET(window) == FALSE)
+	{
+		return FALSE;
+	}
+
 	gtk_widget_set_has_tooltip(window, FALSE);
-	return G_SOURCE_REMOVE;
+	return FALSE;
 }
 
