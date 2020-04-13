@@ -101,7 +101,7 @@ Clear the data stored in the global struct variable. Normally, GTK
 automatically zeros out an object when the reference count of the object drops
 to zero, which may not happen on calling `g_object_unref'. Hence, the contents
 are manually zeroed out. It is worth noting that clearing happens in place--if
-any of the `get_credentials_...' functions were called before calling this
+any of the `get_credentials_*' functions were called before calling this
 function, the pointers returned by those functions will not have the old data
 intact. Also note that there is no need to deallocate the struct members
 because they are automatically deallocated when the GTK object is destroyed.
@@ -113,9 +113,10 @@ void del_credentials(void)
 		return;
 	}
 
-	if(credentials->site  != NULL) gtk_entry_buffer_delete_text(credentials->site,  0, -1);
-	if(credentials->uname != NULL) gtk_entry_buffer_delete_text(credentials->uname, 0, -1);
-	if(credentials->pw    != NULL) gtk_entry_buffer_delete_text(credentials->pw,    0, -1);
-	if(credentials->cp    != NULL) gtk_entry_buffer_delete_text(credentials->cp,    0, -1);
+	if(GTK_IS_ENTRY_BUFFER(credentials->site)  == TRUE) gtk_entry_buffer_delete_text(credentials->site,  0, -1);
+	if(GTK_IS_ENTRY_BUFFER(credentials->uname) == TRUE) gtk_entry_buffer_delete_text(credentials->uname, 0, -1);
+	if(GTK_IS_ENTRY_BUFFER(credentials->pw)    == TRUE) gtk_entry_buffer_delete_text(credentials->pw,    0, -1);
+	if(GTK_IS_ENTRY_BUFFER(credentials->cp)    == TRUE) gtk_entry_buffer_delete_text(credentials->cp,    0, -1);
+	set_credentials(NULL, NULL, NULL, NULL);
 }
 
