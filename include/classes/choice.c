@@ -404,7 +404,7 @@ void populate_search_results(GtkWidget *widget, gpointer data)
 	// find out which items match the search term
 	for(int i = 0, j = 0; i < num_of_items; ++i)
 	{
-		if(!strstr(items[i].ptrs[I_SITE], search_term) && !strstr(items[i].ptrs[I_UNAME], search_term))
+		if(!strstr_ci(items[i].ptrs[I_SITE], search_term) && !strstr(items[i].ptrs[I_UNAME], search_term))
 		{
 			continue;
 		}

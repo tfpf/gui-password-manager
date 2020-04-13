@@ -65,3 +65,41 @@ gboolean hide_tooltip(gpointer data)
 	return FALSE;
 }
 
+/*-----------------------------------------------------------------------------
+Case-insensitive substring searching. It uses the naive substring searching
+algorithm, because the text is not expected to be very long.
+-----------------------------------------------------------------------------*/
+char *strstr_ci(char const *txt, char const *pat)
+{
+	// corner case checks
+	if(pat[0] == '\0')
+	{
+		return (char *)txt;
+	}
+	size_t patlen = strlen(pat);
+	if(patlen > strnlen(txt, patlen + 256))
+	{
+		return NULL;
+	}
+
+	// traverse the text until the last potential match location
+	for(; txt[patlen - 1] != '\0'; ++txt)
+	{
+		// locate first character match
+		for(char *loc_txt = (char *)txt, *loc_pat = (char *)pat;; ++loc_txt, ++loc_pat)
+		{
+			if(*loc_pat == '\0')
+			{
+				return (char *)txt;
+			}
+
+			if(tolower(*loc_txt) != tolower(*loc_pat))
+			{
+				break;
+			}
+		}
+	}
+
+	return NULL;
+}
+
