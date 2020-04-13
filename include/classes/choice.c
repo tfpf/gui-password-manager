@@ -293,56 +293,24 @@ void add_password(GtkWidget *widget, gpointer data)
 		return;
 	}
 
-	// allocate memory to store this additional password item
-	// it will be appended to the array maintained in RAM
-	items = realloc(items, (num_of_items + 1) * sizeof *items);
-	items[num_of_items].lens[I_SITE]  = strlen(site);
-	items[num_of_items].lens[I_UNAME] = strlen(uname);
-	items[num_of_items].lens[I_PW]    = strlen(pw);
-	items[num_of_items].lens[I_KEY]   = ENCRYPT_KEY_LENGTH;
-	items[num_of_items].lens[I_IV]    = INIT_VECTOR_LENGTH;
-
-	// for website and username, mamory has to be allocated
-	// because a copy of the text in the entry will be put in `items'
-	items[num_of_items].ptrs[I_SITE]  = malloc((items[num_of_items].lens[I_SITE]  + 1) * sizeof(char));
-	items[num_of_items].ptrs[I_UNAME] = malloc((items[num_of_items].lens[I_UNAME] + 1) * sizeof(char));
-
-	// the array keeps website and username unencrypted, so write them now
-	strcpy(items[num_of_items].ptrs[I_SITE],  site);
-	strcpy(items[num_of_items].ptrs[I_UNAME], uname);
-
-	// generate encryption key and initialisation vector for AES
+	// obtain the key encryption key, AES key and initialisation vector
+	char unsigned *kek = get_credentials_kek();
 	char unsigned *key = generate_random(ENCRYPT_KEY_LENGTH);
 	char unsigned *iv  = generate_random(INIT_VECTOR_LENGTH);
 
-	// encrypt the website, username and password using the AES key
-	// store the encrypted password in the table
-	char unsigned *e_site, *e_uname, *e_pw;
-	int e_sitelen  = encrypt((char unsigned *)site,  strlen(site),  key, iv, &e_site);
-	int e_unamelen = encrypt((char unsigned *)uname, strlen(uname), key, iv, &e_uname);
-	int e_pwlen    = encrypt((char unsigned *)pw,    strlen(pw),    key, iv, &e_pw);
-	items[num_of_items].ptrs[I_PW] = e_pw;
+	// encrypt the website, username, password and key
+	char unsigned *e_site, *e_uname, *e_pw, *e_key;
+	int e_sitelen  = encrypt((char unsigned *)site,  strlen(site),       key, iv, &e_site);
+	int e_unamelen = encrypt((char unsigned *)uname, strlen(uname),      key, iv, &e_uname);
+	int e_pwlen    = encrypt((char unsigned *)pw,    strlen(pw),         key, iv, &e_pw);
+	int e_keylen   = encrypt(key,                    ENCRYPT_KEY_LENGTH, kek, iv, &e_key);
+
+	// obtain the hexdigest of all these
 	char *e_site_hex  = digest_to_hexdigest(e_site,  e_sitelen);
 	char *e_uname_hex = digest_to_hexdigest(e_uname, e_unamelen);
 	char *e_pw_hex    = digest_to_hexdigest(e_pw,    e_pwlen);
-
-	// encrypt the AES key using key encryption key
-	// no need to check return value of `encrypt' function
-	// encrypted form of 32-byte key is 32 bytes long
-	// store the encrypted key in the table
-	char unsigned *kek = get_credentials_kek();
-	char unsigned *e_key;
-	encrypt(key, ENCRYPT_KEY_LENGTH, kek, iv, &e_key);
-	// memcpy(items[num_of_items].ptrs[I_KEY], e_key, ENCRYPT_KEY_LENGTH);
-	items[num_of_items].ptrs[I_KEY] = e_key;
-	char *e_key_hex = digest_to_hexdigest(e_key, ENCRYPT_KEY_LENGTH);
-
-	// initialisation vector is not encypted
-	// because it is required for decryption
-	// store it as is in the table
-	// memcpy(items[num_of_items].ptrs[I_IV], iv, INIT_VECTOR_LENGTH);
-	items[num_of_items].ptrs[I_IV] = iv;
-	char *iv_hex = digest_to_hexdigest(iv, INIT_VECTOR_LENGTH);
+	char *e_key_hex   = digest_to_hexdigest(e_key,   ENCRYPT_KEY_LENGTH);
+	char *iv_hex      = digest_to_hexdigest(iv,      INIT_VECTOR_LENGTH);
 
 	// write them all to the file
 	FILE *pw_file = fopen(Slave, "ab");
@@ -352,6 +320,26 @@ void add_password(GtkWidget *widget, gpointer data)
 	fprintf(pw_file, "%s\n", e_key_hex);
 	fprintf(pw_file, "%s\n", iv_hex);
 	fclose(pw_file);
+
+	// allocate memory to store this additional password item
+	// it will be appended to the array maintained in RAM
+	items = realloc(items, (num_of_items + 1) * sizeof *items);
+	items[num_of_items].lens[I_SITE]  = strlen(site);
+	items[num_of_items].lens[I_UNAME] = strlen(uname);
+	items[num_of_items].lens[I_PW]    = e_pwlen;
+	items[num_of_items].lens[I_KEY]   = e_keylen;
+	items[num_of_items].lens[I_IV]    = INIT_VECTOR_LENGTH;
+
+	// for website and username, memory has to be allocated
+	// for the rest, direct assignment will work
+	items[num_of_items].ptrs[I_SITE] = malloc((items[num_of_items].lens[I_SITE] + 1) * sizeof(char));
+	strcpy(items[num_of_items].ptrs[I_SITE], site);
+	items[num_of_items].ptrs[I_UNAME] = malloc((items[num_of_items].lens[I_UNAME] + 1) * sizeof(char));
+	strcpy(items[num_of_items].ptrs[I_UNAME], uname);
+	items[num_of_items].ptrs[I_PW]  = e_pw;
+	items[num_of_items].ptrs[I_KEY] = e_key;
+	items[num_of_items].ptrs[I_IV]  = iv;
+
 	++num_of_items;
 
 	// trash all data
