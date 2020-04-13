@@ -139,6 +139,7 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 	// grid which will be placed in a scrollable window
 	GtkWidget *bot_grd = gtk_grid_new();
 	gtk_container_set_border_width(GTK_CONTAINER(bot_grd), 25);
+	gtk_grid_set_column_homogeneous(GTK_GRID(bot_grd), TRUE);
 	gtk_grid_set_column_spacing(GTK_GRID(bot_grd), 15);
 	gtk_grid_set_row_spacing(GTK_GRID(bot_grd), 15);
 	gtk_widget_set_halign(bot_grd, GTK_ALIGN_CENTER);
@@ -180,17 +181,17 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 
 	// website header
 	GtkWidget *site_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(site_label), "<b>                    Website                    </b>");
+	gtk_label_set_markup(GTK_LABEL(site_label), "<b>                         Website                         </b>");
 	gtk_grid_attach(GTK_GRID(bot_grd), site_label, 0, -1, 1, 1);
 
 	// username header
 	GtkWidget *uname_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(uname_label), "<b>                    Username                    </b>");
+	gtk_label_set_markup(GTK_LABEL(uname_label), "<b>                         Username                         </b>");
 	gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, -1, 1, 1);
 
 	// password header
 	GtkWidget *pw_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(pw_label), "<b>                    Password                    </b>");
+	gtk_label_set_markup(GTK_LABEL(pw_label), "<b>                         Password                         </b>");
 	gtk_grid_attach(GTK_GRID(bot_grd), pw_label, 2, -1, 1, 1);
 
 	return see_box;
