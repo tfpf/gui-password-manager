@@ -39,7 +39,12 @@ append a null character at the end.
 -----------------------------------------------------------------------------*/
 char unsigned *hexdigest_to_digest(char *hexdigest, size_t size)
 {
-	char unsigned *digest = malloc(size * sizeof *digest);
+	// important note: why am I allocating twice the memory required
+	// sometimes, calling `free' on the returned pointer causes this error:
+	// free(): invalid next size (fast)
+	// an explanation may be found here
+	// https://stackoverflow.com/a/44940249/6286575
+	char unsigned *digest = malloc(2 * size * sizeof *digest);
 	for(size_t i = 0; i < size; ++i)
 	{
 		#pragma GCC diagnostic ignored "-Wformat"
