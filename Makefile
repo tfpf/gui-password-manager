@@ -27,7 +27,7 @@ clean:
 
 asm:
 	@clear
-	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(LFLAGS) $(INCLD) $(SEARCH) -s -o $(Assembly) $(Source)
+	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(LFLAGS) $(INCLD) $(SEARCH) -S -o $(Assembly) $(Source)
 
 comp:
 	@$(PRINT) "Compiling ...\n"
