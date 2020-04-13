@@ -309,7 +309,7 @@ void add_password(GtkWidget *widget, gpointer data)
 	char *e_site_hex  = digest_to_hexdigest(e_site,  e_sitelen);
 	char *e_uname_hex = digest_to_hexdigest(e_uname, e_unamelen);
 	char *e_pw_hex    = digest_to_hexdigest(e_pw,    e_pwlen);
-	char *e_key_hex   = digest_to_hexdigest(e_key,   ENCRYPT_KEY_LENGTH);
+	char *e_key_hex   = digest_to_hexdigest(e_key,   e_keylen);
 	char *iv_hex      = digest_to_hexdigest(iv,      INIT_VECTOR_LENGTH);
 
 	// write them all to the file
@@ -340,18 +340,30 @@ void add_password(GtkWidget *widget, gpointer data)
 	items[num_of_items].ptrs[I_KEY] = e_key;
 	items[num_of_items].ptrs[I_IV]  = iv;
 
-	++num_of_items;
-
-	// trash all data
+	// clear entries
 	del_credentials();
-	// memset(key,     0, ENCRYPT_KEY_LENGTH);
-	// memset(iv,      0, 2 * INIT_VECTOR_LENGTH);
-	// memset(e_site,  0, 2 * e_sitelen);
-	// memset(e_uname, 0, 2 * e_unamelen);
-	// memset(e_pw,    0, 2 * e_pwlen);
-	// memset(e_key,   0, 2 * ENCRYPT_KEY_LENGTH);
 
-	// display success message
+	// clear RAM
+	memset(key,         0, 1 * ENCRYPT_KEY_LENGTH);
+	memset(e_site,      0, 1 * e_sitelen);
+	memset(e_uname,     0, 1 * e_unamelen);
+	memset(e_site_hex,  0, 2 * e_sitelen);
+	memset(e_uname_hex, 0, 2 * e_unamelen);
+	memset(e_pw_hex,    0, 2 * e_pwlen);
+	memset(e_key_hex,   0, 2 * e_keylen);
+	memset(iv_hex,      0, 2 * INIT_VECTOR_LENGTH);
+
+	// deallocate
+	free(key);
+	free(e_site);
+	free(e_uname);
+	free(e_site_hex);
+	free(e_uname_hex);
+	free(e_pw_hex);
+	free(e_key_hex);
+	free(iv_hex);
+
+	++num_of_items;
 	gtk_widget_set_tooltip_text(window, "Password added successfully.");
 	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 }

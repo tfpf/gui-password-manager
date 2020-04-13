@@ -74,17 +74,24 @@ void set_list(void)
 
 		// to get `site' and `uname', `key' has to be obtained
 		// I have its encrypted version, so decrypt it first
-		decrypt(items[i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
-		decrypt(items[i].ptrs[I_SITE], items[i].lens[I_SITE], key, iv, (char unsigned **)&site);
+		decrypt(items[i].ptrs[I_KEY],   ENCRYPT_KEY_LENGTH,     kek, iv, &key);
+		decrypt(items[i].ptrs[I_SITE],  items[i].lens[I_SITE],  key, iv, (char unsigned **)&site);
 		decrypt(items[i].ptrs[I_UNAME], items[i].lens[I_UNAME], key, iv, (char unsigned **)&uname);
 
-		// clean up
-		memset(key, 0, ENCRYPT_KEY_LENGTH);
+		// clear RAM
+		memset(key,                    0, ENCRYPT_KEY_LENGTH);
+		memset(items[i].ptrs[I_SITE],  0, items[i].lens[I_SITE]);
+		memset(items[i].ptrs[I_UNAME], 0, items[i].lens[I_UNAME]);
+
+		// deallocate
 		free(key);
 		free(items[i].ptrs[I_SITE]);
 		free(items[i].ptrs[I_UNAME]);
-		items[i].ptrs[I_SITE] = site;
+
+		items[i].ptrs[I_SITE]  = site;
+		items[i].lens[I_SITE]  = strlen(site);
 		items[i].ptrs[I_UNAME] = uname;
+		items[i].lens[I_UNAME] = strlen(uname);
 	}
 	fclose(pw_file);
 }
