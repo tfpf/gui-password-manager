@@ -362,9 +362,9 @@ void add_password(GtkWidget *widget, gpointer data)
 	free(e_pw_hex);
 	free(e_key_hex);
 	free(iv_hex);
-	free(data);
 
 	++num_of_items;
+	qsort(items, num_of_items, sizeof *items, comparator);
 	gtk_widget_set_tooltip_text(window, "Password added successfully.");
 	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 }
