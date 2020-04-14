@@ -67,3 +67,26 @@ char unsigned *generate_random(int len)
 	return arr;
 }
 
+/*-----------------------------------------------------------------------------
+Generate a printable random string. Just like `generate_random', but with
+ASCII characters only. Can be used to generate random passwords.
+-----------------------------------------------------------------------------*/
+char *generate_random_constrained(int len)
+{
+	char *pool = "abcdefghijklmnopqrstuvwxyz"
+	             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	             "0123456789"
+	             ",.?:;\"\'()[]!"
+	             "@#$%^&*{}-_=+";
+	size_t poollen = strlen(pool);
+	char *arr = malloc((len + 1) * sizeof *arr);
+	arr[len] = '\0';
+	for(int i = 0; i < len; ++i)
+	{
+		arr[i] = pool[random() % poollen];
+	}
+
+	printf("%s\n", arr);
+	return arr;
+}
+
