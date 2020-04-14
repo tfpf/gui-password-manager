@@ -461,7 +461,6 @@ void show_password(GtkWidget *button, gpointer data)
 	memset(pw,  0, items[*i].lens[I_PW]);
 	free(key);
 	free(pw);
-	free(data);
 
 	// schedule the password to be hidden after some time
 	g_timeout_add(PASSWORD_DISPLAY_TIMEOUT, hide_password, button);
