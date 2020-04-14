@@ -1,3 +1,8 @@
+// prototypes
+int comparator(void const *e1, void const *e2);
+void see_list(void);
+void set_list(void);
+
 /*-----------------------------------------------------------------------------
 This is a global variable which will store the password items in RAM. The
 website and username will be decrypted, but the password will be stored under
@@ -7,12 +12,12 @@ created for convenience. The lengths of these character arrays is stored in
 another array.
 -----------------------------------------------------------------------------*/
 int num_of_items;
-struct
+typedef struct
 {
 	void *ptrs[5];
 	int lens[5];
-}
-*items;
+} items_t;
+items_t *items;
 
 /*-----------------------------------------------------------------------------
 Display the username and website. This is only for debugging. It is not
@@ -94,5 +99,37 @@ void set_list(void)
 		items[i].lens[I_UNAME] = strlen(uname);
 	}
 	fclose(pw_file);
+	qsort(items, num_of_items, sizeof *items, comparator);
+}
+
+/*-----------------------------------------------------------------------------
+A comparator function to be used with `qsort'. It defines the relative order of
+two elements in the `items' array.
+-----------------------------------------------------------------------------*/
+int comparator(void const *e1, void const *e2)
+{
+	// obtain the strings which have to be compared
+	items_t const *p1 = e1;
+	items_t const *p2 = e2;
+
+	// cannot use normal `strcmp' here
+	// it will result in sort order as: A, B, C, ..., Z, a, b, c, ...
+	int result = strcasecmp(p1->ptrs[I_SITE], p2->ptrs[I_SITE]);
+	if(result == 0)
+	{
+		result = strcasecmp(p1->ptrs[I_UNAME], p2->ptrs[I_UNAME]);
+	}
+
+	if(result < 0)
+	{
+		return -1;
+	}
+
+	if(result > 0)
+	{
+		return 1;
+	}
+
+	return result;
 }
 
