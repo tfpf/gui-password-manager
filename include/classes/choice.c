@@ -62,7 +62,7 @@ GtkWidget *create_widget_for_add(GtkWidget *window)
 
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(main_label), "<b>Enter the following details to add a new password.</b>");
+	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Enter the following details to add a new password.</span>");
 	gtk_grid_attach(GTK_GRID(add_grd), main_label, 0, 0, 2, 1);
 
 	// website
@@ -163,7 +163,7 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(main_label), "<b>Start typing to display a list of matching items.</b>");
+	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Start typing to display a list of matching items.</span>");
 	gtk_grid_attach(GTK_GRID(top_grd), main_label, 0, 0, 2, 1);
 
 	// label
@@ -181,18 +181,20 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 
 	// website header
 	GtkWidget *site_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(site_label), "<b>                         Website                         </b>");
+	gtk_label_set_markup(GTK_LABEL(site_label), "<span weight=\"bold\" foreground=\"green\">                         Website                         </span>");
 	gtk_grid_attach(GTK_GRID(bot_grd), site_label, 0, -1, 1, 1);
 
 	// username header
 	GtkWidget *uname_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(uname_label), "<b>                         Username                         </b>");
+	gtk_label_set_markup(GTK_LABEL(uname_label), "<span weight=\"bold\" foreground=\"green\">                         Username                         </span>");
 	gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, -1, 1, 1);
 
 	// password header
 	GtkWidget *pw_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(pw_label), "<b>                         Password                         </b>");
+	gtk_label_set_markup(GTK_LABEL(pw_label), "<span weight=\"bold\" foreground=\"green\">                         Password                         </span>");
 	gtk_grid_attach(GTK_GRID(bot_grd), pw_label, 2, -1, 1, 1);
+
+	populate_search_results(search_entry, bot_grd);
 
 	return see_box;
 }
@@ -212,7 +214,7 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(main_label), "<b>Enter a new passphrase. Make sure it is something memorable.</b>");
+	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Enter a new passphrase. Make sure it is something memorable.</span>");
 	gtk_grid_attach(GTK_GRID(cpp_grd), main_label, 0, 0, 2, 1);
 
 	// passphrase
@@ -228,9 +230,6 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 	GtkWidget *cp_entry = gtk_entry_new();
 	gtk_entry_set_visibility(GTK_ENTRY(cp_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(cpp_grd), cp_entry, 1, 2, 1, 1);
-
-	// set the information in the global struct variable
-	// set_credentials(NULL, NULL, pp_entry, cp_entry);
 
 	// button
 	GtkWidget *cpp_btn = gtk_button_new_with_label("Change Passphrase");
@@ -363,6 +362,7 @@ void add_password(GtkWidget *widget, gpointer data)
 	free(e_pw_hex);
 	free(e_key_hex);
 	free(iv_hex);
+	free(data);
 
 	++num_of_items;
 	gtk_widget_set_tooltip_text(window, "Password added successfully.");
@@ -461,6 +461,7 @@ void show_password(GtkWidget *button, gpointer data)
 	memset(pw,  0, items[*i].lens[I_PW]);
 	free(key);
 	free(pw);
+	free(data);
 
 	// schedule the password to be hidden after some time
 	g_timeout_add(PASSWORD_DISPLAY_TIMEOUT, hide_password, button);

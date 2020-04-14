@@ -27,7 +27,7 @@ void request_passphrase(void)
 
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(main_label), "<b>Enter your passphrase to log in.</b>");
+	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Enter your passphrase to log in.</span>");
 	gtk_grid_attach(GTK_GRID(grid), main_label, 0, 0, 2, 1);
 
 	// passphrase
