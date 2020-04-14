@@ -10,9 +10,10 @@
 #include <time.h>
 
 // lengths in bytes
-#define ENCRYPT_KEY_LENGTH 32
-#define DECRYPT_KEY_LENGTH 32
-#define INIT_VECTOR_LENGTH 16
+#define ENCRYPT_KEY_LENGTH  32
+#define DECRYPT_KEY_LENGTH  32
+#define INIT_VECTOR_LENGTH  16
+#define RNGS_BUFFER_LENGTH 256
 
 #define TOOLTIP_MESSAGE_TIMEOUT   5 * G_TIME_SPAN_MILLISECOND
 #define PASSWORD_DISPLAY_TIMEOUT 30 * G_TIME_SPAN_MILLISECOND
@@ -48,7 +49,8 @@ int main(int const argc, char const *argv[])
 	// seed the random number generator
 	struct timespec t;
 	timespec_get(&t, TIME_UTC);
-	srandom(t.tv_nsec ^ t.tv_sec);
+	char state_buffer[RNGS_BUFFER_LENGTH];
+	initstate(t.tv_nsec ^ t.tv_sec, state_buffer, RNGS_BUFFER_LENGTH);
 
 	gtk_init(0, NULL);
 
