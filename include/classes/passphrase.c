@@ -34,6 +34,7 @@ void request_passphrase(void)
 	GtkWidget *pp_label = gtk_label_new("Passphrase");
 	gtk_grid_attach(GTK_GRID(grid), pp_label, 0, 1, 1, 1);
 	GtkWidget *pp_entry = gtk_entry_new();
+	gtk_entry_set_activates_default(GTK_ENTRY(pp_entry), TRUE);
 	gtk_entry_set_visibility(GTK_ENTRY(pp_entry), FALSE);
 	gtk_widget_grab_focus(pp_entry);
 	gtk_grid_attach(GTK_GRID(grid), pp_entry, 1, 1, 1, 1);
@@ -47,6 +48,8 @@ void request_passphrase(void)
 	GtkWidget *login_button = gtk_button_new_with_label("Log In");
 	g_signal_connect(GTK_BUTTON(login_button), "clicked", G_CALLBACK(validate_passphrase), data);
 	gtk_grid_attach(GTK_GRID(grid), login_button, 0, 2, 2, 1);
+	gtk_widget_set_can_default(login_button, TRUE);
+	gtk_widget_grab_default(login_button);
 
 	// display everything
 	gtk_widget_show_all(window);
