@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 
 // lengths in bytes
@@ -27,9 +28,10 @@
 
 #define HIDDEN_PASSWORD_PLACEHOLDER "[HIDDEN]"
 
-// files which contain the passphrase and other passwords respectively
-char const *Master = "._Master";
-char const *Slave = "._Slave";
+char const *Master  = "._Master";   // contains hash of user's passphrase
+char const *Slave   = "._Slave";    // contains encrypted passwords
+char const *_Master = ".eufnoie";   // use while changing passphrase
+char const *_Slave  = ".uycnweofg"; // use while changing passphrase
 
 #include "credentials.h"
 #include "helpers.c"
