@@ -6,7 +6,7 @@ void request_choice(void)
 	// window
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
-	// gtk_window_maximize(GTK_WINDOW(window));
+	gtk_window_maximize(GTK_WINDOW(window));
 	gtk_window_set_icon_from_file(GTK_WINDOW(window), "favicon.png", NULL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
@@ -163,7 +163,7 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Start typing to display a list of matching items.</span>");
+	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Enter a search term. Matching items will be displayed.</span>");
 	gtk_grid_attach(GTK_GRID(top_grd), main_label, 0, 0, 2, 1);
 
 	// label
@@ -231,9 +231,15 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 	gtk_entry_set_visibility(GTK_ENTRY(cp_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(cpp_grd), cp_entry, 1, 2, 1, 1);
 
+	// prepare data to be sent to callback function
+	GtkWidget **data = malloc(3 * sizeof *data);
+	data[0] = window;
+	data[1] = pp_entry;
+	data[2] = cp_entry;
+
 	// button
 	GtkWidget *cpp_btn = gtk_button_new_with_label("Change Passphrase");
-	g_signal_connect(GTK_BUTTON(cpp_btn), "clicked", G_CALLBACK(change_passphrase), window);
+	g_signal_connect(GTK_BUTTON(cpp_btn), "clicked", G_CALLBACK(change_passphrase), data);
 	gtk_grid_attach(GTK_GRID(cpp_grd), cpp_btn, 0, 5, 2, 1);
 
 	return cpp_grd;
@@ -498,8 +504,11 @@ store the passphrase hash and the encrypted passwords.
 -----------------------------------------------------------------------------*/
 void change_passphrase(GtkWidget *widget, gpointer data)
 {
-	// get the window in which tooltips will be shown
-	GtkWidget *window = data;
+	GtkWidget **callback_data = data;
+	GtkWidget *window   = callback_data[0];
+	GtkWidget *pp_entry = callback_data[1];
+	GtkWidget *cp_entry = callback_data[1];
+	set_credentials(NULL, NULL, pp_entry, cp_entry);
 
 	// read provided information
 	char const *pp = get_credentials_pw();
@@ -524,6 +533,46 @@ void change_passphrase(GtkWidget *widget, gpointer data)
 		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 		return;
 	}
+
+	// write new hash to file and obtain new key encryption key;
+	char unsigned *pph = malloc(SHA512_DIGEST_LENGTH * sizeof *pph);
+	SHA512((char unsigned *)pp, strlen(pp), pph);
+	for(int i = 0; i < HASH_COUNT; ++i)
+	{
+		SHA512(pph, SHA512_DIGEST_LENGTH, pph);
+	}
+	char *pph_hex = digest_to_hexdigest(pph, SHA512_DIGEST_LENGTH);
+	FILE *pp_file = fopen(_Master, "w");
+	fprintf(pp_file, "%s\n", pph_hex);
+	fclose(pp_file);
+	char unsigned *_kek = malloc(SHA256_DIGEST_LENGTH * sizeof *_kek);
+	SHA256((char unsigned *)pp, strlen(pp), _kek);
+
+	// clear RAM
+	memset(pph,     0, 1 * SHA512_DIGEST_LENGTH);
+	memset(pph_hex, 0, 2 * SHA512_DIGEST_LENGTH);
+
+	// deallocate
+	free(pph);
+	free(pph_hex);
+
+	// decrypt all the data, then re-encrypt it using new stuff
+	char unsigned *kek = get_credentials_kek();
+	for(int i = 0; i < num_of_items; ++i)
+	{
+		// website and username are already stored decrypted
+		// first decrypt the key
+		char unsigned *key;
+		decrypt(items[i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, items[i].ptrs[I_IV], &key);
+
+		// use it to get the password
+		char *pw;
+		int pwlen = decrypt(items[i].ptrs[I_PW], items[i].lens[I_PW], key, items[i].ptrs[I_IV], (char unsigned **)&pw);
+
+		// 
+
+	}
+
 }
 
 /*-----------------------------------------------------------------------------

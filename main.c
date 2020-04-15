@@ -10,6 +10,8 @@
 #include <strings.h>
 #include <time.h>
 
+#define HASH_COUNT 65535
+
 // lengths in bytes
 #define ENCRYPT_KEY_LENGTH  32
 #define DECRYPT_KEY_LENGTH  32

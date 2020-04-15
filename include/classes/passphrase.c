@@ -87,7 +87,7 @@ void validate_passphrase(GtkWidget *widget, gpointer data)
 	// hash the passphrase multiple times
 	char unsigned *pph = malloc(SHA512_DIGEST_LENGTH * sizeof *pph);
 	SHA512((char unsigned *)pp, strlen(pp), pph);
-	for(int i = 0; i < 65535; ++i)
+	for(int i = 0; i < HASH_COUNT; ++i)
 	{
 		SHA512(pph, SHA512_DIGEST_LENGTH, pph);
 	}

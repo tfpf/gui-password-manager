@@ -79,9 +79,11 @@ void set_list(void)
 
 		// to get `site' and `uname', `key' has to be obtained
 		// I have its encrypted version, so decrypt it first
-		decrypt(items[i].ptrs[I_KEY],   ENCRYPT_KEY_LENGTH,     kek, iv, &key);
-		decrypt(items[i].ptrs[I_SITE],  items[i].lens[I_SITE],  key, iv, (char unsigned **)&site);
-		decrypt(items[i].ptrs[I_UNAME], items[i].lens[I_UNAME], key, iv, (char unsigned **)&uname);
+		decrypt(items[i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
+
+		// now get website and username
+		int sitelen  = decrypt(items[i].ptrs[I_SITE],  items[i].lens[I_SITE],  key, iv, (char unsigned **)&site);
+		int unamelen = decrypt(items[i].ptrs[I_UNAME], items[i].lens[I_UNAME], key, iv, (char unsigned **)&uname);
 
 		// clear RAM
 		memset(key,                    0, ENCRYPT_KEY_LENGTH);
@@ -94,9 +96,9 @@ void set_list(void)
 		free(items[i].ptrs[I_UNAME]);
 
 		items[i].ptrs[I_SITE]  = site;
-		items[i].lens[I_SITE]  = strlen(site);
+		items[i].lens[I_SITE]  = sitelen;
 		items[i].ptrs[I_UNAME] = uname;
-		items[i].lens[I_UNAME] = strlen(uname);
+		items[i].lens[I_UNAME] = unamelen;
 	}
 	fclose(pw_file);
 	qsort(items, num_of_items, sizeof *items, comparator);
