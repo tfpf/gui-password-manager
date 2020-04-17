@@ -40,10 +40,11 @@ void request_choice(void)
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), cpp_grd, cpp_lbl);
 	gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_LEFT);
 	gtk_container_add(GTK_CONTAINER(window), notebook);
+	g_signal_connect(GTK_NOTEBOOK(notebook), "switch-page", G_CALLBACK(clear_all_entries), notebook);
 
 	// show everything
 	gtk_widget_show_all(window);
-	g_signal_connect(window, "destroy", G_CALLBACK(quit_choice), NULL);
+	g_signal_connect(window, "destroy", G_CALLBACK(quit_choice), notebook);
 	gtk_main();
 }
 
@@ -194,7 +195,7 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 	gtk_label_set_markup(GTK_LABEL(pw_label), "<span weight=\"bold\" foreground=\"green\">                         Password                         </span>");
 	gtk_grid_attach(GTK_GRID(bot_grd), pw_label, 2, -1, 1, 1);
 
-	populate_search_results(search_entry, bot_grd);
+	populate_search_results(GTK_ENTRY(search_entry), bot_grd);
 
 	return see_box;
 }
@@ -251,7 +252,7 @@ username and password with the randomly generated key. Then encrypt the key
 using the key encryption key. Store them and the initialisation vector also in
 the file.
 -----------------------------------------------------------------------------*/
-void add_password(GtkWidget *widget, gpointer data)
+void add_password(GtkButton *button, gpointer data)
 {
 	GtkWidget **callback_data = data;
 	GtkWidget *window      = callback_data[0];
@@ -402,10 +403,10 @@ items in the password file which match the search term. The contents of the
 password file are already loaded in memory, so the file need not be read from
 the drive.
 -----------------------------------------------------------------------------*/
-void populate_search_results(GtkWidget *widget, gpointer data)
+void populate_search_results(GtkEntry *entry, gpointer data)
 {
 	// get the entry text and the grid whose children have to be modified
-	gchar const *search_term = gtk_entry_get_text(GTK_ENTRY(widget));
+	gchar const *search_term = gtk_entry_get_text(GTK_ENTRY(entry));
 	GtkWidget *bot_grd = data;
 
 	delete_previous_search_results(bot_grd);
@@ -448,7 +449,7 @@ void populate_search_results(GtkWidget *widget, gpointer data)
 Modify the label of a button. Find the password corresponding to the website
 and username. Set it as the button label text.
 -----------------------------------------------------------------------------*/
-void show_password(GtkWidget *button, gpointer data)
+void show_password(GtkButton *button, gpointer data)
 {
 	// get the index of the item to show
 	int *i = data;
@@ -460,7 +461,7 @@ void show_password(GtkWidget *button, gpointer data)
 	char *pw;
 	decrypt_AES(items[*i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
 	decrypt_AES(items[*i].ptrs[I_PW], items[*i].lens[I_PW], key, iv, (char unsigned **)&pw);
-	gtk_button_set_label(GTK_BUTTON(button), pw);
+	gtk_button_set_label(button, pw);
 
 	// clean up
 	memset(key, 0, ENCRYPT_KEY_LENGTH);
@@ -502,7 +503,7 @@ Change the passphrase used to encrypt the data. Decrypt the data using the old
 passphrase, then re-ecnrypt it using the new passphrase. Rewrite the files that
 store the passphrase hash and the encrypted passwords.
 -----------------------------------------------------------------------------*/
-void change_passphrase(GtkWidget *widget, gpointer data)
+void change_passphrase(GtkButton *button, gpointer data)
 {
 	GtkWidget **callback_data = data;
 	GtkWidget *window   = callback_data[0];
@@ -660,15 +661,20 @@ void change_passphrase(GtkWidget *widget, gpointer data)
 	free(kek);
 
 	credentials->kek = __kek;
+
+	gtk_widget_set_tooltip_text(window, "Passphrase changed successfully.");
+	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 }
 
 /*-----------------------------------------------------------------------------
 Clear the data in the global struct variable. Also clear the key encryption
 key. Deallocate all memory and quit.
 -----------------------------------------------------------------------------*/
-void quit_choice(void)
+void quit_choice(GtkWidget *widget, gpointer data)
 {
-	del_credentials();
+	GtkNotebook *notebook = data;
+
+	clear_all_entries(NULL, NULL, 0, notebook);
 	gtk_main_quit();
 	memset(credentials->kek, 0, ENCRYPT_KEY_LENGTH);
 	free(credentials->kek);

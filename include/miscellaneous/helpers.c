@@ -110,3 +110,27 @@ char *strstr_ci(char const *txt, char const *pat)
 	return NULL;
 }
 
+/*-----------------------------------------------------------------------------
+Clear the provided GTK entry. If the provided widget is not an entry,
+recursively clear all those children which are entries.
+-----------------------------------------------------------------------------*/
+void clear_all_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer data)
+{
+	GtkEntry *entry = data;
+
+	if(GTK_IS_ENTRY(entry) == TRUE)
+	{
+		GtkEntryBuffer *buffer = gtk_entry_get_buffer(entry);
+		gtk_entry_buffer_delete_text(buffer, 0, -1);
+		return;
+	}
+
+	if(GTK_IS_CONTAINER(entry) == FALSE)
+	{
+		return;
+	}
+
+	// if this widget is not an entry, recursively check its children
+	GList *children = gtk_container_get_children(GTK_CONTAINER(entry));
+}
+

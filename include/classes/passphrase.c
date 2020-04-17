@@ -64,7 +64,7 @@ passphrase is entered, display a tooltip as an error message. If the correct
 passphrase is entered, the key encryption key is determined and stored as a
 member of the global struct variable.
 -----------------------------------------------------------------------------*/
-void validate_passphrase(GtkWidget *widget, gpointer data)
+void validate_passphrase(GtkButton *button, gpointer data)
 {
 	GtkWidget **callback_data = data;
 	GtkWidget *window   = callback_data[0];
@@ -153,7 +153,7 @@ window loop. Find out the status (whether the user entered the correct
 passphrase or not) by checking whether the key encryption key has been set or
 not. If user failed to log in, quit the application.
 -----------------------------------------------------------------------------*/
-void quit_passphrase(void)
+void quit_passphrase(GtkWidget *widget, gpointer data)
 {
 	del_credentials();
 	gtk_main_quit();
