@@ -30,10 +30,10 @@
 
 #define HIDDEN_PASSWORD_PLACEHOLDER "[HIDDEN]"
 
-char const *Master  = "._Master";   // contains hash of user's passphrase
-char const *Slave   = "._Slave";    // contains encrypted passwords
-char const *_Master = ".eufnoie";   // use while changing passphrase
-char const *_Slave  = ".uycnweofg"; // use while changing passphrase
+char const *Master  = ".__Master";   // contains hash of user's passphrase
+char const *Slave   = ".__Slave";    // contains encrypted passwords
+char const *__Master = ".eufnoie";   // use while changing passphrase
+char const *__Slave  = ".uycnweofg"; // use while changing passphrase
 
 #include "credentials.h"
 #include "helpers.c"

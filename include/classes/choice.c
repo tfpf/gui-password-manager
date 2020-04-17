@@ -319,7 +319,7 @@ void add_password(GtkWidget *widget, gpointer data)
 	char *iv_hex      = digest_to_hexdigest(iv,      INIT_VECTOR_LENGTH);
 
 	// write them all to the file
-	FILE *pw_file = fopen(Slave, "ab");
+	FILE *pw_file = fopen(Slave, "a");
 	fprintf(pw_file, "%s\n", e_site_hex);
 	fprintf(pw_file, "%s\n", e_uname_hex);
 	fprintf(pw_file, "%s\n", e_pw_hex);
@@ -337,10 +337,12 @@ void add_password(GtkWidget *widget, gpointer data)
 	items[num_of_items].lens[I_IV]    = INIT_VECTOR_LENGTH;
 
 	// for website and username, memory has to be allocated
+	// because the contents of the entries are being copied
 	// for the rest, direct assignment will work
-	items[num_of_items].ptrs[I_SITE] = malloc((items[num_of_items].lens[I_SITE] + 1) * sizeof(char));
-	strcpy(items[num_of_items].ptrs[I_SITE], site);
+	items[num_of_items].ptrs[I_SITE]  = malloc((items[num_of_items].lens[I_SITE]  + 1) * sizeof(char));
 	items[num_of_items].ptrs[I_UNAME] = malloc((items[num_of_items].lens[I_UNAME] + 1) * sizeof(char));
+
+	strcpy(items[num_of_items].ptrs[I_SITE], site);
 	strcpy(items[num_of_items].ptrs[I_UNAME], uname);
 	items[num_of_items].ptrs[I_PW]  = e_pw;
 	items[num_of_items].ptrs[I_KEY] = e_key;
@@ -505,7 +507,7 @@ void change_passphrase(GtkWidget *widget, gpointer data)
 	GtkWidget **callback_data = data;
 	GtkWidget *window   = callback_data[0];
 	GtkWidget *pp_entry = callback_data[1];
-	GtkWidget *cp_entry = callback_data[1];
+	GtkWidget *cp_entry = callback_data[2];
 	set_credentials(NULL, NULL, pp_entry, cp_entry);
 
 	// read provided information
@@ -527,12 +529,12 @@ void change_passphrase(GtkWidget *widget, gpointer data)
 	}
 	if(strcmp(pp, cp))
 	{
-		gtk_widget_set_tooltip_text(window, "Cannot add passphrase. Fields \'New Passphrase\' and \'Confirm New Passphrase\' do not match.");
+		gtk_widget_set_tooltip_text(window, "Cannot change passphrase. Fields \'New Passphrase\' and \'Confirm New Passphrase\' do not match.");
 		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 		return;
 	}
 
-	// write new hash to file and obtain new key encryption key;
+	// write new hash to file and obtain new key encryption key
 	char unsigned *pph = malloc(SHA512_DIGEST_LENGTH * sizeof *pph);
 	SHA512((char unsigned *)pp, strlen(pp), pph);
 	for(int i = 0; i < HASH_COUNT; ++i)
@@ -540,11 +542,11 @@ void change_passphrase(GtkWidget *widget, gpointer data)
 		SHA512(pph, SHA512_DIGEST_LENGTH, pph);
 	}
 	char *pph_hex = digest_to_hexdigest(pph, SHA512_DIGEST_LENGTH);
-	FILE *pp_file = fopen(_Master, "w");
+	FILE *pp_file = fopen(__Master, "w");
 	fprintf(pp_file, "%s\n", pph_hex);
 	fclose(pp_file);
-	char unsigned *_kek = malloc(SHA256_DIGEST_LENGTH * sizeof *_kek);
-	SHA256((char unsigned *)pp, strlen(pp), _kek);
+	char unsigned *__kek = malloc(SHA256_DIGEST_LENGTH * sizeof *__kek);
+	SHA256((char unsigned *)pp, strlen(pp), __kek);
 
 	// clear RAM
 	memset(pph,     0, 1 * SHA512_DIGEST_LENGTH);
@@ -558,19 +560,106 @@ void change_passphrase(GtkWidget *widget, gpointer data)
 	char unsigned *kek = get_credentials_kek();
 	for(int i = 0; i < num_of_items; ++i)
 	{
-		// website and username are already stored decrypted
-		// first decrypt the key
+		// decrypt the key
 		char unsigned *key;
-		decrypt_AES(items[i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, items[i].ptrs[I_IV], &key);
+		char unsigned *e_key = items[i].ptrs[I_KEY];
+		char unsigned *iv    = items[i].ptrs[I_IV];
+		decrypt_AES(e_key, items[i].lens[I_KEY], kek, iv, &key);
 
-		// use it to get the password
+		// decrypt the password
 		char *pw;
-		int pwlen = decrypt_AES(items[i].ptrs[I_PW], items[i].lens[I_PW], key, items[i].ptrs[I_IV], (char unsigned **)&pw);
+		char unsigned *e_pw = items[i].ptrs[I_PW];
+		int pwlen = decrypt_AES(e_pw, items[i].lens[I_PW], key, iv, (char unsigned **)&pw);
 
-		// 
+		// clear RAM
+		memset(key,   0, ENCRYPT_KEY_LENGTH);
+		memset(iv,    0, INIT_VECTOR_LENGTH);
+		memset(e_pw,  0, items[i].lens[I_PW]);
+		memset(e_key, 0, items[i].lens[I_KEY]);
 
+		// deallocate
+		free(key);
+		free(iv);
+		free(e_pw);
+		free(e_key);
+
+		// obtain website and username, which were not encrypted
+		char *site  = items[i].ptrs[I_SITE];
+		char *uname = items[i].ptrs[I_UNAME];
+
+		// obtain new key and initialisation vector
+		key = generate_random(ENCRYPT_KEY_LENGTH);
+		iv  = generate_random(INIT_VECTOR_LENGTH);
+
+		// encrypt
+		char unsigned *e_site, *e_uname;
+		int e_sitelen  = encrypt_AES((char unsigned *)site,  items[i].lens[I_SITE],  key,   iv, &e_site);
+		int e_unamelen = encrypt_AES((char unsigned *)uname, items[i].lens[I_UNAME], key,   iv, &e_uname);
+		int e_pwlen    = encrypt_AES((char unsigned *)pw,    pwlen,                  key,   iv, &e_pw);
+		int e_keylen   = encrypt_AES(key,                    ENCRYPT_KEY_LENGTH,     __kek, iv, &e_key);
+
+		// obtain the hexdigest of all these
+		char *e_site_hex  = digest_to_hexdigest(e_site,  e_sitelen);
+		char *e_uname_hex = digest_to_hexdigest(e_uname, e_unamelen);
+		char *e_pw_hex    = digest_to_hexdigest(e_pw,    e_pwlen);
+		char *e_key_hex   = digest_to_hexdigest(e_key,   e_keylen);
+		char *iv_hex      = digest_to_hexdigest(iv,      INIT_VECTOR_LENGTH);
+
+		// write them all to the file
+		FILE *pw_file = fopen(__Slave, "a");
+		fprintf(pw_file, "%s\n", e_site_hex);
+		fprintf(pw_file, "%s\n", e_uname_hex);
+		fprintf(pw_file, "%s\n", e_pw_hex);
+		fprintf(pw_file, "%s\n", e_key_hex);
+		fprintf(pw_file, "%s\n", iv_hex);
+		fclose(pw_file);
+
+		// store the required data in RAM
+		items[i].ptrs[I_PW]  = e_pw;
+		items[i].lens[I_PW]  = e_pwlen;
+		items[i].ptrs[I_KEY] = e_key;
+		items[i].lens[I_KEY] = e_keylen;
+		items[i].ptrs[I_IV]  = iv;
+
+		// clear entries
+		del_credentials();
+
+		// clear RAM
+		memset(pw,          0, 1 * pwlen);
+		memset(key,         0, 1 * ENCRYPT_KEY_LENGTH);
+		memset(e_site,      0, 1 * e_sitelen);
+		memset(e_uname,     0, 1 * e_unamelen);
+		memset(e_site_hex,  0, 2 * e_sitelen);
+		memset(e_uname_hex, 0, 2 * e_unamelen);
+		memset(e_pw_hex,    0, 2 * e_pwlen);
+		memset(e_key_hex,   0, 2 * e_keylen);
+		memset(iv_hex,      0, 2 * INIT_VECTOR_LENGTH);
+
+		// deallocate
+		free(pw);
+		free(key);
+		free(e_site);
+		free(e_uname);
+		free(e_site_hex);
+		free(e_uname_hex);
+		free(e_pw_hex);
+		free(e_key_hex);
+		free(iv_hex);
 	}
 
+	// delete the old files, and replace them with the new files
+	remove(Slave);
+	rename(__Slave, Slave);
+	remove(Master);
+	rename(__Master, Master);
+
+	// clear RAM
+	memset(kek, 0, ENCRYPT_KEY_LENGTH);
+
+	// deallocate
+	free(kek);
+
+	credentials->kek = __kek;
 }
 
 /*-----------------------------------------------------------------------------

@@ -65,6 +65,7 @@ void set_list(void)
 			ptr_hex[len] = '\0'; // replacing LF with NUL
 			items[i].lens[j] = len / 2;
 			char unsigned *ptr = hexdigest_to_digest(ptr_hex, items[i].lens[j]);
+			memset(ptr_hex, 0, len);
 			free(ptr_hex);
 			items[i].ptrs[j] = ptr;
 		}
@@ -79,7 +80,7 @@ void set_list(void)
 
 		// to get `site' and `uname', `key' has to be obtained
 		// I have its encrypted version, so decrypt it first
-		decrypt_AES(items[i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
+		decrypt_AES(items[i].ptrs[I_KEY], items[i].lens[I_KEY], kek, iv, &key);
 
 		// now get website and username
 		int sitelen  = decrypt_AES(items[i].ptrs[I_SITE],  items[i].lens[I_SITE],  key, iv, (char unsigned **)&site);
