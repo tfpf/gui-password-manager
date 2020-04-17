@@ -72,9 +72,9 @@ gboolean hide_tooltip(gpointer data)
 
 /*-----------------------------------------------------------------------------
 Case-insensitive substring searching. It uses the naive substring searching
-algorithm, because the text is not expected to be very long. The GCC
-implementation I am using does not have `strcasestr', which is specified by
-POSIX.
+algorithm, because the text is not expected to be very long. This is no longer
+needed, because I figured out how to use `strcasestr', a non-standard extension
+which happens to be available on my system.
 -----------------------------------------------------------------------------*/
 char *strstr_ci(char const *txt, char const *pat)
 {

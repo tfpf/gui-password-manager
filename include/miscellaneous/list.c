@@ -79,11 +79,11 @@ void set_list(void)
 
 		// to get `site' and `uname', `key' has to be obtained
 		// I have its encrypted version, so decrypt it first
-		decrypt(items[i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
+		decrypt_AES(items[i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
 
 		// now get website and username
-		int sitelen  = decrypt(items[i].ptrs[I_SITE],  items[i].lens[I_SITE],  key, iv, (char unsigned **)&site);
-		int unamelen = decrypt(items[i].ptrs[I_UNAME], items[i].lens[I_UNAME], key, iv, (char unsigned **)&uname);
+		int sitelen  = decrypt_AES(items[i].ptrs[I_SITE],  items[i].lens[I_SITE],  key, iv, (char unsigned **)&site);
+		int unamelen = decrypt_AES(items[i].ptrs[I_UNAME], items[i].lens[I_UNAME], key, iv, (char unsigned **)&uname);
 
 		// clear RAM
 		memset(key,                    0, ENCRYPT_KEY_LENGTH);

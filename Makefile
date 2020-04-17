@@ -10,6 +10,7 @@ WIGN   = -Wno-unused-parameter
 SSL    = -lcrypto -lssl
 GTK    = $(shell pkg-config --libs --cflags gtk+-3.0)
 SEARCH = -I./include/miscellaneous -I./include/classes
+DEFINE = -D_GNU_SOURCE
 # install GTK3 with the following command
 # sudo apt install libgtk-3-dev
 # https://askubuntu.com/questions/942010/how-to-compile-c-gtk3-program-in-ubuntu-for-windows
@@ -29,15 +30,15 @@ clean:
 asm:
 	@$(CLEAR)
 	@$(PRINT) "Assembling ...\n"
-	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SSL) $(GTK) $(SEARCH) -S -o $(Assembly) $(Source)
+	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(DEFINE) $(SSL) $(GTK) $(SEARCH) -S -o $(Assembly) $(Source)
 
 comp:
 	@$(PRINT) "Compiling ...\n"
-	@$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SSL) $(GTK) $(SEARCH) -o $(Binary) $(Source)
+	@$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(DEFINE) $(SSL) $(GTK) $(SEARCH) -o $(Binary) $(Source)
 
 pe:
 	@$(PRINT) "Compiling ...\n"
-	@$(WC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SSL) $(GTK) -o $(Executable) $(Source)
+	@$(WC) $(CFLAGS) $(WFLAGS) $(WIGN) $(DEFINE) $(SSL) $(GTK) -o $(Executable) $(Source)
 
 exec:
 	@$(PRINT) "Running ...\n"

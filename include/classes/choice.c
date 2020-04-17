@@ -176,7 +176,7 @@ GtkWidget *create_widget_for_see(GtkWidget *window)
 	// put both `top_grd' and `bot_scw' into a box
 	// this box will be returned so that it can be placed in a notebook
 	GtkWidget *see_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_box_pack_start(GTK_BOX(see_box), top_grd, FALSE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(see_box), top_grd, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(see_box), bot_scw, TRUE, TRUE, 0);
 
 	// website header
@@ -306,10 +306,10 @@ void add_password(GtkWidget *widget, gpointer data)
 
 	// encrypt the website, username, password and key
 	char unsigned *e_site, *e_uname, *e_pw, *e_key;
-	int e_sitelen  = encrypt((char unsigned *)site,  strlen(site),       key, iv, &e_site);
-	int e_unamelen = encrypt((char unsigned *)uname, strlen(uname),      key, iv, &e_uname);
-	int e_pwlen    = encrypt((char unsigned *)pw,    strlen(pw),         key, iv, &e_pw);
-	int e_keylen   = encrypt(key,                    ENCRYPT_KEY_LENGTH, kek, iv, &e_key);
+	int e_sitelen  = encrypt_AES((char unsigned *)site,  strlen(site),       key, iv, &e_site);
+	int e_unamelen = encrypt_AES((char unsigned *)uname, strlen(uname),      key, iv, &e_uname);
+	int e_pwlen    = encrypt_AES((char unsigned *)pw,    strlen(pw),         key, iv, &e_pw);
+	int e_keylen   = encrypt_AES(key,                    ENCRYPT_KEY_LENGTH, kek, iv, &e_key);
 
 	// obtain the hexdigest of all these
 	char *e_site_hex  = digest_to_hexdigest(e_site,  e_sitelen);
@@ -411,7 +411,7 @@ void populate_search_results(GtkWidget *widget, gpointer data)
 	// find out which items match the search term
 	for(int i = 0, j = 0; i < num_of_items; ++i)
 	{
-		if(!strstr_ci(items[i].ptrs[I_SITE], search_term) && !strstr_ci(items[i].ptrs[I_UNAME], search_term))
+		if(!strcasestr(items[i].ptrs[I_SITE], search_term) && !strcasestr(items[i].ptrs[I_UNAME], search_term))
 		{
 			continue;
 		}
@@ -437,8 +437,6 @@ void populate_search_results(GtkWidget *widget, gpointer data)
 		g_signal_connect(pw_button, "clicked", G_CALLBACK(show_password), k);
 		gtk_grid_attach(GTK_GRID(bot_grd), pw_button, 2, j, 1, 1);
 
-		// `j' is the row in which these widgets were added
-		// so, increment it because this item matches the search term
 		++j;
 	}
 	gtk_widget_show_all(bot_grd);
@@ -458,8 +456,8 @@ void show_password(GtkWidget *button, gpointer data)
 	char unsigned *iv = items[*i].ptrs[I_IV];
 	char unsigned *key;
 	char *pw;
-	decrypt(items[*i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
-	decrypt(items[*i].ptrs[I_PW], items[*i].lens[I_PW], key, iv, (char unsigned **)&pw);
+	decrypt_AES(items[*i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, iv, &key);
+	decrypt_AES(items[*i].ptrs[I_PW], items[*i].lens[I_PW], key, iv, (char unsigned **)&pw);
 	gtk_button_set_label(GTK_BUTTON(button), pw);
 
 	// clean up
@@ -563,11 +561,11 @@ void change_passphrase(GtkWidget *widget, gpointer data)
 		// website and username are already stored decrypted
 		// first decrypt the key
 		char unsigned *key;
-		decrypt(items[i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, items[i].ptrs[I_IV], &key);
+		decrypt_AES(items[i].ptrs[I_KEY], ENCRYPT_KEY_LENGTH, kek, items[i].ptrs[I_IV], &key);
 
 		// use it to get the password
 		char *pw;
-		int pwlen = decrypt(items[i].ptrs[I_PW], items[i].lens[I_PW], key, items[i].ptrs[I_IV], (char unsigned **)&pw);
+		int pwlen = decrypt_AES(items[i].ptrs[I_PW], items[i].lens[I_PW], key, items[i].ptrs[I_IV], (char unsigned **)&pw);
 
 		// 
 

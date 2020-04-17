@@ -2,7 +2,7 @@
 Encrypt the input array of bytes using 256-bit AES. Automatically allocate
 sufficient memory to store the ciphertext.
 -----------------------------------------------------------------------------*/
-int encrypt(char unsigned *pt, int ptlen, char unsigned *key, char unsigned *iv, char unsigned **ct)
+int encrypt_AES(char unsigned *pt, int ptlen, char unsigned *key, char unsigned *iv, char unsigned **ct)
 {
 	// allocate space to store ciphertext
 	// to be on the safer side, allocate more space than required
@@ -27,7 +27,7 @@ int encrypt(char unsigned *pt, int ptlen, char unsigned *key, char unsigned *iv,
 Decrypt the input array of bytes using 256-bit AES. Automatically allocate
 sufficient memory to store the plaintext.
 -----------------------------------------------------------------------------*/
-int decrypt(char unsigned *ct, int ctlen, char unsigned *key, char unsigned *iv, char unsigned **pt)
+int decrypt_AES(char unsigned *ct, int ctlen, char unsigned *key, char unsigned *iv, char unsigned **pt)
 {
 	// allocate space to store plaintext
 	// to be on the safer side, allocate more space than required
