@@ -355,8 +355,8 @@ void add_password(GtkButton *button, gpointer data)
 
 /*-----------------------------------------------------------------------------
 Clear whatever was populated in the grid because of a previous call to the
-function `populate_search_results'. However, do not clear the three labels
-which are used as headers for whatever data is populated.
+function `populate_search_results'. However, do not clear the labels which are
+used as headers for whatever data is populated.
 -----------------------------------------------------------------------------*/
 void delete_previous_search_results(GtkWidget *bot_grd)
 {
@@ -420,25 +420,26 @@ void populate_search_results(GtkEntry *entry, gpointer data)
 		GtkWidget *chg_image = gtk_image_new_from_file(icon_edit);
 		GtkWidget *chg_button = gtk_button_new();
 		gtk_button_set_image(GTK_BUTTON(chg_button), chg_image);
-		gtk_widget_set_halign(chg_button, GTK_ALIGN_CENTER);
-		gtk_widget_set_hexpand(chg_button, FALSE);
+		// gtk_widget_set_halign(chg_button, GTK_ALIGN_CENTER);
+		// gtk_widget_set_hexpand(chg_button, TRUE);
 		gtk_widget_set_tooltip_text(chg_button, "Click to edit this item.");
+		g_signal_connect(chg_button, "clicked", G_CALLBACK(change_password), k);
 		gtk_grid_attach(GTK_GRID(bot_grd), chg_button, 3, j, 1, 1);
 
 		// delete button
 		GtkWidget *del_image = gtk_image_new_from_file(icon_del);
 		GtkWidget *del_button = gtk_button_new();
 		gtk_button_set_image(GTK_BUTTON(del_button), del_image);
-		gtk_widget_set_halign(del_button, GTK_ALIGN_CENTER);
-		gtk_widget_set_hexpand(del_button, FALSE);
+		// gtk_widget_set_halign(del_button, GTK_ALIGN_CENTER);
+		// gtk_widget_set_hexpand(del_button, TRUE);
 		gtk_widget_set_tooltip_text(del_button, "Click to delete this item.");
+		g_signal_connect(del_button, "clicked", G_CALLBACK(delete_password), k);
 		gtk_grid_attach(GTK_GRID(bot_grd), del_button, 4, j, 1, 1);
 
 		++j;
 	}
 	gtk_widget_show_all(bot_grd);
 }
-
 
 /*-----------------------------------------------------------------------------
 Modify the label of a button. Find the password corresponding to the website
@@ -491,6 +492,24 @@ gboolean hide_password(gpointer data)
 	memset(pw, 0, strlen(pw));
 	gtk_button_set_label(GTK_BUTTON(button), HIDDEN_PASSWORD_PLACEHOLDER);
 	return FALSE;
+}
+
+/*-----------------------------------------------------------------------------
+Delete the password associated with the specified item.
+-----------------------------------------------------------------------------*/
+void delete_password(GtkButton *button, gpointer data)
+{
+	int *i = data;
+	printf("delete %d\n", *i);
+}
+
+/*-----------------------------------------------------------------------------
+Change the password associated with the specified item.
+-----------------------------------------------------------------------------*/
+void change_password(GtkButton *button, gpointer data)
+{
+	int *i = data;
+	printf("change %d\n", *i);
 }
 
 /*-----------------------------------------------------------------------------
