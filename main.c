@@ -1,3 +1,8 @@
+/*-----------------------------------------------------------------------------
+Preprocessor directives.
+-----------------------------------------------------------------------------*/
+#define _GNU_SOURCE
+
 #include <ctype.h>
 #include <gtk/gtk.h>
 #include <openssl/conf.h>
@@ -10,34 +15,46 @@
 #include <strings.h>
 #include <time.h>
 
-#define HASH_COUNT 65535
 
-// lengths in bytes
-#define ENCRYPT_KEY_LENGTH  32
-#define DECRYPT_KEY_LENGTH  32
-#define INIT_VECTOR_LENGTH  16
-#define RNGS_BUFFER_LENGTH 256
+/*-----------------------------------------------------------------------------
+Definition of constants.
+-----------------------------------------------------------------------------*/
+enum {HASH_COUNT = 65535};
 
-#define TOOLTIP_MESSAGE_TIMEOUT   5 * G_TIME_SPAN_MILLISECOND
-#define PASSWORD_DISPLAY_TIMEOUT 30 * G_TIME_SPAN_MILLISECOND
+enum
+{
+	ENCRYPT_KEY_LENGTH =  32,
+	INIT_VECTOR_LENGTH =  16,
+	RNGS_BUFFER_LENGTH = 256
+};
 
-#define PTRS_PER_ITEM 5
-#define I_SITE  0
-#define I_UNAME 1
-#define I_PW    2
-#define I_KEY   3
-#define I_IV    4
+guint const TOOLTIP_MESSAGE_TIMEOUT  =  5 * G_TIME_SPAN_MILLISECOND;
+guint const PASSWORD_DISPLAY_TIMEOUT = 30 * G_TIME_SPAN_MILLISECOND;
 
-#define HIDDEN_PASSWORD_PLACEHOLDER "[HIDDEN]"
+// the order in which the different pieces of each item are stored
+enum
+{
+	I_SITE        = 0, // website
+	I_UNAME       = 1, // username
+	I_PW          = 2, // (encrypted) password
+	I_KEY         = 3, // (encrypted) key
+	I_IV          = 4, // initialisation vector
+	PTRS_PER_ITEM = 5  // total number of above items
+};
 
-// where scrambled data is stored
-char const *Master = ".o.Master";
-char const *Slave  = ".o.Slave";
+char const *HIDDEN_PASSWORD_PLACEHOLDER = "[HIDDEN]";
 
-// where scrambled data will be stored while changing passphrase
-char const *__Master = ".n.Master";
-char const *__Slave  = ".n.Slave";
+// where data is stored
+char const *Master = ".Master.o";
+char const *Slave  = ".Slave.o";
 
+// where data will be temporarily stored while changing passphrase
+char const *__Master = ".Master.n";
+char const *__Slave  = ".Slave.n";
+
+/*-----------------------------------------------------------------------------
+More preprocessor directives.
+-----------------------------------------------------------------------------*/
 #include "credentials.h"
 #include "helpers.c"
 #include "cipher.c"

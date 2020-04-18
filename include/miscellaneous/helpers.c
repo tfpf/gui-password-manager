@@ -116,21 +116,23 @@ recursively clear all those children which are entries.
 -----------------------------------------------------------------------------*/
 void clear_all_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer data)
 {
-	GtkEntry *entry = data;
+	GtkWidget *widget = data;
 
-	if(GTK_IS_ENTRY(entry) == TRUE)
+	if(GTK_IS_ENTRY(widget) == TRUE)
 	{
-		GtkEntryBuffer *buffer = gtk_entry_get_buffer(entry);
+		printf("entry\n");
+		GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(widget));
 		gtk_entry_buffer_delete_text(buffer, 0, -1);
 		return;
 	}
 
-	if(GTK_IS_CONTAINER(entry) == FALSE)
+	if(GTK_IS_CONTAINER(widget) == FALSE)
 	{
 		return;
 	}
 
 	// if this widget is not an entry, recursively check its children
-	GList *children = gtk_container_get_children(GTK_CONTAINER(entry));
+	printf("container\n");
+	GList *children = gtk_container_get_children(GTK_CONTAINER(widget));
 }
 
