@@ -40,7 +40,7 @@ void request_choice(void)
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), cpp_grd, cpp_lbl);
 	gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_LEFT);
 	gtk_container_add(GTK_CONTAINER(window), notebook);
-	g_signal_connect(GTK_NOTEBOOK(notebook), "switch-page", G_CALLBACK(clear_all_entries), notebook);
+	g_signal_connect(GTK_NOTEBOOK(notebook), "switch-page", G_CALLBACK(clear_all_entries), add_grd);
 
 	// show everything
 	gtk_widget_show_all(window);
@@ -674,7 +674,7 @@ void quit_choice(GtkWidget *widget, gpointer data)
 {
 	GtkNotebook *notebook = data;
 
-	clear_all_entries(NULL, NULL, 0, notebook);
+	// clear_all_entries(NULL, NULL, 0, notebook);
 	gtk_main_quit();
 	memset(credentials->kek, 0, ENCRYPT_KEY_LENGTH);
 	free(credentials->kek);

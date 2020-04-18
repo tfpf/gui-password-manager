@@ -15,6 +15,7 @@ follows.
 * Download/Clone the repository to some convenient location on your computer.
 * Open a terminal window to that location.
 * Enter the command `make run`.
+
 The current passphrase is `q`, and you can change it. Some sample passwords are
 already saved, and you can view them once you have entered the passphrase.
 

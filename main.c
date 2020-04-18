@@ -15,17 +15,15 @@ Preprocessor directives.
 #include <strings.h>
 #include <time.h>
 
-
 /*-----------------------------------------------------------------------------
 Definition of constants.
 -----------------------------------------------------------------------------*/
-enum {HASH_COUNT = 65535};
-
 enum
 {
-	ENCRYPT_KEY_LENGTH =  32,
-	INIT_VECTOR_LENGTH =  16,
-	RNGS_BUFFER_LENGTH = 256
+	ENCRYPT_KEY_LENGTH =    32,
+	INIT_VECTOR_LENGTH =    16,
+	RNGS_BUFFER_LENGTH =   256,
+	HASH_COUNT         = 65535
 };
 
 guint const TOOLTIP_MESSAGE_TIMEOUT  =  5 * G_TIME_SPAN_MILLISECOND;

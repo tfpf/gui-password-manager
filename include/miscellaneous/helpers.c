@@ -112,19 +112,25 @@ char *strstr_ci(char const *txt, char const *pat)
 
 /*-----------------------------------------------------------------------------
 Clear the provided GTK entry. If the provided widget is not an entry,
-recursively clear all those children which are entries.
+recursively clear all those children which are entries. This still needs a lot
+of work.
 -----------------------------------------------------------------------------*/
 void clear_all_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer data)
 {
 	GtkWidget *widget = data;
+	return;
+	printf("%p,", widget);
+	printf("%s\n", G_OBJECT_TYPE_NAME(widget));
 
-	if(GTK_IS_ENTRY(widget) == TRUE)
-	{
-		printf("entry\n");
-		GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(widget));
-		gtk_entry_buffer_delete_text(buffer, 0, -1);
-		return;
-	}
+	// if(widget == NULL) printf("is null\n");
+	// if(GTK_IS_WIDGET(widget)) printf("%s\n", G_OBJECT_TYPE_NAME(widget));
+
+	// if(GTK_IS_ENTRY(widget) == TRUE)
+	// {
+	// 	GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(widget));
+	// 	gtk_entry_buffer_delete_text(buffer, 0, -1);
+	// 	return;
+	// }
 
 	if(GTK_IS_CONTAINER(widget) == FALSE)
 	{
@@ -132,7 +138,10 @@ void clear_all_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, g
 	}
 
 	// if this widget is not an entry, recursively check its children
-	printf("container\n");
 	GList *children = gtk_container_get_children(GTK_CONTAINER(widget));
+	for(GList *child = children; child != NULL; child = g_list_next(child))
+	{
+		clear_all_entries(NULL, NULL, 0, child);
+	}
 }
 
