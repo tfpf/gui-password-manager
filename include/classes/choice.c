@@ -7,7 +7,7 @@ void request_choice(void)
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
 	gtk_window_maximize(GTK_WINDOW(window));
-	gtk_window_set_icon_from_file(GTK_WINDOW(window), "favicon.png", NULL);
+	gtk_window_set_icon_from_file(GTK_WINDOW(window), icon_main, NULL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
 	gtk_window_set_title(GTK_WINDOW(window), "Password Manager");
@@ -152,22 +152,22 @@ GtkWidget *create_widget_for_mng(GtkWidget *window)
 
 	// website header
 	GtkWidget *site_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(site_label), "<span weight=\"bold\" foreground=\"green\">                         Website                         </span>");
+	gtk_label_set_markup(GTK_LABEL(site_label), "<span weight=\"bold\" foreground=\"green\">                      Website                      </span>");
 	gtk_grid_attach(GTK_GRID(bot_grd), site_label, 0, -1, 1, 1);
 
 	// username header
 	GtkWidget *uname_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(uname_label), "<span weight=\"bold\" foreground=\"green\">                         Username                         </span>");
+	gtk_label_set_markup(GTK_LABEL(uname_label), "<span weight=\"bold\" foreground=\"green\">                      Username                      </span>");
 	gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, -1, 1, 1);
 
 	// password header
 	GtkWidget *pw_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(pw_label), "<span weight=\"bold\" foreground=\"green\">                         Password                         </span>");
+	gtk_label_set_markup(GTK_LABEL(pw_label), "<span weight=\"bold\" foreground=\"green\">                      Password                      </span>");
 	gtk_grid_attach(GTK_GRID(bot_grd), pw_label, 2, -1, 1, 1);
 
 	// action header
 	GtkWidget *act_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(act_label), "<span weight=\"bold\" foreground=\"green\">Actions</span>");
+	gtk_label_set_markup(GTK_LABEL(act_label), "<span weight=\"bold\" foreground=\"green\">    Actions    </span>");
 	gtk_grid_attach(GTK_GRID(bot_grd), act_label, 3, -1, 2, 1);
 
 	populate_search_results(GTK_ENTRY(search_entry), bot_grd);
@@ -417,7 +417,7 @@ void populate_search_results(GtkEntry *entry, gpointer data)
 		gtk_grid_attach(GTK_GRID(bot_grd), pw_button, 2, j, 1, 1);
 
 		// edit button
-		GtkWidget *chg_image = gtk_image_new_from_file("edit.png");
+		GtkWidget *chg_image = gtk_image_new_from_file(icon_edit);
 		GtkWidget *chg_button = gtk_button_new();
 		gtk_button_set_image(GTK_BUTTON(chg_button), chg_image);
 		gtk_widget_set_halign(chg_button, GTK_ALIGN_CENTER);
@@ -426,7 +426,7 @@ void populate_search_results(GtkEntry *entry, gpointer data)
 		gtk_grid_attach(GTK_GRID(bot_grd), chg_button, 3, j, 1, 1);
 
 		// delete button
-		GtkWidget *del_image = gtk_image_new_from_file("delete.png");
+		GtkWidget *del_image = gtk_image_new_from_file(icon_del);
 		GtkWidget *del_button = gtk_button_new();
 		gtk_button_set_image(GTK_BUTTON(del_button), del_image);
 		gtk_widget_set_halign(del_button, GTK_ALIGN_CENTER);
