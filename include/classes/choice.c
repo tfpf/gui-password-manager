@@ -503,9 +503,9 @@ void delete_password(GtkButton *button, gpointer data)
 
 	// grid which will be put in the confirm dialogue box
 	GtkWidget *confirm_grd = gtk_grid_new();
-	gtk_container_set_border_width(GTK_CONTAINER(confirm_grd), 50);
-	gtk_grid_set_column_spacing(GTK_GRID(confirm_grd), 25);
-	gtk_grid_set_row_spacing(GTK_GRID(confirm_grd), 25);
+	gtk_container_set_border_width(GTK_CONTAINER(confirm_grd), 25);
+	gtk_grid_set_column_spacing(GTK_GRID(confirm_grd), 15);
+	gtk_grid_set_row_spacing(GTK_GRID(confirm_grd), 15);
 	gtk_widget_set_halign(confirm_grd, GTK_ALIGN_CENTER);
 	gtk_widget_set_hexpand(confirm_grd, TRUE);
 	GtkWidget *confirm_img = gtk_image_new_from_file(icon_warn);
@@ -532,6 +532,79 @@ void delete_password(GtkButton *button, gpointer data)
 	{
 		return;
 	}
+
+	// clear RAM and deallocate
+	// then shift all elements to complete the delete operation
+	for(int j = 0; j < PTRS_PER_ITEM; ++j)
+	{
+		memset(items[*i].ptrs[j], 0, items[*i].lens[j]);
+		free(items[*i].ptrs[j]);
+	}
+	for(int j = *i; j < num_of_items - 1; ++j)
+	{
+		items[j] = items[j + 1];
+	}
+	--num_of_items;
+
+	// write the modified list of items to the password file
+	for(int j = 0; j < num_of_items; ++j)
+	{
+		char unsigned *e_pw = items[j].ptrs[I_PW];
+
+		// obtain key
+		char unsigned *kek   = get_credentials_kek();
+		char unsigned *e_key = items[j].ptrs[I_KEY];
+		char unsigned *iv    = items[j].ptrs[I_IV];
+		char unsigned *key;
+		int keylen = decrypt_AES(e_key, items[j].lens[I_KEY], kek, iv, &key);
+
+		// encrypt website and username
+		char *site  = items[j].ptrs[I_SITE];
+		char *uname = items[j].ptrs[I_UNAME];
+		char unsigned *e_site, *e_uname;
+		int e_sitelen  = encrypt_AES((char unsigned *)site,  items[j].lens[I_SITE],  key, iv, &e_site);
+		int e_unamelen = encrypt_AES((char unsigned *)uname, items[j].lens[I_UNAME], key, iv, &e_uname);
+
+		// obtain their hexdigests
+		char *e_site_hex  = digest_to_hexdigest(e_site,  e_sitelen);
+		char *e_uname_hex = digest_to_hexdigest(e_uname, e_unamelen);
+		char *e_pw_hex    = digest_to_hexdigest(e_pw,    items[j].lens[I_PW]);
+		char *e_key_hex   = digest_to_hexdigest(e_key,   items[j].lens[I_KEY]);
+		char *iv_hex      = digest_to_hexdigest(iv,      INIT_VECTOR_LENGTH);
+
+		// write everything to the file
+		FILE *pw_file = fopen(__Slave, "a");
+		fprintf(pw_file, "%s\n", e_site_hex);
+		fprintf(pw_file, "%s\n", e_uname_hex);
+		fprintf(pw_file, "%s\n", e_pw_hex);
+		fprintf(pw_file, "%s\n", e_key_hex);
+		fprintf(pw_file, "%s\n", iv_hex);
+		fclose(pw_file);
+
+		// clear RAM
+		memset(key,         0, 1 * keylen);
+		memset(e_site,      0, 1 * e_sitelen);
+		memset(e_uname,     0, 1 * e_unamelen);
+		memset(e_site_hex,  0, 2 * e_sitelen);
+		memset(e_uname_hex, 0, 2 * e_unamelen);
+		memset(e_pw_hex,    0, 2 * items[j].lens[I_PW]);
+		memset(e_key_hex,   0, 2 * items[j].lens[I_KEY]);
+		memset(iv_hex,      0, 2 * INIT_VECTOR_LENGTH);
+
+		// deallocate
+		free(key);
+		free(e_site);
+		free(e_uname);
+		free(e_site_hex);
+		free(e_uname_hex);
+		free(e_pw_hex);
+		free(e_key_hex);
+		free(iv_hex);
+	}
+
+	// replace old file with new
+	remove(Slave);
+	rename(__Slave, Slave);
 }
 
 /*-----------------------------------------------------------------------------
