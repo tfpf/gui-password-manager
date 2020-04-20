@@ -15,7 +15,7 @@ void request_choice(void)
 	// notebook tab to add password
 	GtkWidget *add_grd = create_widget_for_add(window);
 	GtkWidget *add_lbl = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(add_lbl), "<span weight=\"normal\">Add Password</span>");
+	gtk_label_set_markup(GTK_LABEL(add_lbl), "<span weight=\"normal\">Add New Password</span>");
 
 	// notebook tab to manage passwords
 	GtkWidget *mng_box = create_widget_for_mng(window);
@@ -43,7 +43,7 @@ void request_choice(void)
 }
 
 /*-----------------------------------------------------------------------------
-Populate the 'Add Password' page of the notebook.
+Populate the 'Add New Password' page of the notebook.
 -----------------------------------------------------------------------------*/
 GtkWidget *create_widget_for_add(GtkWidget *window)
 {
@@ -96,7 +96,7 @@ GtkWidget *create_widget_for_add(GtkWidget *window)
 	data[4] = cp_entry;
 
 	// button
-	GtkWidget *add_btn = gtk_button_new_with_label("Add Password");
+	GtkWidget *add_btn = gtk_button_new_with_label("Add New Password");
 	g_signal_connect(GTK_BUTTON(add_btn), "clicked", G_CALLBACK(add_password), data);
 	gtk_grid_attach(GTK_GRID(add_grd), add_btn, 0, 5, 2, 1);
 
@@ -420,8 +420,6 @@ void populate_search_results(GtkEntry *entry, gpointer data)
 		GtkWidget *chg_image = gtk_image_new_from_file(icon_edit);
 		GtkWidget *chg_button = gtk_button_new();
 		gtk_button_set_image(GTK_BUTTON(chg_button), chg_image);
-		// gtk_widget_set_halign(chg_button, GTK_ALIGN_CENTER);
-		// gtk_widget_set_hexpand(chg_button, TRUE);
 		gtk_widget_set_tooltip_text(chg_button, "Click to edit this item.");
 		g_signal_connect(chg_button, "clicked", G_CALLBACK(change_password), k);
 		gtk_grid_attach(GTK_GRID(bot_grd), chg_button, 3, j, 1, 1);
@@ -430,8 +428,6 @@ void populate_search_results(GtkEntry *entry, gpointer data)
 		GtkWidget *del_image = gtk_image_new_from_file(icon_del);
 		GtkWidget *del_button = gtk_button_new();
 		gtk_button_set_image(GTK_BUTTON(del_button), del_image);
-		// gtk_widget_set_halign(del_button, GTK_ALIGN_CENTER);
-		// gtk_widget_set_hexpand(del_button, TRUE);
 		gtk_widget_set_tooltip_text(del_button, "Click to delete this item.");
 		g_signal_connect(del_button, "clicked", G_CALLBACK(delete_password), k);
 		gtk_grid_attach(GTK_GRID(bot_grd), del_button, 4, j, 1, 1);
@@ -500,7 +496,42 @@ Delete the password associated with the specified item.
 void delete_password(GtkButton *button, gpointer data)
 {
 	int *i = data;
-	printf("delete %d\n", *i);
+
+	// obtain the toplevel window
+	// it will be used as the parent of the confirm dialogue box
+	GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+
+	// grid which will be put in the confirm dialogue box
+	GtkWidget *confirm_grd = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(confirm_grd), 50);
+	gtk_grid_set_column_spacing(GTK_GRID(confirm_grd), 25);
+	gtk_grid_set_row_spacing(GTK_GRID(confirm_grd), 25);
+	gtk_widget_set_halign(confirm_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(confirm_grd, TRUE);
+	GtkWidget *confirm_img = gtk_image_new_from_file(icon_warn);
+	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_img, 0, 0, 1, 1);
+	GtkWidget *confirm_lbl = gtk_label_new("Are you sure you want to delete this item?\nThis action is irreversible.");
+	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_lbl, 1, 0, 1, 1);
+
+	// create the confirm dialogue box
+	GtkWidget *confirm = gtk_dialog_new();
+	gtk_window_set_resizable(GTK_WINDOW(confirm), FALSE);
+	gtk_window_set_title(GTK_WINDOW(confirm), "Confirm Delete");
+	gtk_window_set_transient_for(GTK_WINDOW(confirm), GTK_WINDOW(window));
+
+	// put the grid and some buttons in it
+	GtkWidget *confirm_box = gtk_dialog_get_content_area(GTK_DIALOG(confirm));
+	gtk_container_add(GTK_CONTAINER(confirm_box), confirm_grd);
+	gtk_dialog_add_buttons(GTK_DIALOG(confirm), "Cancel", GTK_RESPONSE_REJECT, "Delete", GTK_RESPONSE_ACCEPT, NULL);
+	gtk_dialog_set_default_response(GTK_DIALOG(confirm), GTK_RESPONSE_REJECT);
+	gtk_widget_show_all(confirm);
+
+	int response = gtk_dialog_run(GTK_DIALOG(confirm));
+	gtk_widget_destroy(confirm);
+	if(response != GTK_RESPONSE_ACCEPT)
+	{
+		return;
+	}
 }
 
 /*-----------------------------------------------------------------------------
@@ -510,6 +541,7 @@ void change_password(GtkButton *button, gpointer data)
 {
 	int *i = data;
 	printf("change %d\n", *i);
+	// gtk_widget_hide(window);
 }
 
 /*-----------------------------------------------------------------------------
