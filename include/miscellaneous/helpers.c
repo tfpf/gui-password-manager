@@ -3,6 +3,8 @@ void wait(int unsigned delay);
 gboolean hide_tooltip(gpointer data);
 char *digest_to_hexdigest(char unsigned *digest, size_t size);
 char unsigned *hexdigest_to_digest(char *hexdigest, size_t size);
+void clear_all_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer data);
+void __clear_all_entries(GtkWidget *widget, gpointer data);
 
 /*-----------------------------------------------------------------------------
 Block program execution for aome amount of time. This will not be used in the
@@ -111,37 +113,48 @@ char *strstr_ci(char const *txt, char const *pat)
 }
 
 /*-----------------------------------------------------------------------------
-Clear the provided GTK entry. If the provided widget is not an entry,
-recursively clear all those children which are entries. This still needs a lot
-of work.
+Hand over the provided GTK container to the `__clear_single_entry' function,
+which will recursively clear each GTK entry which is a child (direct or
+indirect) of the container.
 -----------------------------------------------------------------------------*/
 void clear_all_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer data)
 {
 	GtkWidget *widget = data;
-	return;
-	printf("%p,", widget);
-	printf("%s\n", G_OBJECT_TYPE_NAME(widget));
+	gtk_container_foreach(GTK_CONTAINER(widget), __clear_all_entries, NULL);
+}
 
-	// if(widget == NULL) printf("is null\n");
-	// if(GTK_IS_WIDGET(widget)) printf("%s\n", G_OBJECT_TYPE_NAME(widget));
-
-	// if(GTK_IS_ENTRY(widget) == TRUE)
-	// {
-	// 	GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(widget));
-	// 	gtk_entry_buffer_delete_text(buffer, 0, -1);
-	// 	return;
-	// }
-
-	if(GTK_IS_CONTAINER(widget) == FALSE)
+/*-----------------------------------------------------------------------------
+If the widget is an entry, clear it. If it is container, check its children
+and clear those which are entries.
+Question. Why did I create a separate function `__clear_all_entries'? I could
+just have inserted the below code in `clear_all_entries'. That way, there need
+be only one function.
+Answer. `clear_all_entries' is a callback for the `switch-page' signal of a
+notebook. `__clear_all_entries' is a callback for the `foreach' function. They
+have different signatures. That is why I created the latter, a separate
+function.
+-----------------------------------------------------------------------------*/
+void __clear_all_entries(GtkWidget *widget, gpointer data)
+{
+	if(GTK_IS_ENTRY(widget) == TRUE)
 	{
+		// explanation for the peculiar set of actions
+		// assume that the user adds a new password
+		// and then switched to the 'Manage Passords' page
+		// newly added password will not be visible there
+		// 'Manage Passwords' page was populated before adding password
+		// it is refreshed when the entry on that page changes
+		// that is why I artifically change the entry text like this
+		GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(widget));
+		gtk_entry_buffer_delete_text(buffer, 0, -1);
+		gtk_entry_buffer_set_text(buffer, "", -1);
+		gtk_entry_buffer_delete_text(buffer, 0, -1);
 		return;
 	}
 
-	// if this widget is not an entry, recursively check its children
-	GList *children = gtk_container_get_children(GTK_CONTAINER(widget));
-	for(GList *child = children; child != NULL; child = g_list_next(child))
+	if(GTK_IS_CONTAINER(widget) == TRUE)
 	{
-		clear_all_entries(NULL, NULL, 0, child);
+		gtk_container_foreach(GTK_CONTAINER(widget), __clear_all_entries, NULL);
 	}
 }
 

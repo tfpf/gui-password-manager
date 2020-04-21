@@ -34,7 +34,7 @@ void request_choice(void)
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), cpp_grd, cpp_lbl);
 	gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_LEFT);
 	gtk_container_add(GTK_CONTAINER(window), notebook);
-	g_signal_connect(GTK_NOTEBOOK(notebook), "switch-page", G_CALLBACK(clear_all_entries), add_grd);
+	g_signal_connect(GTK_NOTEBOOK(notebook), "switch-page", G_CALLBACK(clear_all_entries), window);
 
 	// show everything
 	gtk_widget_show_all(window);
@@ -605,6 +605,8 @@ void delete_password(GtkButton *button, gpointer data)
 	// replace old file with new
 	remove(Slave);
 	rename(__Slave, Slave);
+
+	__clear_all_entries(window, NULL);
 }
 
 /*-----------------------------------------------------------------------------
