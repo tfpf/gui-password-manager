@@ -1,5 +1,5 @@
 void request_choice(void);
-void quit_choice(GtkWidget *widget, gpointer data);
+void quit_choice(GtkWindow *window, gpointer data);
 void add_password(GtkButton *button, gpointer data);
 void change_password(GtkButton *button, gpointer data);
 void delete_password(GtkButton *button, gpointer data);

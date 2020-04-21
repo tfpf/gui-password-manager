@@ -2,10 +2,10 @@
 struct
 {
 	// entry buffers of entries which contain data
-	GtkEntryBuffer *site;
-	GtkEntryBuffer *uname;
-	GtkEntryBuffer *pw;
-	GtkEntryBuffer *cp;
+	char const *site;
+	char const *uname;
+	char const *pw;
+	char const *cp;
 
 	// key encryption key which will be used to encrypt the AES keys
 	// which themselves will be used to encrypt the data

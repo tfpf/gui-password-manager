@@ -104,8 +104,7 @@ void validate_passphrase(GtkButton *button, gpointer data)
 	// compare
 	if(strcmp(pph_hex, pph_s))
 	{
-		// clear entries
-		del_credentials();
+		__clear_all_entries(window, NULL);
 
 		// clear RAM
 		memset(pph,     0, 1 * SHA512_DIGEST_LENGTH);
@@ -128,8 +127,7 @@ void validate_passphrase(GtkButton *button, gpointer data)
 	SHA256((char unsigned *)pp, strlen(pp), kek);
 	credentials->kek = kek;
 
-	// clear entries
-	del_credentials();
+	__clear_all_entries(window, NULL);
 
 	// clear RAM
 	memset(pph,     0, 1 * SHA512_DIGEST_LENGTH);
@@ -153,9 +151,9 @@ window loop. Find out the status (whether the user entered the correct
 passphrase or not) by checking whether the key encryption key has been set or
 not. If user failed to log in, quit the application.
 -----------------------------------------------------------------------------*/
-void quit_passphrase(GtkWidget *widget, gpointer data)
+void quit_passphrase(GtkWindow *window, gpointer data)
 {
-	del_credentials();
+	__clear_all_entries(GTK_WIDGET(window), NULL);
 	gtk_main_quit();
 	if(credentials->kek == NULL)
 	{

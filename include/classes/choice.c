@@ -38,7 +38,7 @@ void request_choice(void)
 
 	// show everything
 	gtk_widget_show_all(window);
-	g_signal_connect(window, "destroy", G_CALLBACK(quit_choice), notebook);
+	g_signal_connect(window, "destroy", G_CALLBACK(quit_choice), window);
 	gtk_main();
 }
 
@@ -324,8 +324,7 @@ void add_password(GtkButton *button, gpointer data)
 	items[num_of_items].ptrs[I_KEY] = e_key;
 	items[num_of_items].ptrs[I_IV]  = iv;
 
-	// clear entries
-	del_credentials();
+	__clear_all_entries(window, NULL);
 
 	// clear RAM
 	memset(key,         0, 1 * ENCRYPT_KEY_LENGTH);
@@ -607,6 +606,9 @@ void delete_password(GtkButton *button, gpointer data)
 	rename(__Slave, Slave);
 
 	__clear_all_entries(window, NULL);
+
+	gtk_widget_set_tooltip_text(window, "Password deleted successfully.");
+	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 }
 
 /*-----------------------------------------------------------------------------
@@ -743,9 +745,6 @@ void change_passphrase(GtkButton *button, gpointer data)
 		items[i].lens[I_KEY] = e_keylen;
 		items[i].ptrs[I_IV]  = iv;
 
-		// clear entries
-		del_credentials();
-
 		// clear RAM
 		memset(pw,          0, 1 * pwlen);
 		memset(key,         0, 1 * ENCRYPT_KEY_LENGTH);
@@ -775,6 +774,8 @@ void change_passphrase(GtkButton *button, gpointer data)
 	remove(Master);
 	rename(__Master, Master);
 
+	__clear_all_entries(window, NULL);
+
 	// clear RAM
 	memset(kek, 0, ENCRYPT_KEY_LENGTH);
 
@@ -791,11 +792,9 @@ void change_passphrase(GtkButton *button, gpointer data)
 Clear the data in the global struct variable. Also clear the key encryption
 key. Deallocate all memory and quit.
 -----------------------------------------------------------------------------*/
-void quit_choice(GtkWidget *widget, gpointer data)
+void quit_choice(GtkWindow *window, gpointer data)
 {
-	// GtkNotebook *notebook = data;
-
-	// clear_all_entries(NULL, NULL, 0, notebook);
+	__clear_all_entries(GTK_WIDGET(window), NULL);
 	gtk_main_quit();
 	memset(credentials->kek, 0, ENCRYPT_KEY_LENGTH);
 	free(credentials->kek);
