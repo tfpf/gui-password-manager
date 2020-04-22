@@ -7,6 +7,7 @@ WC     = x86_64-w64-mingw32-gcc
 CFLAGS = -O0
 WFLAGS = -Wall -Wextra
 WIGN   = -Wno-unused-parameter
+SEGVTR = -g -rdynamic
 SSL    = -lcrypto -lssl
 GTK    = $(shell pkg-config --libs --cflags gtk+-3.0)
 SEARCH = -I./include/miscellaneous -I./include/classes
@@ -29,11 +30,11 @@ clean:
 asm:
 	@$(CLEAR)
 	@$(PRINT) "Assembling ...\n"
-	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SSL) $(GTK) $(SEARCH) -S -o $(Assembly) $(Source)
+	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SEGVTR) $(SSL) $(GTK) $(SEARCH) -S -o $(Assembly) $(Source)
 
 comp:
 	@$(PRINT) "Compiling ...\n"
-	@$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SSL) $(GTK) $(SEARCH) -o $(Binary) $(Source)
+	@$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SEGVTR) $(SSL) $(GTK) $(SEARCH) -o $(Binary) $(Source)
 
 pe:
 	@$(PRINT) "Compiling ...\n"

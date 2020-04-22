@@ -4,6 +4,7 @@ Preprocessor directives.
 #define _GNU_SOURCE
 
 #include <ctype.h>
+#include <execinfo.h>
 #include <gtk/gtk.h>
 #include <openssl/conf.h>
 #include <openssl/err.h>
@@ -14,14 +15,16 @@ Preprocessor directives.
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+#include <unistd.h>
 
 /*-----------------------------------------------------------------------------
 Definition of constants.
 -----------------------------------------------------------------------------*/
 enum
 {
-	ENCRYPT_KEY_LENGTH =    32,
+	BACKTRACE_ARR_SIZE =    10,
 	INIT_VECTOR_LENGTH =    16,
+	ENCRYPT_KEY_LENGTH =    32,
 	RNGS_BUFFER_LENGTH =   256,
 	HASH_COUNT         = 65535
 };
@@ -70,6 +73,9 @@ Main function.
 -----------------------------------------------------------------------------*/
 int main(int const argc, char const *argv[])
 {
+	// install segmentation fault handler
+	signal(SIGSEGV, segmentation_fault_handler);
+
 	// disable output buffering
 	setvbuf(stdout, NULL, _IONBF, 0);
 

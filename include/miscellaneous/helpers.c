@@ -158,3 +158,16 @@ void __clear_all_entries(GtkWidget *widget, gpointer data)
 	}
 }
 
+/*-----------------------------------------------------------------------------
+Segmentation fault handler. Whenever the program crashes because of
+segmentation fault, write the backtrace.
+-----------------------------------------------------------------------------*/
+void segmentation_fault_handler(int sig)
+{
+	fprintf(stderr, "\033[1;31mSegmentation fault: backtrace is as follows.\033[0m\n");
+	void *backtrace_array[BACKTRACE_ARR_SIZE];
+	size_t size = backtrace(backtrace_array, BACKTRACE_ARR_SIZE);
+	backtrace_symbols_fd(backtrace_array, size, STDERR_FILENO);
+	exit(EXIT_FAILURE);
+}
+
