@@ -70,9 +70,9 @@ can see what data is stored in the global struct variable.
 -----------------------------------------------------------------------------*/
 void see_credentials(void)
 {
-	printf("%10s: %s\n", "site",  get_credentials_site());
-	printf("%10s: %s\n", "uname", get_credentials_uname());
-	printf("%10s: %s\n", "pw",    get_credentials_pw());
-	printf("%10s: %s\n", "cp",    get_credentials_cp());
+	fprintf(stdout, "%10s: %s\n", "site",  get_credentials_site());
+	fprintf(stdout, "%10s: %s\n", "uname", get_credentials_uname());
+	fprintf(stdout, "%10s: %s\n", "pw",    get_credentials_pw());
+	fprintf(stdout, "%10s: %s\n", "cp",    get_credentials_cp());
 }
 

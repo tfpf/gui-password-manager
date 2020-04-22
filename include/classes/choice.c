@@ -808,6 +808,6 @@ void quit_choice(GtkWindow *window, gpointer data)
 		}
 	}
 	free(items);
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 

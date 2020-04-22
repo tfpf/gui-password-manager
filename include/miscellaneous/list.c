@@ -27,12 +27,12 @@ void see_list(void)
 {
 	for(int i = 0; i < num_of_items; ++i)
 	{
-		printf("%3d: ", i);
+		fprintf(stdout, "%3d: ", i);
 		for(int j = 0; j < 2; ++j)
 		{
-			printf("%s,", (char *)(items[i].ptrs[j]));
+			fprintf(stdout, "%s,", (char *)(items[i].ptrs[j]));
 		}
-		printf("\n");
+		fprintf(stdout, "\n");
 	}
 }
 

@@ -158,7 +158,7 @@ void quit_passphrase(GtkWindow *window, gpointer data)
 	if(credentials->kek == NULL)
 	{
 		free(credentials);
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 }
 
