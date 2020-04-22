@@ -477,8 +477,13 @@ gboolean hide_password(gpointer data)
 		return FALSE;
 	}
 
+	// `widget' has been confirmed to be a valid GTK widget
+	// still, it is possible that it is not
+	// this could happen if the widget has already been destroyed
+	// in which case, `pw' will be `NULL'
+	// hence, check `pw' to prevent a segmentation fault
 	char *pw = (char *)gtk_button_get_label(GTK_BUTTON(button));
-	if(!strcmp(pw, HIDDEN_PASSWORD_PLACEHOLDER))
+	if(pw == NULL || !strcmp(pw, HIDDEN_PASSWORD_PLACEHOLDER))
 	{
 		return FALSE;
 	}

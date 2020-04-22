@@ -30,7 +30,7 @@ enum
 };
 
 guint const TOOLTIP_MESSAGE_TIMEOUT  =  5 * G_TIME_SPAN_MILLISECOND;
-guint const PASSWORD_DISPLAY_TIMEOUT =  5 * G_TIME_SPAN_MILLISECOND;
+guint const PASSWORD_DISPLAY_TIMEOUT = 10 * G_TIME_SPAN_MILLISECOND;
 
 // the order in which the different pieces of each item are stored
 enum
