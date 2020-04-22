@@ -275,6 +275,38 @@ void add_password(GtkButton *button, gpointer data)
 		return;
 	}
 
+	// grid which will be put in the confirm dialogue box
+	GtkWidget *confirm_grd = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(confirm_grd), 25);
+	gtk_grid_set_column_spacing(GTK_GRID(confirm_grd), 15);
+	gtk_grid_set_row_spacing(GTK_GRID(confirm_grd), 15);
+	gtk_widget_set_halign(confirm_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(confirm_grd, TRUE);
+	GtkWidget *confirm_img = gtk_image_new_from_file(icon_warn);
+	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_img, 0, 0, 1, 1);
+	GtkWidget *confirm_lbl = gtk_label_new("Are you sure you want to add this item?");
+	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_lbl, 1, 0, 1, 1);
+
+	// create the confirm dialogue box
+	GtkWidget *confirm = gtk_dialog_new();
+	gtk_window_set_resizable(GTK_WINDOW(confirm), FALSE);
+	gtk_window_set_title(GTK_WINDOW(confirm), "Confirm Add");
+	gtk_window_set_transient_for(GTK_WINDOW(confirm), GTK_WINDOW(window));
+
+	// put the grid and some buttons in it
+	GtkWidget *confirm_box = gtk_dialog_get_content_area(GTK_DIALOG(confirm));
+	gtk_container_add(GTK_CONTAINER(confirm_box), confirm_grd);
+	gtk_dialog_add_buttons(GTK_DIALOG(confirm), "Cancel", GTK_RESPONSE_REJECT, "Add", GTK_RESPONSE_ACCEPT, NULL);
+	gtk_dialog_set_default_response(GTK_DIALOG(confirm), GTK_RESPONSE_ACCEPT);
+	gtk_widget_show_all(confirm);
+
+	int response = gtk_dialog_run(GTK_DIALOG(confirm));
+	gtk_widget_destroy(confirm);
+	if(response != GTK_RESPONSE_ACCEPT)
+	{
+		return;
+	}
+
 	// obtain the key encryption key, AES key and initialisation vector
 	char unsigned *kek = get_credentials_kek();
 	char unsigned *key = generate_random(ENCRYPT_KEY_LENGTH);
@@ -660,6 +692,38 @@ void change_passphrase(GtkButton *button, gpointer data)
 	{
 		gtk_widget_set_tooltip_text(window, "Cannot change passphrase. Fields \'New Passphrase\' and \'Confirm New Passphrase\' do not match.");
 		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
+		return;
+	}
+
+	// grid which will be put in the confirm dialogue box
+	GtkWidget *confirm_grd = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(confirm_grd), 25);
+	gtk_grid_set_column_spacing(GTK_GRID(confirm_grd), 15);
+	gtk_grid_set_row_spacing(GTK_GRID(confirm_grd), 15);
+	gtk_widget_set_halign(confirm_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(confirm_grd, TRUE);
+	GtkWidget *confirm_img = gtk_image_new_from_file(icon_warn);
+	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_img, 0, 0, 1, 1);
+	GtkWidget *confirm_lbl = gtk_label_new("Are you sure you want to change the passphrase?\nIf you forget the new passphrase, you won\'t be able to recover your passwords.");
+	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_lbl, 1, 0, 1, 1);
+
+	// create the confirm dialogue box
+	GtkWidget *confirm = gtk_dialog_new();
+	gtk_window_set_resizable(GTK_WINDOW(confirm), FALSE);
+	gtk_window_set_title(GTK_WINDOW(confirm), "Confirm Change");
+	gtk_window_set_transient_for(GTK_WINDOW(confirm), GTK_WINDOW(window));
+
+	// put the grid and some buttons in it
+	GtkWidget *confirm_box = gtk_dialog_get_content_area(GTK_DIALOG(confirm));
+	gtk_container_add(GTK_CONTAINER(confirm_box), confirm_grd);
+	gtk_dialog_add_buttons(GTK_DIALOG(confirm), "Cancel", GTK_RESPONSE_REJECT, "Change", GTK_RESPONSE_ACCEPT, NULL);
+	gtk_dialog_set_default_response(GTK_DIALOG(confirm), GTK_RESPONSE_REJECT);
+	gtk_widget_show_all(confirm);
+
+	int response = gtk_dialog_run(GTK_DIALOG(confirm));
+	gtk_widget_destroy(confirm);
+	if(response != GTK_RESPONSE_ACCEPT)
+	{
 		return;
 	}
 
