@@ -46,7 +46,6 @@ void request_passphrase(void)
 	gtk_widget_set_can_default(login_button, TRUE);
 	gtk_widget_grab_default(login_button);
 
-	// display everything
 	gtk_widget_show_all(window);
 	g_signal_connect(window, "destroy", G_CALLBACK(quit_passphrase), NULL);
 	gtk_main();
@@ -133,10 +132,9 @@ void validate_passphrase(GtkButton *button, gpointer data)
 }
 
 /*-----------------------------------------------------------------------------
-Clear the data stored in the global struct variable and exit from the GTK
-window loop. Find out the status (whether the user entered the correct
-passphrase or not) by checking whether the key encryption key has been set or
-not. If user failed to log in, quit the application.
+Exit from the GTK window loop. Find out the status (whether the user entered
+the correct passphrase or not) by checking whether the key encryption key has
+been set or not. If user failed to log in, quit the application.
 -----------------------------------------------------------------------------*/
 void quit_passphrase(GtkWindow *window, gpointer data)
 {

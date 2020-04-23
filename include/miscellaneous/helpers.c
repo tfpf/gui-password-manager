@@ -7,10 +7,10 @@ void clear_all_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, g
 void __clear_all_entries(GtkWidget *widget, gpointer data);
 
 /*-----------------------------------------------------------------------------
-Block program execution for aome amount of time. This will not be used in the
+Block program execution for some amount of time. This will not be used in the
 code, but is being left just for fun (and in case it is required later).
 -----------------------------------------------------------------------------*/
-void wait(int unsigned delay)
+void wait_time_delay(int unsigned delay)
 {
 	int unsigned end_time = time(NULL) + delay;
 	while(time(NULL) < end_time);
@@ -20,8 +20,8 @@ void wait(int unsigned delay)
 Represent a sequence of bits as a hexadecimal number. The input is an array of
 bytes. Each byte in this array can be represented using two hexadecimal
 symbols. Thus, the hexadecimal result is a string whose length is twice that
-of the input array. This result is supposed to be in printable form, so a null
-character is appended at the end.
+of the input array. This result is supposed to be in printable form. A null
+character is appended at the end automatically by `sprintf'.
 -----------------------------------------------------------------------------*/
 char *digest_to_hexdigest(char unsigned *digest, size_t size)
 {
@@ -41,17 +41,19 @@ append a null character at the end.
 -----------------------------------------------------------------------------*/
 char unsigned *hexdigest_to_digest(char *hexdigest, size_t size)
 {
-	// important note: why am I allocating twice the memory required
-	// sometimes, calling `free' on the returned pointer causes this error:
+	// Question. Why am I allocating twice the memory required?
+	// Answer. If the exact amount required is allocated, then sometimes,
+	// trying to free the allocated memory fails with this error.
 	// free(): invalid next size (fast)
 	// an explanation may be found here
 	// https://stackoverflow.com/a/44940249/6286575
 	char unsigned *digest = malloc(2 * size * sizeof *digest);
 	for(size_t i = 0; i < size; ++i)
 	{
+		#pragma GCC diagnostic push
 		#pragma GCC diagnostic ignored "-Wformat"
 		sscanf(hexdigest + 2 * i, "%2x", digest + i);
-		#pragma GCC diagnostic error "-Wformat"
+		#pragma GCC diagnostic pop
 	}
 	return digest;
 }
@@ -62,13 +64,13 @@ associated with the widget.
 -----------------------------------------------------------------------------*/
 gboolean hide_tooltip(gpointer data)
 {
-	GtkWidget *window = data;
-	if(GTK_IS_WIDGET(window) == FALSE)
+	GtkWidget *widget = data;
+	if(GTK_IS_WIDGET(widget) == TRUE)
 	{
+		gtk_widget_set_has_tooltip(widget, FALSE);
 		return FALSE;
 	}
 
-	gtk_widget_set_has_tooltip(window, FALSE);
 	return FALSE;
 }
 
@@ -138,17 +140,11 @@ void __clear_all_entries(GtkWidget *widget, gpointer data)
 {
 	if(GTK_IS_ENTRY(widget) == TRUE)
 	{
-		// explanation for the peculiar set of actions
-		// assume that the user adds a new password
-		// and then switched to the 'Manage Passords' page
-		// newly added password will not be visible there
-		// 'Manage Passwords' page was populated before adding password
-		// it is refreshed when the entry on that page changes
-		// that is why I artifically change the entry text like this
+		// calling `gtk_entry_buffer_set_text' after deleting text
+		// this forces the entry to emit the "changed" signal
 		GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(widget));
 		gtk_entry_buffer_delete_text(buffer, 0, -1);
 		gtk_entry_buffer_set_text(buffer, "", -1);
-		gtk_entry_buffer_delete_text(buffer, 0, -1);
 		return;
 	}
 
@@ -159,7 +155,7 @@ void __clear_all_entries(GtkWidget *widget, gpointer data)
 }
 
 /*-----------------------------------------------------------------------------
-Segmentation fault handler. Whenever the program crashes because of
+Segmentation fault handler. Whenever the program crashes because of a
 segmentation fault, write the backtrace.
 -----------------------------------------------------------------------------*/
 void segmentation_fault_handler(int sig)

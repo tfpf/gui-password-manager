@@ -20,6 +20,7 @@ Preprocessor directives.
 /*-----------------------------------------------------------------------------
 Key encryption key declaration. It has to be available throughout the program,
 because it is used to encrypt the keys which are used to encrypt the passwords.
+If this is `NULL' when the login window is destroyed, the program will exit.
 -----------------------------------------------------------------------------*/
 char unsigned *kek = NULL;
 
