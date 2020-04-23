@@ -1,7 +1,7 @@
 // prototypes
 int comparator(void const *e1, void const *e2);
 void see_list(void);
-void set_list(void);
+void load_list_of_passwords(void);
 
 /*-----------------------------------------------------------------------------
 This is a global variable which will store the password items in RAM. The
@@ -40,12 +40,12 @@ void see_list(void)
 Read the data stored in the user's file and store it into RAM. Then decrypt
 only the website and username, leaving everything else as it is.
 -----------------------------------------------------------------------------*/
-void set_list(void)
+void load_list_of_passwords(void)
 {
 	// count the number of lines in the password file
 	// there are `PTRS_PER_ITEM' lines for each password item
 	num_of_items = 0;
-	FILE *pw_file = fopen(Slave, "rb");
+	FILE *pw_file = fopen(Slave, "r");
 	while(fscanf(pw_file, "%*s") != EOF)
 	{
 		++num_of_items;
@@ -54,7 +54,7 @@ void set_list(void)
 	items = malloc(num_of_items * sizeof *items);
 	rewind(pw_file);
 
-	// store the five parts of each item in the struct defined above
+	// store the parts of each item in the struct defined above
 	for(int i = 0; i < num_of_items; ++i)
 	{
 		for(int j = 0; j < PTRS_PER_ITEM; ++j)
@@ -64,25 +64,18 @@ void set_list(void)
 			len = getline(&ptr_hex, &len, pw_file) - 1;
 			ptr_hex[len] = '\0'; // replacing LF with NUL
 			items[i].lens[j] = len / 2;
-			char unsigned *ptr = hexdigest_to_digest(ptr_hex, items[i].lens[j]);
+			items[i].ptrs[j] = hexdigest_to_digest(ptr_hex, items[i].lens[j]);
 			memset(ptr_hex, 0, len);
 			free(ptr_hex);
-			items[i].ptrs[j] = ptr;
 		}
 
-		// decrypt and store website and username
-		// initialisation vector was not encrypted--store as is
-		// store encrypted password and encrypted key
-		char unsigned *kek = get_credentials_kek();
-		char *site, *uname; // store as plaintext
-		char unsigned *key; // do not store
+		// obtain the key by decrypting it
 		char unsigned *iv = items[i].ptrs[I_IV];
-
-		// to get `site' and `uname', `key' has to be obtained
-		// I have its encrypted version, so decrypt it first
+		char unsigned *key;
 		decrypt_AES(items[i].ptrs[I_KEY], items[i].lens[I_KEY], kek, iv, &key);
 
-		// now get website and username
+		// now get website and username using the key
+		char *site, *uname;
 		int sitelen  = decrypt_AES(items[i].ptrs[I_SITE],  items[i].lens[I_SITE],  key, iv, (char unsigned **)&site);
 		int unamelen = decrypt_AES(items[i].ptrs[I_UNAME], items[i].lens[I_UNAME], key, iv, (char unsigned **)&uname);
 
@@ -133,6 +126,6 @@ int comparator(void const *e1, void const *e2)
 		return 1;
 	}
 
-	return result;
+	return 0;
 }
 

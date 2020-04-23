@@ -230,18 +230,11 @@ the file.
 void add_password(GtkButton *button, gpointer data)
 {
 	GtkWidget **callback_data = data;
-	GtkWidget *window      = callback_data[0];
-	GtkWidget *site_entry  = callback_data[1];
-	GtkWidget *uname_entry = callback_data[2];
-	GtkWidget *pw_entry    = callback_data[3];
-	GtkWidget *cp_entry    = callback_data[4];
-	set_credentials(site_entry, uname_entry, pw_entry, cp_entry);
-
-	// read provided information
-	char const *site  = get_credentials_site();
-	char const *uname = get_credentials_uname();
-	char const *pw    = get_credentials_pw();
-	char const *cp    = get_credentials_cp();
+	GtkWidget *window = callback_data[0];
+	char const *site  = gtk_entry_get_text(GTK_ENTRY(callback_data[1]));
+	char const *uname = gtk_entry_get_text(GTK_ENTRY(callback_data[2]));
+	char const *pw    = gtk_entry_get_text(GTK_ENTRY(callback_data[3]));
+	char const *cp    = gtk_entry_get_text(GTK_ENTRY(callback_data[4]));
 
 	// sanity
 	if(!strcmp(site, ""))
@@ -308,7 +301,6 @@ void add_password(GtkButton *button, gpointer data)
 	}
 
 	// obtain the key encryption key, AES key and initialisation vector
-	char unsigned *kek = get_credentials_kek();
 	char unsigned *key = generate_random(ENCRYPT_KEY_LENGTH);
 	char unsigned *iv  = generate_random(INIT_VECTOR_LENGTH);
 
@@ -478,7 +470,6 @@ void show_password(GtkButton *button, gpointer data)
 	int *i = data;
 
 	// decrypt the password
-	char unsigned *kek = get_credentials_kek();
 	char unsigned *iv = items[*i].ptrs[I_IV];
 	char unsigned *key;
 	char *pw;
@@ -588,7 +579,6 @@ void delete_password(GtkButton *button, gpointer data)
 		char unsigned *e_pw = items[j].ptrs[I_PW];
 
 		// obtain key
-		char unsigned *kek   = get_credentials_kek();
 		char unsigned *e_key = items[j].ptrs[I_KEY];
 		char unsigned *iv    = items[j].ptrs[I_IV];
 		char unsigned *key;
@@ -666,14 +656,9 @@ store the passphrase hash and the encrypted passwords.
 void change_passphrase(GtkButton *button, gpointer data)
 {
 	GtkWidget **callback_data = data;
-	GtkWidget *window   = callback_data[0];
-	GtkWidget *pp_entry = callback_data[1];
-	GtkWidget *cp_entry = callback_data[2];
-	set_credentials(NULL, NULL, pp_entry, cp_entry);
-
-	// read provided information
-	char const *pp = get_credentials_pw();
-	char const *cp = get_credentials_cp();
+	GtkWidget *window = callback_data[0];
+	char const *pp = gtk_entry_get_text(GTK_ENTRY(callback_data[1]));
+	char const *cp = gtk_entry_get_text(GTK_ENTRY(callback_data[2]));
 
 	// sanity
 	if(!strcmp(pp, ""))
@@ -750,7 +735,6 @@ void change_passphrase(GtkButton *button, gpointer data)
 	free(pph_hex);
 
 	// decrypt all the data, then re-encrypt it using new stuff
-	char unsigned *kek = get_credentials_kek();
 	for(int i = 0; i < num_of_items; ++i)
 	{
 		// decrypt the key
@@ -851,7 +835,7 @@ void change_passphrase(GtkButton *button, gpointer data)
 	// deallocate
 	free(kek);
 
-	credentials->kek = __kek;
+	kek = __kek;
 
 	gtk_widget_set_tooltip_text(window, "Passphrase changed successfully.");
 	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
@@ -865,9 +849,8 @@ void quit_choice(GtkWindow *window, gpointer data)
 {
 	__clear_all_entries(GTK_WIDGET(window), NULL);
 	gtk_main_quit();
-	memset(credentials->kek, 0, ENCRYPT_KEY_LENGTH);
-	free(credentials->kek);
-	free(credentials);
+	memset(kek, 0, ENCRYPT_KEY_LENGTH);
+	free(kek);
 	for(int i = 0; i < num_of_items; ++i)
 	{
 		for(int j = 0; j < PTRS_PER_ITEM; ++j)

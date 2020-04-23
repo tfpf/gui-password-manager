@@ -3,11 +3,6 @@ Displays a window in which the user can enter their passphrase.
 -----------------------------------------------------------------------------*/
 void request_passphrase(void)
 {
-	// this initialisation indicates that the user is yet to log in
-	// after logging in, `kek' will not be `NULL'
-	set_credentials(NULL, NULL, NULL, NULL);
-	credentials->kek = NULL;
-
 	// window
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
@@ -58,23 +53,17 @@ void request_passphrase(void)
 }
 
 /*-----------------------------------------------------------------------------
-Compare repeated SHA512 hashed of the passphrase entered by the user against
+Compare repeated SHA512 hashes of the passphrase entered by the user against
 the SHA512 stored on the drive. If nothing is entered, or if the wrong
 passphrase is entered, display a tooltip as an error message. If the correct
-passphrase is entered, the key encryption key is determined and stored as a
-member of the global struct variable.
+passphrase is entered, the key encryption key is determined and and this window
+is closed.
 -----------------------------------------------------------------------------*/
 void validate_passphrase(GtkButton *button, gpointer data)
 {
 	GtkWidget **callback_data = data;
-	GtkWidget *window   = callback_data[0];
-	GtkWidget *pp_entry = callback_data[1];
-	set_credentials(NULL, NULL, pp_entry, NULL);
-
-	// read provided information
-	// `get_credentials_pw' returns `gchar const *'
-	// but `gchar' is typedef'd to `char' in GTK
-	char const *pp = get_credentials_pw();
+	GtkWidget *window = callback_data[0];
+	char const *pp = gtk_entry_get_text(GTK_ENTRY(callback_data[1]));
 
 	// sanity
 	if(!strcmp(pp, ""))
@@ -123,9 +112,8 @@ void validate_passphrase(GtkButton *button, gpointer data)
 
 	// on success, store a hash of the passphrase
 	// it will be used as the key encryption key
-	char unsigned *kek = malloc(SHA256_DIGEST_LENGTH * sizeof *kek);
+	kek = malloc(SHA256_DIGEST_LENGTH * sizeof *kek);
 	SHA256((char unsigned *)pp, strlen(pp), kek);
-	credentials->kek = kek;
 
 	__clear_all_entries(window, NULL);
 
@@ -141,8 +129,7 @@ void validate_passphrase(GtkButton *button, gpointer data)
 
 	gtk_widget_destroy(window);
 
-	// read all items from the password file into RAM
-	set_list();
+	load_list_of_passwords();
 }
 
 /*-----------------------------------------------------------------------------
@@ -155,9 +142,8 @@ void quit_passphrase(GtkWindow *window, gpointer data)
 {
 	__clear_all_entries(GTK_WIDGET(window), NULL);
 	gtk_main_quit();
-	if(credentials->kek == NULL)
+	if(kek == NULL)
 	{
-		free(credentials);
 		exit(EXIT_FAILURE);
 	}
 }

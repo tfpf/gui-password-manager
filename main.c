@@ -18,6 +18,12 @@ Preprocessor directives.
 #include <unistd.h>
 
 /*-----------------------------------------------------------------------------
+Key encryption key declaration. It has to be available throughout the program,
+because it is used to encrypt the keys which are used to encrypt the passwords.
+-----------------------------------------------------------------------------*/
+char unsigned *kek = NULL;
+
+/*-----------------------------------------------------------------------------
 Definition of constants.
 -----------------------------------------------------------------------------*/
 enum
@@ -61,7 +67,6 @@ char const *__Slave  = ".Slave.n";
 /*-----------------------------------------------------------------------------
 More preprocessor directives.
 -----------------------------------------------------------------------------*/
-#include "credentials.h"
 #include "helpers.c"
 #include "cipher.c"
 #include "list.c"
