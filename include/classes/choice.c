@@ -397,17 +397,15 @@ void populate_search_results(GtkEntry *entry, gpointer data)
 		gtk_grid_attach(GTK_GRID(bot_grd), pw_button, 2, j, 1, 1);
 
 		// edit button
-		GtkWidget *chg_image = gtk_image_new_from_file(icon_edit);
 		GtkWidget *chg_button = gtk_button_new();
-		gtk_button_set_image(GTK_BUTTON(chg_button), chg_image);
+		gtk_button_set_image(GTK_BUTTON(chg_button), gtk_image_new_from_file(icon_edit));
 		gtk_widget_set_tooltip_text(chg_button, "Click to edit this item.");
 		g_signal_connect(chg_button, "clicked", G_CALLBACK(change_password), k);
 		gtk_grid_attach(GTK_GRID(bot_grd), chg_button, 3, j, 1, 1);
 
 		// delete button
-		GtkWidget *del_image = gtk_image_new_from_file(icon_del);
 		GtkWidget *del_button = gtk_button_new();
-		gtk_button_set_image(GTK_BUTTON(del_button), del_image);
+		gtk_button_set_image(GTK_BUTTON(del_button), gtk_image_new_from_file(icon_del));
 		gtk_widget_set_tooltip_text(del_button, "Click to delete this item.");
 		g_signal_connect(del_button, "clicked", G_CALLBACK(delete_password), k);
 		gtk_grid_attach(GTK_GRID(bot_grd), del_button, 4, j, 1, 1);

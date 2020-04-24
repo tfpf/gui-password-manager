@@ -155,6 +155,22 @@ void __clear_all_entries(GtkWidget *widget, gpointer data)
 }
 
 /*-----------------------------------------------------------------------------
+Show or hide the string written in the provided GTK entry.
+-----------------------------------------------------------------------------*/
+void toggle_visibility(GtkButton *button, gpointer data)
+{
+	GtkEntry *entry = data;
+
+	if(gtk_entry_get_visibility(entry) == FALSE)
+	{
+		gtk_entry_set_visibility(entry, TRUE);
+		return;
+	}
+
+	gtk_entry_set_visibility(entry, FALSE);
+}
+
+/*-----------------------------------------------------------------------------
 Segmentation fault handler. Whenever the program crashes because of a
 segmentation fault, write the backtrace.
 -----------------------------------------------------------------------------*/

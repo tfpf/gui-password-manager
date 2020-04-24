@@ -23,7 +23,8 @@ void request_passphrase(void)
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Enter your passphrase to log in.</span>");
-	gtk_grid_attach(GTK_GRID(grid), main_label, 0, 0, 2, 1);
+	gtk_grid_attach(GTK_GRID(grid), main_label, 0, 0, 3, 1);
+
 
 	// passphrase
 	GtkWidget *pp_label = gtk_label_new("Passphrase");
@@ -33,6 +34,11 @@ void request_passphrase(void)
 	gtk_entry_set_visibility(GTK_ENTRY(pp_entry), FALSE);
 	gtk_widget_grab_focus(pp_entry);
 	gtk_grid_attach(GTK_GRID(grid), pp_entry, 1, 1, 1, 1);
+	GtkWidget *show_button = gtk_button_new();
+	gtk_button_set_image(GTK_BUTTON(show_button), gtk_image_new_from_file(icon_visibility));
+	gtk_widget_set_tooltip_text(show_button, "Click to show or hide passphrase.");
+	g_signal_connect(show_button, "clicked", G_CALLBACK(toggle_visibility), pp_entry);
+	gtk_grid_attach(GTK_GRID(grid), show_button, 2, 1, 1, 1);
 
 	// prepare data to be sent to callback function
 	GtkWidget **data = malloc(2 * sizeof *data);
@@ -42,7 +48,7 @@ void request_passphrase(void)
 	// button
 	GtkWidget *login_button = gtk_button_new_with_label("Log In");
 	g_signal_connect(GTK_BUTTON(login_button), "clicked", G_CALLBACK(validate_passphrase), data);
-	gtk_grid_attach(GTK_GRID(grid), login_button, 0, 2, 2, 1);
+	gtk_grid_attach(GTK_GRID(grid), login_button, 0, 2, 3, 1);
 	gtk_widget_set_can_default(login_button, TRUE);
 	gtk_widget_grab_default(login_button);
 
@@ -50,6 +56,7 @@ void request_passphrase(void)
 	g_signal_connect(window, "destroy", G_CALLBACK(quit_passphrase), NULL);
 	gtk_main();
 }
+
 
 /*-----------------------------------------------------------------------------
 Compare repeated SHA512 hashes of the passphrase entered by the user against
