@@ -56,8 +56,8 @@ GtkWidget *create_widget_for_add(GtkWidget *window)
 
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Enter the following details to add a new password.</span>");
-	gtk_grid_attach(GTK_GRID(add_grd), main_label, 0, 0, 2, 1);
+	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Fill these fields to add a new password.</span>");
+	gtk_grid_attach(GTK_GRID(add_grd), main_label, 0, 0, 3, 1);
 
 	// website
 	GtkWidget *site_label = gtk_label_new("Website");
@@ -78,6 +78,11 @@ GtkWidget *create_widget_for_add(GtkWidget *window)
 	GtkWidget *pw_entry = gtk_entry_new();
 	gtk_entry_set_visibility(GTK_ENTRY(pw_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(add_grd), pw_entry, 1, 3, 1, 1);
+	GtkWidget *show_button_pw = gtk_button_new();
+	gtk_button_set_image(GTK_BUTTON(show_button_pw), gtk_image_new_from_file(icon_visibility));
+	gtk_widget_set_tooltip_text(show_button_pw, "Click to show or hide password.");
+	g_signal_connect(show_button_pw, "clicked", G_CALLBACK(toggle_visibility), pw_entry);
+	gtk_grid_attach(GTK_GRID(add_grd), show_button_pw, 2, 3, 1, 1);
 
 	// confirm password
 	GtkWidget *cp_label = gtk_label_new("Confirm Password");
@@ -85,6 +90,11 @@ GtkWidget *create_widget_for_add(GtkWidget *window)
 	GtkWidget *cp_entry = gtk_entry_new();
 	gtk_entry_set_visibility(GTK_ENTRY(cp_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(add_grd), cp_entry, 1, 4, 1, 1);
+	GtkWidget *show_button_cp = gtk_button_new();
+	gtk_button_set_image(GTK_BUTTON(show_button_cp), gtk_image_new_from_file(icon_visibility));
+	gtk_widget_set_tooltip_text(show_button_cp, "Click to show or hide password.");
+	g_signal_connect(show_button_cp, "clicked", G_CALLBACK(toggle_visibility), cp_entry);
+	gtk_grid_attach(GTK_GRID(add_grd), show_button_cp, 2, 4, 1, 1);
 
 	// prepare data to be sent to callback function
 	GtkWidget **data = malloc(5 * sizeof *data);
@@ -97,7 +107,7 @@ GtkWidget *create_widget_for_add(GtkWidget *window)
 	// button
 	GtkWidget *add_btn = gtk_button_new_with_label("Add New Password");
 	g_signal_connect(GTK_BUTTON(add_btn), "clicked", G_CALLBACK(add_password), data);
-	gtk_grid_attach(GTK_GRID(add_grd), add_btn, 0, 5, 2, 1);
+	gtk_grid_attach(GTK_GRID(add_grd), add_btn, 0, 5, 3, 1);
 
 	return add_grd;
 }
@@ -620,8 +630,8 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 
 	// header
 	GtkWidget *main_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Enter a new passphrase. Make sure it is something memorable.</span>");
-	gtk_grid_attach(GTK_GRID(cpp_grd), main_label, 0, 0, 2, 1);
+	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Fill these fields to change the passphrase.</span>");
+	gtk_grid_attach(GTK_GRID(cpp_grd), main_label, 0, 0, 3, 1);
 
 	// passphrase
 	GtkWidget *pp_label = gtk_label_new("New Passphrase");
@@ -629,6 +639,11 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 	GtkWidget *pp_entry = gtk_entry_new();
 	gtk_entry_set_visibility(GTK_ENTRY(pp_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(cpp_grd), pp_entry, 1, 1, 1, 1);
+	GtkWidget *show_button_pp = gtk_button_new();
+	gtk_button_set_image(GTK_BUTTON(show_button_pp), gtk_image_new_from_file(icon_visibility));
+	gtk_widget_set_tooltip_text(show_button_pp, "Click to show or hide passphrase.");
+	g_signal_connect(show_button_pp, "clicked", G_CALLBACK(toggle_visibility), pp_entry);
+	gtk_grid_attach(GTK_GRID(cpp_grd), show_button_pp, 2, 1, 1, 1);
 
 	// confirm passphrase
 	GtkWidget *cp_label = gtk_label_new("Confirm New Passphrase");
@@ -636,6 +651,11 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 	GtkWidget *cp_entry = gtk_entry_new();
 	gtk_entry_set_visibility(GTK_ENTRY(cp_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(cpp_grd), cp_entry, 1, 2, 1, 1);
+	GtkWidget *show_button_cp = gtk_button_new();
+	gtk_button_set_image(GTK_BUTTON(show_button_cp), gtk_image_new_from_file(icon_visibility));
+	gtk_widget_set_tooltip_text(show_button_cp, "Click to show or hide passphrase.");
+	g_signal_connect(show_button_cp, "clicked", G_CALLBACK(toggle_visibility), cp_entry);
+	gtk_grid_attach(GTK_GRID(cpp_grd), show_button_cp, 2, 2, 1, 1);
 
 	// prepare data to be sent to callback function
 	GtkWidget **data = malloc(3 * sizeof *data);
@@ -646,7 +666,7 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 	// button
 	GtkWidget *cpp_btn = gtk_button_new_with_label("Change Passphrase");
 	g_signal_connect(GTK_BUTTON(cpp_btn), "clicked", G_CALLBACK(change_passphrase), data);
-	gtk_grid_attach(GTK_GRID(cpp_grd), cpp_btn, 0, 5, 2, 1);
+	gtk_grid_attach(GTK_GRID(cpp_grd), cpp_btn, 0, 3, 3, 1);
 
 	return cpp_grd;
 }
