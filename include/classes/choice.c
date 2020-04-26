@@ -517,7 +517,11 @@ void delete_password(GtkButton *button, gpointer data)
 	GtkWidget *confirm_img = gtk_image_new_from_file(icon_warn);
 	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_img, 0, 0, 1, 1);
 	GtkWidget *confirm_lbl = gtk_label_new("Are you sure you want to delete this item?\nThis action is irreversible.");
-	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_lbl, 1, 0, 1, 1);
+	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_lbl, 1, 0, 2, 1);
+	GtkWidget *site_lbl = gtk_label_new(items[*i].ptrs[I_SITE]);
+	gtk_grid_attach(GTK_GRID(confirm_grd), site_lbl, 1, 1, 1, 1);
+	GtkWidget *uname_lbl = gtk_label_new(items[*i].ptrs[I_UNAME]);
+	gtk_grid_attach(GTK_GRID(confirm_grd), uname_lbl, 2, 1, 1, 1);
 
 	// create the confirm dialogue box
 	GtkWidget *confirm = gtk_dialog_new();
