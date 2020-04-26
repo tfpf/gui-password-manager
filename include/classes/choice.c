@@ -12,15 +12,15 @@ void request_choice(void)
 	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
 	gtk_window_set_title(GTK_WINDOW(window), "Password Manager");
 
-	// notebook page to add password
-	GtkWidget *add_grd = create_widget_for_add(window);
-	GtkWidget *add_lbl = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(add_lbl), "<span weight=\"normal\">Add New Password</span>");
-
 	// notebook page to manage passwords
 	GtkWidget *mng_box = create_widget_for_mng(window);
 	GtkWidget *mng_lbl = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(mng_lbl), "<span weight=\"normal\">Manage Passwords</span>");
+
+	// notebook page to add password
+	GtkWidget *add_grd = create_widget_for_add(window);
+	GtkWidget *add_lbl = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(add_lbl), "<span weight=\"normal\">Add New Password</span>");
 
 	// notebook page to change passphrase
 	GtkWidget *cpp_grd = create_widget_for_cpp(window);
@@ -29,8 +29,8 @@ void request_choice(void)
 
 	// notebook
 	GtkWidget *notebook = gtk_notebook_new();
-	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), add_grd, add_lbl);
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), mng_box, mng_lbl);
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), add_grd, add_lbl);
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), cpp_grd, cpp_lbl);
 	gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_LEFT);
 	gtk_container_add(GTK_CONTAINER(window), notebook);
@@ -317,6 +317,8 @@ GtkWidget *create_widget_for_mng(GtkWidget *window)
 	GtkWidget *mng_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(mng_box), top_grd, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(mng_box), bot_scw, TRUE, TRUE, 0);
+
+	populate_search_results(GTK_ENTRY(search_entry), bot_grd);
 
 	return mng_box;
 }
@@ -622,13 +624,34 @@ void delete_password(GtkButton *button, gpointer data)
 }
 
 /*-----------------------------------------------------------------------------
-Change the password associated with the specified item.
+Change the password associated with the specified item. This is merely a
+wrapper around the actual function which will change the password. All this
+does is display the window for changing the password.
 -----------------------------------------------------------------------------*/
 void change_password(GtkButton *button, gpointer data)
 {
 	int *i = data;
-	printf("change %d\n", *i);
-	// gtk_widget_hide(window);
+
+	// obtain the toplevel window and hide it while password is changed
+	GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(button));
+	gtk_widget_hide(window);
+
+	// window
+	GtkWidget *chg_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_container_set_border_width(GTK_CONTAINER(chg_win), 0);
+	gtk_window_maximize(GTK_WINDOW(chg_win));
+	gtk_window_set_icon_from_file(GTK_WINDOW(chg_win), icon_main, NULL);
+	gtk_window_set_position(GTK_WINDOW(chg_win), GTK_WIN_POS_CENTER);
+	gtk_window_set_resizable(GTK_WINDOW(chg_win), TRUE);
+	gtk_window_set_title(GTK_WINDOW(chg_win), "Password Manager");
+
+	gtk_widget_show_all(chg_win);
+	g_signal_connect(chg_win, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+	gtk_main();
+
+	gtk_window_maximize(GTK_WINDOW(window));
+	gtk_widget_show_all(window);
+
 }
 
 /*-----------------------------------------------------------------------------
@@ -881,6 +904,15 @@ void change_passphrase(GtkButton *button, gpointer data)
 
 	gtk_widget_set_tooltip_text(window, "Passphrase changed successfully.");
 	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
+}
+
+/*-----------------------------------------------------------------------------
+Close the window which had been displayed to let the user change a password.
+-----------------------------------------------------------------------------*/
+void quit_change(GtkWindow *chg_win, gpointer data)
+{
+	__clear_all_entries(GTK_WIDGET(chg_win), NULL);
+	gtk_main_quit();
 }
 
 /*-----------------------------------------------------------------------------
