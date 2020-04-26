@@ -172,6 +172,20 @@ void toggle_visibility(GtkButton *button, gpointer data)
 }
 
 /*-----------------------------------------------------------------------------
+Write a randomly generated string in the teo GTK entries provided.
+-----------------------------------------------------------------------------*/
+void auto_fill_entry(GtkButton *button, gpointer data)
+{
+	GtkEntry **callback_data = data;
+	GtkEntry *pw_entry = callback_data[0];
+	GtkEntry *cp_entry = callback_data[1];
+
+	char *password = generate_random_constrained(8, 16);
+	gtk_entry_set_text(pw_entry, password);
+	gtk_entry_set_text(cp_entry, password);
+}
+
+/*-----------------------------------------------------------------------------
 Segmentation fault handler. Whenever the program crashes because of a
 segmentation fault, write the backtrace.
 -----------------------------------------------------------------------------*/

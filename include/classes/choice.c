@@ -6,7 +6,6 @@ void request_choice(void)
 	// window
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 0);
-	gtk_window_maximize(GTK_WINDOW(window));
 	gtk_window_set_icon_from_file(GTK_WINDOW(window), icon_main, NULL);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
@@ -37,6 +36,7 @@ void request_choice(void)
 	g_signal_connect(GTK_NOTEBOOK(notebook), "switch-page", G_CALLBACK(clear_all_entries), window);
 
 	gtk_widget_show_all(window);
+	gtk_window_maximize(GTK_WINDOW(window));
 	g_signal_connect(window, "destroy", G_CALLBACK(quit_choice), window);
 	gtk_main();
 }
@@ -98,19 +98,26 @@ GtkWidget *create_widget_for_add(GtkWidget *window)
 	g_signal_connect(show_button_cp, "clicked", G_CALLBACK(toggle_visibility), cp_entry);
 	gtk_grid_attach(GTK_GRID(add_grd), show_button_cp, 2, 4, 1, 1);
 
-	// prepare data to be sent to callback function
-	GtkWidget **data = malloc(5 * sizeof *data);
+	// prepare data to be sent to callback functions
+	void **data = malloc(5 * sizeof *data);
 	data[0] = window;
 	data[1] = site_entry;
 	data[2] = uname_entry;
 	data[3] = pw_entry;
 	data[4] = cp_entry;
 
-	// button
+	// auto-fill button
+	GtkWidget *auto_btn = gtk_button_new_with_label("Generate Random Password");
+	gtk_widget_set_can_focus(auto_btn, FALSE);
+	gtk_widget_set_tooltip_text(auto_btn, "Click to automatically suggest a strong password.");
+	g_signal_connect(GTK_BUTTON(auto_btn), "clicked", G_CALLBACK(auto_fill_entry), data + 3);
+	gtk_grid_attach(GTK_GRID(add_grd), auto_btn, 0, 5, 3, 1);
+
+	// add button
 	GtkWidget *add_btn = gtk_button_new_with_label("Add New Password");
 	gtk_widget_set_can_focus(add_btn, FALSE);
 	g_signal_connect(GTK_BUTTON(add_btn), "clicked", G_CALLBACK(add_password), data);
-	gtk_grid_attach(GTK_GRID(add_grd), add_btn, 0, 5, 3, 1);
+	gtk_grid_attach(GTK_GRID(add_grd), add_btn, 0, 6, 3, 1);
 
 	return add_grd;
 }
@@ -630,6 +637,7 @@ does is display the window for changing the password.
 -----------------------------------------------------------------------------*/
 void change_password(GtkButton *button, gpointer data)
 {
+	// get the index of the item which has to be changed
 	int *i = data;
 
 	// obtain the toplevel window and hide it while password is changed
@@ -639,19 +647,104 @@ void change_password(GtkButton *button, gpointer data)
 	// window
 	GtkWidget *chg_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_container_set_border_width(GTK_CONTAINER(chg_win), 0);
-	gtk_window_maximize(GTK_WINDOW(chg_win));
 	gtk_window_set_icon_from_file(GTK_WINDOW(chg_win), icon_main, NULL);
 	gtk_window_set_position(GTK_WINDOW(chg_win), GTK_WIN_POS_CENTER);
 	gtk_window_set_resizable(GTK_WINDOW(chg_win), TRUE);
-	gtk_window_set_title(GTK_WINDOW(chg_win), "Password Manager");
+	gtk_window_set_title(GTK_WINDOW(chg_win), "Password Manager: Edit Item");
 
+	// grid to place in window
+	GtkWidget *chg_grd = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(chg_grd), 50);
+	gtk_grid_set_column_spacing(GTK_GRID(chg_grd), 25);
+	gtk_grid_set_row_spacing(GTK_GRID(chg_grd), 25);
+	gtk_widget_set_halign(chg_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(chg_grd, TRUE);
+	gtk_container_add(GTK_CONTAINER(chg_win), chg_grd);
+
+	// header
+	GtkWidget *main_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(main_label), "<span weight=\"bold\" foreground=\"green\">Update or fill these fields as necessary.</span>");
+	gtk_grid_attach(GTK_GRID(chg_grd), main_label, 0, 0, 3, 1);
+
+	// website
+	GtkWidget *site_label = gtk_label_new("Website");
+	gtk_grid_attach(GTK_GRID(chg_grd), site_label, 0, 1, 1, 1);
+	GtkWidget *site_entry = gtk_entry_new();
+	gtk_entry_set_placeholder_text(GTK_ENTRY(site_entry), "e.g. FB, Twitter");
+	gtk_entry_set_text(GTK_ENTRY(site_entry), items[*i].ptrs[I_SITE]);
+	gtk_grid_attach(GTK_GRID(chg_grd), site_entry, 1, 1, 1, 1);
+
+	// username
+	GtkWidget *uname_label = gtk_label_new("Username");
+	gtk_grid_attach(GTK_GRID(chg_grd), uname_label, 0, 2, 1, 1);
+	GtkWidget *uname_entry = gtk_entry_new();
+	gtk_entry_set_text(GTK_ENTRY(uname_entry), items[*i].ptrs[I_UNAME]);
+	gtk_grid_attach(GTK_GRID(chg_grd), uname_entry, 1, 2, 1, 1);
+
+	// password
+	GtkWidget *pw_label = gtk_label_new("Password");
+	gtk_grid_attach(GTK_GRID(chg_grd), pw_label, 0, 3, 1, 1);
+	GtkWidget *pw_entry = gtk_entry_new();
+	gtk_entry_set_visibility(GTK_ENTRY(pw_entry), FALSE);
+	gtk_grid_attach(GTK_GRID(chg_grd), pw_entry, 1, 3, 1, 1);
+	GtkWidget *show_button_pw = gtk_button_new();
+	gtk_widget_set_can_focus(show_button_pw, FALSE);
+	gtk_button_set_image(GTK_BUTTON(show_button_pw), gtk_image_new_from_file(icon_invis));
+	gtk_widget_set_tooltip_text(show_button_pw, "Click to show or hide password.");
+	g_signal_connect(show_button_pw, "clicked", G_CALLBACK(toggle_visibility), pw_entry);
+	gtk_grid_attach(GTK_GRID(chg_grd), show_button_pw, 2, 3, 1, 1);
+
+	// confirm password
+	GtkWidget *cp_label = gtk_label_new("Confirm Password");
+	gtk_grid_attach(GTK_GRID(chg_grd), cp_label, 0, 4, 1, 1);
+	GtkWidget *cp_entry = gtk_entry_new();
+	gtk_entry_set_visibility(GTK_ENTRY(cp_entry), FALSE);
+	gtk_grid_attach(GTK_GRID(chg_grd), cp_entry, 1, 4, 1, 1);
+	GtkWidget *show_button_cp = gtk_button_new();
+	gtk_widget_set_can_focus(show_button_cp, FALSE);
+	gtk_button_set_image(GTK_BUTTON(show_button_cp), gtk_image_new_from_file(icon_invis));
+	gtk_widget_set_tooltip_text(show_button_cp, "Click to show or hide password.");
+	g_signal_connect(show_button_cp, "clicked", G_CALLBACK(toggle_visibility), cp_entry);
+	gtk_grid_attach(GTK_GRID(chg_grd), show_button_cp, 2, 4, 1, 1);
+
+	// prepare data to be sent to callback function
+	void **__data = malloc(6 * sizeof *__data);
+	__data[0] = chg_win;
+	__data[1] = site_entry;
+	__data[2] = uname_entry;
+	__data[3] = pw_entry;
+	__data[4] = cp_entry;
+	__data[5] = i;
+
+	// auto-fill button
+	GtkWidget *auto_btn = gtk_button_new_with_label("Generate Random Password");
+	gtk_widget_set_can_focus(auto_btn, FALSE);
+	gtk_widget_set_tooltip_text(auto_btn, "Click to automatically suggest a strong password.");
+	g_signal_connect(GTK_BUTTON(auto_btn), "clicked", G_CALLBACK(auto_fill_entry), __data + 3);
+	gtk_grid_attach(GTK_GRID(chg_grd), auto_btn, 0, 5, 3, 1);
+
+	// change button
+	GtkWidget *chg_btn = gtk_button_new_with_label("Save Changes");
+	gtk_widget_set_can_focus(chg_btn, FALSE);
+	g_signal_connect(GTK_BUTTON(chg_btn), "clicked", G_CALLBACK(__change_password), __data);
+	gtk_grid_attach(GTK_GRID(chg_grd), chg_btn, 0, 6, 3, 1);
+
+	// display everything
 	gtk_widget_show_all(chg_win);
-	g_signal_connect(chg_win, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+	g_signal_connect(chg_win, "destroy", G_CALLBACK(quit_change), NULL);
 	gtk_main();
 
-	gtk_window_maximize(GTK_WINDOW(window));
+	// once the job is done, show the previous window again
 	gtk_widget_show_all(window);
+	gtk_window_maximize(GTK_WINDOW(window));
+}
 
+/*-----------------------------------------------------------------------------
+Update the provided item. This is where the actual change process is done.
+-----------------------------------------------------------------------------*/
+void __change_password(GtkButton *button, gpointer data)
+{
+	printf("changing\n");
 }
 
 /*-----------------------------------------------------------------------------
@@ -699,12 +792,12 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 	gtk_grid_attach(GTK_GRID(cpp_grd), show_button_cp, 2, 2, 1, 1);
 
 	// prepare data to be sent to callback function
-	GtkWidget **data = malloc(3 * sizeof *data);
+	void **data = malloc(3 * sizeof *data);
 	data[0] = window;
 	data[1] = pp_entry;
 	data[2] = cp_entry;
 
-	// button
+	// change button
 	GtkWidget *cpp_btn = gtk_button_new_with_label("Change Passphrase");
 	gtk_widget_set_can_focus(cpp_btn, FALSE);
 	g_signal_connect(GTK_BUTTON(cpp_btn), "clicked", G_CALLBACK(change_passphrase), data);

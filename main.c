@@ -70,8 +70,8 @@ char const *__Slave  = ".Slave.n";
 /*-----------------------------------------------------------------------------
 More preprocessor directives.
 -----------------------------------------------------------------------------*/
-#include "helpers.c"
 #include "cipher.c"
+#include "helpers.c"
 #include "list.c"
 #include "passphrase.h"
 #include "choice.h"

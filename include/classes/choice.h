@@ -3,6 +3,7 @@ void quit_change(GtkWindow *chg_win, gpointer data);
 void quit_choice(GtkWindow *window, gpointer data);
 void add_password(GtkButton *button, gpointer data);
 void change_password(GtkButton *button, gpointer data);
+void __change_password(GtkButton *button, gpointer data);
 void delete_password(GtkButton *button, gpointer data);
 void change_passphrase(GtkButton *button, gpointer data);
 void delete_previous_search_results(GtkWidget *bot_grd);
