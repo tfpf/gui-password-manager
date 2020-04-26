@@ -52,12 +52,12 @@ enum
 
 char const *HIDDEN_PASSWORD_PLACEHOLDER = "[HIDDEN]";
 
-char const *icon_main       = "include/icons/favicon.png";
-char const *icon_vis        = "include/icons/visible.png";
-char const *icon_invis      = "include/icons/invisible.png";
-char const *icon_edit       = "include/icons/edit.png";
-char const *icon_del        = "include/icons/delete.png";
-char const *icon_warn       = "include/icons/warning.png";
+char const *icon_main       = "./include/icons/favicon.png";
+char const *icon_vis        = "./include/icons/visible.png";
+char const *icon_invis      = "./include/icons/invisible.png";
+char const *icon_edit       = "./include/icons/edit.png";
+char const *icon_del        = "./include/icons/delete.png";
+char const *icon_warn       = "./include/icons/warning.png";
 
 // where data is stored
 char const *Master = ".Master.o";
