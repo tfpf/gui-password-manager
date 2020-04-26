@@ -79,7 +79,7 @@ GtkWidget *create_widget_for_add(GtkWidget *window)
 	gtk_entry_set_visibility(GTK_ENTRY(pw_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(add_grd), pw_entry, 1, 3, 1, 1);
 	GtkWidget *show_button_pw = gtk_button_new();
-	gtk_button_set_image(GTK_BUTTON(show_button_pw), gtk_image_new_from_file(icon_visibility));
+	gtk_button_set_image(GTK_BUTTON(show_button_pw), gtk_image_new_from_file(icon_invis));
 	gtk_widget_set_tooltip_text(show_button_pw, "Click to show or hide password.");
 	g_signal_connect(show_button_pw, "clicked", G_CALLBACK(toggle_visibility), pw_entry);
 	gtk_grid_attach(GTK_GRID(add_grd), show_button_pw, 2, 3, 1, 1);
@@ -91,7 +91,7 @@ GtkWidget *create_widget_for_add(GtkWidget *window)
 	gtk_entry_set_visibility(GTK_ENTRY(cp_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(add_grd), cp_entry, 1, 4, 1, 1);
 	GtkWidget *show_button_cp = gtk_button_new();
-	gtk_button_set_image(GTK_BUTTON(show_button_cp), gtk_image_new_from_file(icon_visibility));
+	gtk_button_set_image(GTK_BUTTON(show_button_cp), gtk_image_new_from_file(icon_invis));
 	gtk_widget_set_tooltip_text(show_button_cp, "Click to show or hide password.");
 	g_signal_connect(show_button_cp, "clicked", G_CALLBACK(toggle_visibility), cp_entry);
 	gtk_grid_attach(GTK_GRID(add_grd), show_button_cp, 2, 4, 1, 1);
@@ -646,7 +646,7 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 	gtk_entry_set_visibility(GTK_ENTRY(pp_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(cpp_grd), pp_entry, 1, 1, 1, 1);
 	GtkWidget *show_button_pp = gtk_button_new();
-	gtk_button_set_image(GTK_BUTTON(show_button_pp), gtk_image_new_from_file(icon_visibility));
+	gtk_button_set_image(GTK_BUTTON(show_button_pp), gtk_image_new_from_file(icon_invis));
 	gtk_widget_set_tooltip_text(show_button_pp, "Click to show or hide passphrase.");
 	g_signal_connect(show_button_pp, "clicked", G_CALLBACK(toggle_visibility), pp_entry);
 	gtk_grid_attach(GTK_GRID(cpp_grd), show_button_pp, 2, 1, 1, 1);
@@ -658,7 +658,7 @@ GtkWidget *create_widget_for_cpp(GtkWidget *window)
 	gtk_entry_set_visibility(GTK_ENTRY(cp_entry), FALSE);
 	gtk_grid_attach(GTK_GRID(cpp_grd), cp_entry, 1, 2, 1, 1);
 	GtkWidget *show_button_cp = gtk_button_new();
-	gtk_button_set_image(GTK_BUTTON(show_button_cp), gtk_image_new_from_file(icon_visibility));
+	gtk_button_set_image(GTK_BUTTON(show_button_cp), gtk_image_new_from_file(icon_invis));
 	gtk_widget_set_tooltip_text(show_button_cp, "Click to show or hide passphrase.");
 	g_signal_connect(show_button_cp, "clicked", G_CALLBACK(toggle_visibility), cp_entry);
 	gtk_grid_attach(GTK_GRID(cpp_grd), show_button_cp, 2, 2, 1, 1);

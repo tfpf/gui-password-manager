@@ -35,7 +35,7 @@ void request_passphrase(void)
 	gtk_widget_grab_focus(pp_entry);
 	gtk_grid_attach(GTK_GRID(grid), pp_entry, 1, 1, 1, 1);
 	GtkWidget *show_button = gtk_button_new();
-	gtk_button_set_image(GTK_BUTTON(show_button), gtk_image_new_from_file(icon_visibility));
+	gtk_button_set_image(GTK_BUTTON(show_button), gtk_image_new_from_file(icon_invis));
 	gtk_widget_set_tooltip_text(show_button, "Click to show or hide passphrase.");
 	g_signal_connect(show_button, "clicked", G_CALLBACK(toggle_visibility), pp_entry);
 	gtk_grid_attach(GTK_GRID(grid), show_button, 2, 1, 1, 1);
