@@ -315,45 +315,18 @@ GtkWidget *create_widget_for_mng(GtkWidget *window)
 	gtk_box_pack_start(GTK_BOX(mng_box), top_grd, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(mng_box), bot_scw, TRUE, TRUE, 0);
 
-	// website header
-	GtkWidget *site_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(site_label), "<span weight=\"bold\" foreground=\"green\">                      Website                      </span>");
-	gtk_grid_attach(GTK_GRID(bot_grd), site_label, 0, -1, 1, 1);
-
-	// username header
-	GtkWidget *uname_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(uname_label), "<span weight=\"bold\" foreground=\"green\">                      Username                      </span>");
-	gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, -1, 1, 1);
-
-	// password header
-	GtkWidget *pw_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(pw_label), "<span weight=\"bold\" foreground=\"green\">                      Password                      </span>");
-	gtk_grid_attach(GTK_GRID(bot_grd), pw_label, 2, -1, 1, 1);
-
-	// action header
-	GtkWidget *act_label = gtk_label_new(NULL);
-	gtk_label_set_markup(GTK_LABEL(act_label), "<span weight=\"bold\" foreground=\"green\">    Actions    </span>");
-	gtk_grid_attach(GTK_GRID(bot_grd), act_label, 3, -1, 2, 1);
-
-	populate_search_results(GTK_ENTRY(search_entry), bot_grd);
-
 	return mng_box;
 }
 
 /*-----------------------------------------------------------------------------
 Clear whatever was populated in the grid because of a previous call to the
-function `populate_search_results'. However, do not clear the labels which are
-used as headers for whatever data is populated.
+function `populate_search_results'.
 -----------------------------------------------------------------------------*/
 void delete_previous_search_results(GtkWidget *bot_grd)
 {
 	GList *children = gtk_container_get_children(GTK_CONTAINER(bot_grd));
-	for(GList *child = children;; child = g_list_next(child))
+	for(GList *child = children; child != NULL; child = g_list_next(child))
 	{
-		if(g_list_next(g_list_next(g_list_next(g_list_next(child)))) == NULL)
-		{
-			break;
-		}
 		gtk_widget_destroy(child->data);
 	}
 	g_list_free(children);
@@ -376,6 +349,7 @@ void populate_search_results(GtkEntry *entry, gpointer data)
 	delete_previous_search_results(bot_grd);
 
 	// find out which items match the search term
+	gboolean is_grid_populated = FALSE;
 	for(int i = 0, j = 0; i < num_of_items; ++i)
 	{
 		if(!strcasestr(items[i].ptrs[I_SITE], search_term) && !strcasestr(items[i].ptrs[I_UNAME], search_term))
@@ -385,7 +359,7 @@ void populate_search_results(GtkEntry *entry, gpointer data)
 
 		// local copy of `i'
 		// this is required to pass the correct data on button click
-		// cannot use plain `int'
+		// cannot simply assign `i' to another `int' variable
 		// because it will be destroyed when this scope is exited
 		int *k = malloc(sizeof *k);
 		*k = i;
@@ -421,7 +395,39 @@ void populate_search_results(GtkEntry *entry, gpointer data)
 		gtk_grid_attach(GTK_GRID(bot_grd), del_button, 4, j, 1, 1);
 
 		++j;
+		is_grid_populated = TRUE;
 	}
+
+	// if there were no matches for the search, do not draw the headers
+	if(is_grid_populated == FALSE)
+	{
+		GtkWidget *error_label = gtk_label_new(NULL);
+		gtk_label_set_markup(GTK_LABEL(error_label), "<span weight=\"bold\" foreground=\"gray\">No Matching Items</span>");
+		gtk_grid_attach(GTK_GRID(bot_grd), error_label, 0, 0, 1, 1);
+		gtk_widget_show_all(bot_grd);
+		return;
+	}
+
+	// website header
+	GtkWidget *site_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(site_label), "<span weight=\"bold\" foreground=\"green\">                      Website                      </span>");
+	gtk_grid_attach(GTK_GRID(bot_grd), site_label, 0, -1, 1, 1);
+
+	// username header
+	GtkWidget *uname_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(uname_label), "<span weight=\"bold\" foreground=\"green\">                      Username                      </span>");
+	gtk_grid_attach(GTK_GRID(bot_grd), uname_label, 1, -1, 1, 1);
+
+	// password header
+	GtkWidget *pw_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(pw_label), "<span weight=\"bold\" foreground=\"green\">                      Password                      </span>");
+	gtk_grid_attach(GTK_GRID(bot_grd), pw_label, 2, -1, 1, 1);
+
+	// action header
+	GtkWidget *act_label = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(act_label), "<span weight=\"bold\" foreground=\"green\">Actions</span>");
+	gtk_grid_attach(GTK_GRID(bot_grd), act_label, 3, -1, 2, 1);
+
 	gtk_widget_show_all(bot_grd);
 }
 
