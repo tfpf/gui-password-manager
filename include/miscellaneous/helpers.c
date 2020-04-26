@@ -160,8 +160,15 @@ Show or hide the string written in the provided GTK entry.
 void toggle_visibility(GtkButton *button, gpointer data)
 {
 	GtkEntry *entry = data;
-	gboolean current_visibility = gtk_entry_get_visibility(entry);
-	gtk_entry_set_visibility(entry, !current_visibility);
+	if(gtk_entry_get_visibility(entry) == FALSE)
+	{
+		gtk_entry_set_visibility(entry, TRUE);
+		gtk_button_set_image(button, gtk_image_new_from_file(icon_vis));
+		return;
+	}
+
+	gtk_entry_set_visibility(entry, FALSE);
+	gtk_button_set_image(button, gtk_image_new_from_file(icon_invis));
 }
 
 /*-----------------------------------------------------------------------------
