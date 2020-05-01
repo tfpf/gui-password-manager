@@ -739,7 +739,7 @@ void change_password(GtkButton *button, gpointer data)
 	gtk_window_maximize(GTK_WINDOW(window));
 
 	// when returning from this function, a password may have changed
-	// hence, change the entry to trigger a regresh
+	// hence, change the entry to trigger a refresh
 	__clear_all_entries(window, NULL);
 }
 
@@ -922,8 +922,7 @@ void __change_password(GtkButton *button, gpointer data)
 	remove(Slave);
 	rename(__Slave, Slave);
 
-	gtk_widget_set_tooltip_text(window, "Changes saved successfully.");
-	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
+	quit_change(GTK_WINDOW(window), NULL);
 }
 
 /*-----------------------------------------------------------------------------
