@@ -29,9 +29,9 @@ Definition of constants.
 -----------------------------------------------------------------------------*/
 enum
 {
-	BACKTRACE_ARR_SIZE =    10,
 	INIT_VECTOR_LENGTH =    16,
 	ENCRYPT_KEY_LENGTH =    32,
+	BACKTRACE_ARR_SIZE =    48,
 	RNGS_BUFFER_LENGTH =   256,
 	HASH_COUNT         = 65535
 };

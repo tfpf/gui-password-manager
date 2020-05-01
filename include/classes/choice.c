@@ -737,6 +737,10 @@ void change_password(GtkButton *button, gpointer data)
 	// once the job is done, show the previous window again
 	gtk_widget_show_all(window);
 	gtk_window_maximize(GTK_WINDOW(window));
+
+	// when returning from this function, a password may have changed
+	// hence, change the entry to trigger a regresh
+	__clear_all_entries(window, NULL);
 }
 
 /*-----------------------------------------------------------------------------
@@ -744,7 +748,182 @@ Update the provided item. This is where the actual change process is done.
 -----------------------------------------------------------------------------*/
 void __change_password(GtkButton *button, gpointer data)
 {
-	printf("changing\n");
+	GtkWidget **callback_data = data;
+	GtkWidget *window = callback_data[0];
+	char const *site  = gtk_entry_get_text(GTK_ENTRY(callback_data[1]));
+	char const *uname = gtk_entry_get_text(GTK_ENTRY(callback_data[2]));
+	char const *pw    = gtk_entry_get_text(GTK_ENTRY(callback_data[3]));
+	char const *cp    = gtk_entry_get_text(GTK_ENTRY(callback_data[4]));
+	int *i            = (int *)(callback_data[5]);
+
+	// sanity
+	if(!strcmp(site, ""))
+	{
+		gtk_widget_set_tooltip_text(window, "Cannot save. \'Website\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
+		return;
+	}
+	if(!strcmp(uname, ""))
+	{
+		gtk_widget_set_tooltip_text(window, "Cannot save. \'Username\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
+		return;
+	}
+	if(!strcmp(pw, ""))
+	{
+		gtk_widget_set_tooltip_text(window, "Cannot save. \'Password\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
+		return;
+	}
+	if(!strcmp(cp, ""))
+	{
+		gtk_widget_set_tooltip_text(window, "Cannot save. \'Confirm Password\' field is empty.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
+		return;
+	}
+	if(strcmp(pw, cp))
+	{
+		gtk_widget_set_tooltip_text(window, "Cannot save. Fields \'Password\' and \'Confirm Password\' do not match.");
+		g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
+		return;
+	}
+
+	// grid which will be put in the confirm dialogue box
+	GtkWidget *confirm_grd = gtk_grid_new();
+	gtk_container_set_border_width(GTK_CONTAINER(confirm_grd), 25);
+	gtk_grid_set_column_spacing(GTK_GRID(confirm_grd), 15);
+	gtk_grid_set_row_spacing(GTK_GRID(confirm_grd), 15);
+	gtk_widget_set_halign(confirm_grd, GTK_ALIGN_CENTER);
+	gtk_widget_set_hexpand(confirm_grd, TRUE);
+	GtkWidget *confirm_img = gtk_image_new_from_file(icon_warn);
+	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_img, 0, 0, 1, 1);
+	GtkWidget *confirm_lbl = gtk_label_new("Are you sure you want to save the changes to this item?");
+	gtk_grid_attach(GTK_GRID(confirm_grd), confirm_lbl, 1, 0, 1, 1);
+
+	// create the confirm dialogue box
+	GtkWidget *confirm = gtk_dialog_new();
+	gtk_window_set_resizable(GTK_WINDOW(confirm), FALSE);
+	gtk_window_set_title(GTK_WINDOW(confirm), "Confirm Save");
+	gtk_window_set_transient_for(GTK_WINDOW(confirm), GTK_WINDOW(window));
+
+	// put the grid and some buttons in it
+	GtkWidget *confirm_box = gtk_dialog_get_content_area(GTK_DIALOG(confirm));
+	gtk_container_add(GTK_CONTAINER(confirm_box), confirm_grd);
+	gtk_dialog_add_buttons(GTK_DIALOG(confirm), "Cancel", GTK_RESPONSE_REJECT, "Save", GTK_RESPONSE_ACCEPT, NULL);
+	gtk_dialog_set_default_response(GTK_DIALOG(confirm), GTK_RESPONSE_ACCEPT);
+	gtk_widget_show_all(confirm);
+
+	int response = gtk_dialog_run(GTK_DIALOG(confirm));
+	gtk_widget_destroy(confirm);
+	if(response != GTK_RESPONSE_ACCEPT)
+	{
+		return;
+	}
+
+	// obtain new encryption key and initialisation vector
+	char unsigned *key = generate_random(ENCRYPT_KEY_LENGTH);
+	char unsigned *iv  = generate_random(INIT_VECTOR_LENGTH);
+
+	// encrypt the website, username, password and key
+	char unsigned *e_site, *e_uname, *e_pw, *e_key;
+	int e_sitelen  = encrypt_AES((char unsigned *)site,  strlen(site),       key, iv, &e_site);
+	int e_unamelen = encrypt_AES((char unsigned *)uname, strlen(uname),      key, iv, &e_uname);
+	int e_pwlen    = encrypt_AES((char unsigned *)pw,    strlen(pw),         key, iv, &e_pw);
+	int e_keylen   = encrypt_AES(key,                    ENCRYPT_KEY_LENGTH, kek, iv, &e_key);
+
+	// clear the previous contents and make space for new
+	for(int j = 0; j < PTRS_PER_ITEM; ++j)
+	{
+		memset(items[*i].ptrs[j], 0, items[*i].lens[j]);
+		free(items[*i].ptrs[j]);
+	}
+	items[*i].lens[I_SITE]  = strlen(site);
+	items[*i].lens[I_UNAME] = strlen(uname);
+	items[*i].lens[I_PW]    = e_pwlen;
+	items[*i].lens[I_KEY]   = e_keylen;
+	items[*i].lens[I_IV]    = INIT_VECTOR_LENGTH;
+	items[*i].ptrs[I_SITE]  = malloc((items[num_of_items].lens[I_SITE]  + 1) * sizeof(char));
+	items[*i].ptrs[I_UNAME] = malloc((items[num_of_items].lens[I_UNAME] + 1) * sizeof(char));
+	strcpy(items[*i].ptrs[I_SITE], site);
+	strcpy(items[*i].ptrs[I_UNAME], uname);
+	items[*i].ptrs[I_PW]  = e_pw;
+	items[*i].ptrs[I_KEY] = e_key;
+	items[*i].ptrs[I_IV]  = iv;
+
+	__clear_all_entries(window, NULL);
+
+	// clear RAM
+	memset(key,         0, 1 * ENCRYPT_KEY_LENGTH);
+	memset(e_site,      0, 1 * e_sitelen);
+	memset(e_uname,     0, 1 * e_unamelen);
+
+	// deallocate
+	free(key);
+	free(e_site);
+	free(e_uname);
+
+	qsort(items, num_of_items, sizeof *items, comparator);
+
+	// write it into a file line it was done in `change_passphrase'
+	for(int j = 0; j < num_of_items; ++j)
+	{
+		// obtain website and username, which were not encrypted
+		char *site  = items[j].ptrs[I_SITE];
+		char *uname = items[j].ptrs[I_UNAME];
+
+		char unsigned *key;
+		char unsigned *e_key = items[j].ptrs[I_KEY];
+		char unsigned *iv = items[j].ptrs[I_IV];
+		decrypt_AES(e_key, items[j].lens[I_KEY], kek, iv, &key);
+
+		// encrypt
+		char unsigned *e_site, *e_uname;
+		int e_sitelen  = encrypt_AES((char unsigned *)site,  items[j].lens[I_SITE],  key,   iv, &e_site);
+		int e_unamelen = encrypt_AES((char unsigned *)uname, items[j].lens[I_UNAME], key,   iv, &e_uname);
+
+		char unsigned *e_pw = items[j].ptrs[I_PW];
+
+		// obtain the hexdigest of all these
+		char *e_site_hex  = digest_to_hexdigest(e_site,  e_sitelen);
+		char *e_uname_hex = digest_to_hexdigest(e_uname, e_unamelen);
+		char *e_pw_hex    = digest_to_hexdigest(e_pw,    items[j].lens[I_PW]);
+		char *e_key_hex   = digest_to_hexdigest(e_key,   items[j].lens[I_KEY]);
+		char *iv_hex      = digest_to_hexdigest(iv,      INIT_VECTOR_LENGTH);
+
+		// write them all to the file
+		FILE *pw_file = fopen(__Slave, "a");
+		fprintf(pw_file, "%s\n", e_site_hex);
+		fprintf(pw_file, "%s\n", e_uname_hex);
+		fprintf(pw_file, "%s\n", e_pw_hex);
+		fprintf(pw_file, "%s\n", e_key_hex);
+		fprintf(pw_file, "%s\n", iv_hex);
+		fclose(pw_file);
+
+		// clear RAM
+		memset(e_site,      0, 1 * e_sitelen);
+		memset(e_uname,     0, 1 * e_unamelen);
+		memset(e_site_hex,  0, 2 * e_sitelen);
+		memset(e_uname_hex, 0, 2 * e_unamelen);
+		memset(e_pw_hex,    0, 2 * e_pwlen);
+		memset(e_key_hex,   0, 2 * e_keylen);
+		memset(iv_hex,      0, 2 * INIT_VECTOR_LENGTH);
+
+		// deallocate
+		free(e_site);
+		free(e_uname);
+		free(e_site_hex);
+		free(e_uname_hex);
+		free(e_pw_hex);
+		free(e_key_hex);
+		free(iv_hex);
+	}
+
+	// delete the old files, and replace them with the new files
+	remove(Slave);
+	rename(__Slave, Slave);
+
+	gtk_widget_set_tooltip_text(window, "Changes saved successfully.");
+	g_timeout_add(TOOLTIP_MESSAGE_TIMEOUT, hide_tooltip, window);
 }
 
 /*-----------------------------------------------------------------------------
