@@ -7,8 +7,10 @@ Requires a POSIX-compliant system, because I have used stuff not specified in
 the C standard, but specified by POSIX.
 
 # Usage
-In its current stage of development, the best way to use this application is as
-follows.
+I have ceased development on this project. There is an extremely rare bug which
+causes a segmentation fault while repeatedly performing all the actions
+(changing, deleting and adding) in quick succession, and I am not able to
+reproduce it. For all intents and purposes, the bug is random.
 * Install the required libraries.
   * GTK+3.0: on Debian, enter the command `sudo apt install libgtk-3-dev`.
   * OpenSSL: on Debian, enter the command `sudo apt install libssl-dev`.
