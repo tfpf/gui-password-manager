@@ -25,6 +25,10 @@ Compile-time constant strings. These are strings with formatting information in
 Pango (the markup language GTK understands).
 -----------------------------------------------------------------------------*/
 char const *const msg_passphrase = "<span weight=\"bold\" foreground=\"green\">Enter your passphrase to log in.</span>";
+char const *const msg_manage = "<span weight=\"normal\">Manage Passwords</span>";
+char const *const msg_add = "<span weight=\"normal\">Add New Password</span>";
+char const *const msg_add_header = "<span weight=\"bold\" foreground=\"green\">Fill these fields to add a new password.</span>";
+char const *const msg_change = "<span weight=\"normal\">Change Passphrase</span>";
 
 /*-----------------------------------------------------------------------------
 Compile-time constant strings. Names of the files which contain the passphrase
@@ -82,18 +86,43 @@ void segfault_handler(int sig)
 }
 
 /*-----------------------------------------------------------------------------
-Overwrite the given memory chunk with zeros. Then release the memory.
+Overwrite the given memory chunk with zeros. Then release the memory. Whatever
+the input pointer type may have been, assume that it is volatile when it is
+passed to this function. This is ensure that the zeroing operation does not get
+removed because of compiler optimisation.
+
+It is not possible to replace this loop with a call to the `memset' function,
+because `memset' discards the `volatile' qualifier.
+
+The final cast to a pointer of type `void' ensures that the compiler does not
+give a warning about `free' discarding the `volatile' qualifier.
 -----------------------------------------------------------------------------*/
-void zero_and_free(char unsigned *data, int length)
+void zero_and_free(char volatile unsigned *data, int length)
 {
     for(int i = 0; i < length; ++i)
     {
         data[i] = '\0';
     }
-    free(data);
+    free((void *)data);
+}
+
+/*-----------------------------------------------------------------------------
+Generate an array of random bytes. It is used to generate an encryption key
+and initialisation vector for AES. The length is the number of bytes, not bits.
+-----------------------------------------------------------------------------*/
+char unsigned *gen_rand(int len)
+{
+    char unsigned *arr = malloc(len * sizeof *arr);
+    for(int i = 0; i < len; ++i)
+    {
+        arr[i] = random();
+    }
+
+    return arr;
 }
 
 #include "passphrase_window.c"
+#include "selection_window.c"
 
 /*-----------------------------------------------------------------------------
 The main function.
@@ -123,6 +152,10 @@ int main(void)
     {
         return EXIT_FAILURE;
     }
+
+    // display the main menu, where the user can choose what to do
+    selection_window_t *selection_window = selection_window_new(kek);
+    selection_window_main(selection_window);
 
     return EXIT_SUCCESS;
 }
