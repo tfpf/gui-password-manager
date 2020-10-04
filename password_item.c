@@ -1,29 +1,23 @@
 /*-----------------------------------------------------------------------------
 Container to save and easily access the encrypted and decrypted data.
+
+There is no need to store the length of the encrypted key, because it is known.
+Encrypting a 256-bit value using AES256 gives a 256-bit value.
 -----------------------------------------------------------------------------*/
 typedef struct
 {
-    // plaintext strings
     char *website;
     char *username;
     char *password;
-
-    // ciphertext bytearrays
-    char unsigned *e_website;
-    char unsigned *e_username;
-    char unsigned *e_password;
-
-    // lengths of above
-    // no need to store encrypted key length, because it is known
-    // encrypting a 256-bit value using AES256 gives a 256-bit value
+    char unsigned *e_website;  // encrypted website
+    char unsigned *e_username; // encrypted username
+    char unsigned *e_password; // encrypted password
     int e_website_length;
     int e_username_length;
     int e_password_length;
-
-    // cryptographic bytearrays
-    char unsigned *iv;
-    char unsigned *key;
-    char unsigned *e_key;
+    char unsigned *iv;         // initialisation vector
+    char unsigned *key;        // encryption key
+    char unsigned *e_key;      // key encrypted with the key encryption key
 }
 password_item_t;
 
@@ -59,13 +53,15 @@ password_item_t *password_item_new_from_plaintext(char const *website, char cons
 }
 
 /*-----------------------------------------------------------------------------
-Load all the password items saved in the password file.
+Load all the passwords saved in the password file into an array.
 -----------------------------------------------------------------------------*/
 password_item_t **password_items_new_from_file(int *num_of_items, char unsigned *kek)
 {
-    FILE *Slave_file = fopen(Slave, "rb");
+    // the array in which everything will be stored
+    password_item_t **items = NULL;
 
     // read the data the same way it is written in `password_item_append'
+    FILE *Slave_file = fopen(Slave, "rb");
     for(*num_of_items = 0;; ++*num_of_items)
     {
         int e_website_length, e_username_length, e_password_length;
@@ -92,8 +88,32 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
         decrypt_AES(e_website, e_website_length, key, iv, (char unsigned **)&website);
         decrypt_AES(e_username, e_username_length, key, iv, (char unsigned **)&username);
         decrypt_AES(e_password, e_password_length, key, iv, (char unsigned **)&password);
-        printf("%s,%s,%s\n", website, username, password);
+
+        // create struct and assign these variables
+        password_item_t *item = malloc(sizeof *item);
+        item->website = website;
+        item->username = username;
+        item->password = password;
+        item->key = key;
+        item->iv = iv;
+        item->e_website = e_website;
+        item->e_username = e_username;
+        item->e_password = e_password;
+        item->e_key = e_key;
+
+        password_item_t **temp = realloc(items, (*num_of_items + 1) * sizeof *temp);
+        if(temp == NULL)
+        {
+            fprintf(stderr, "Could not allocate memory to read password file.\n");
+            exit(EXIT_FAILURE);
+        }
+        items = temp;
+
+        // append to array
+        items[*num_of_items] = item;
     }
+
+    return items;
 }
 
 /*-----------------------------------------------------------------------------

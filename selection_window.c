@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------
-Wrapper around the GTK window struct. Allows eassy access to all sensitive
+Wrapper around the GTK window struct. Allows easy access to all sensitive
 data and the key encryption key.
 -----------------------------------------------------------------------------*/
 typedef struct
@@ -9,6 +9,7 @@ typedef struct
     password_item_t **items;           // array containing data read from file
     int num_of_items;
     GtkWidget *search_ent;
+    GtkWidget *bottom_grid;            // grid containing search results
     GtkWidget *website_ent;
     GtkWidget *username_ent;
     GtkWidget *password1_ent;
@@ -218,13 +219,13 @@ GtkWidget *manage_box_new(selection_window_t *self)
     gtk_box_pack_start(GTK_BOX(manage_box), scrollable, TRUE, TRUE, 0);
 
     // grid to be put in the scrollable window
-    GtkWidget *bottom_grid = gtk_grid_new();
-    gtk_container_set_border_width(GTK_CONTAINER(bottom_grid), 25);
-    gtk_grid_set_column_spacing(GTK_GRID(bottom_grid), 15);
-    gtk_grid_set_row_spacing(GTK_GRID(bottom_grid), 15);
-    gtk_widget_set_halign(bottom_grid, GTK_ALIGN_CENTER);
-    gtk_widget_set_hexpand(bottom_grid, TRUE);
-    gtk_container_add(GTK_CONTAINER(scrollable), bottom_grid);
+    self->bottom_grid = gtk_grid_new();
+    gtk_container_set_border_width(GTK_CONTAINER(self->bottom_grid), 25);
+    gtk_grid_set_column_spacing(GTK_GRID(self->bottom_grid), 15);
+    gtk_grid_set_row_spacing(GTK_GRID(self->bottom_grid), 15);
+    gtk_widget_set_halign(self->bottom_grid, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(self->bottom_grid, TRUE);
+    gtk_container_add(GTK_CONTAINER(scrollable), self->bottom_grid);
 
     // header label
     GtkWidget *header = gtk_label_new(NULL);
@@ -238,7 +239,7 @@ GtkWidget *manage_box_new(selection_window_t *self)
     // search response entry
     self->search_ent = gtk_entry_new();
     gtk_grid_attach(GTK_GRID(top_grid), self->search_ent, 1, 1, 1, 1);
-    g_signal_connect(self->search_ent, "changed", G_CALLBACK(manage_box_update), bottom_grid);
+    g_signal_connect(self->search_ent, "changed", G_CALLBACK(manage_box_update), self);
 
     return manage_box;
 }
@@ -252,9 +253,12 @@ Wherefore, there is no need to refer to the entry as `self->search_ent'.
 -----------------------------------------------------------------------------*/
 void manage_box_update(GtkEntry *search_ent, gpointer data)
 {
-    GtkGrid *bottom_grid = data;
+    selection_window_t *self = data;
 
-    printf("Search entry changed!\n");
+    for(int i = 0; i < self->num_of_items; ++i)
+    {
+        printf("%s,%s,%s\n", self->items[i]->website, self->items[i]->username, self->items[i]->password);
+    }
 }
 
 /*-----------------------------------------------------------------------------
