@@ -1,5 +1,8 @@
 #include <execinfo.h>
 #include <gtk/gtk.h>
+#include <openssl/conf.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
 #include <openssl/sha.h>
 #include <signal.h>
 #include <stdio.h>
@@ -8,10 +11,12 @@
 /*-----------------------------------------------------------------------------
 Compile-time constant integers.
 -----------------------------------------------------------------------------*/
-enum { NOISE_GEN_BUF_LENGTH = 256 };
+enum { PRNG_BUG_LENGTH = 256 };
 enum { BACKTRACE_ARR_SIZE = 8 };
 enum { NUM_OF_HASHES = 65535 };
-guint const TOAST_TIMEOUT = 5 * G_TIME_SPAN_MILLISECOND;
+enum { AES_KEY_LENGTH = 32 };
+enum { INIT_VEC_LENGTH = 16 };
+enum { TOAST_TIMEOUT = 5 * G_TIME_SPAN_MILLISECOND };
 
 /*-----------------------------------------------------------------------------
 Compile-time constant strings. These are the images which will be used as icons
@@ -19,6 +24,7 @@ in the GUI.
 -----------------------------------------------------------------------------*/
 char const *const icon_main = "./include/icons/favicon.png";
 char const *const icon_vis = "./include/icons/visible.png";
+char const *const icon_warn = "./include/icons/warning.png";
 
 /*-----------------------------------------------------------------------------
 Compile-time constant strings. These are strings with formatting information in
@@ -26,9 +32,11 @@ Pango (the markup language GTK understands).
 -----------------------------------------------------------------------------*/
 char const *const msg_passphrase = "<span weight=\"bold\" foreground=\"green\">Enter your passphrase to log in.</span>";
 char const *const msg_manage = "<span weight=\"normal\">Manage Passwords</span>";
+char const *const msg_manage_header = "<span weight=\"bold\" foreground=\"green\">Type into the search box to filter the list below.</span>";
 char const *const msg_add = "<span weight=\"normal\">Add New Password</span>";
 char const *const msg_add_header = "<span weight=\"bold\" foreground=\"green\">Fill these fields to add a new password.</span>";
 char const *const msg_change = "<span weight=\"normal\">Change Passphrase</span>";
+char const *const msg_change_header = "<span weight=\"bold\" foreground=\"green\">Fill these fields to change the passphrase.</span>";
 
 /*-----------------------------------------------------------------------------
 Compile-time constant strings. Names of the files which contain the passphrase
@@ -78,7 +86,7 @@ segmentation fault, write the backtrace.
 -----------------------------------------------------------------------------*/
 void segfault_handler(int sig)
 {
-    fprintf(stderr, "\033[1;31m\t%d segfault backtrace:\033[0m\n", sig);
+    fprintf(stderr, "\033[1;31mSignal %d received. Backtrace is as follows.\033[0m\n", sig);
     void *backtrace_array[BACKTRACE_ARR_SIZE];
     size_t size = backtrace(backtrace_array, BACKTRACE_ARR_SIZE);
     backtrace_symbols_fd(backtrace_array, size, STDERR_FILENO);
@@ -121,7 +129,62 @@ char unsigned *gen_rand(int len)
     return arr;
 }
 
+/*-----------------------------------------------------------------------------
+Encrypt the input array of bytes using 256-bit AES. Automatically allocate
+sufficient memory to store the ciphertext.
+-----------------------------------------------------------------------------*/
+int encrypt_AES(char unsigned *pt, int ptlen, char unsigned *key, char unsigned *iv, char unsigned **ct)
+{
+    // allocate space to store ciphertext
+    // to be on the safer side, allocate more space than required
+    *ct = malloc(2 * ptlen * sizeof **ct);
+
+    // encrypt
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, key, iv);
+    int len;
+    EVP_EncryptUpdate(ctx, *ct, &len, pt, ptlen);
+    int ctlen = len;
+    EVP_EncryptFinal_ex(ctx, *ct + len, &len);
+    ctlen += len;
+    EVP_CIPHER_CTX_free(ctx);
+
+    // all the bytes allocated to store the ciphertext may not be used
+    // hence, the actual ciphertext length is being returned
+    return ctlen;
+}
+
+/*-----------------------------------------------------------------------------
+Decrypt the input array of bytes using 256-bit AES. Automatically allocate
+sufficient memory to store the plaintext.
+-----------------------------------------------------------------------------*/
+int decrypt_AES(char unsigned *ct, int ctlen, char unsigned *key, char unsigned *iv, char unsigned **pt)
+{
+    // allocate space to store plaintext
+    // to be on the safer side, allocate more space than required
+    *pt = malloc(2 * ctlen * sizeof **pt);
+
+    // decrypt
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, key, iv);
+    int len;
+    EVP_DecryptUpdate(ctx, *pt, &len, ct, ctlen);
+    int ptlen = len;
+    EVP_DecryptFinal_ex(ctx, *pt + len, &len);
+    ptlen += len;
+    EVP_CIPHER_CTX_free(ctx);
+
+    // plaintext is supposed to be in printable form
+    // hence, a null character must be added at the end
+    (*pt)[ptlen] = '\0';
+
+    // all the bytes allocated to store the plaintext may not be used
+    // hence, the actual plaintext length is being returned
+    return ptlen;
+}
+
 #include "passphrase_window.c"
+#include "password_item.c"
 #include "selection_window.c"
 
 /*-----------------------------------------------------------------------------
@@ -138,8 +201,8 @@ int main(void)
     // seed the random number generator
     struct timespec t;
     timespec_get(&t, TIME_UTC);
-    char state_buffer[NOISE_GEN_BUF_LENGTH];
-    initstate(t.tv_nsec ^ t.tv_sec, state_buffer, NOISE_GEN_BUF_LENGTH);
+    char state_buffer[PRNG_BUG_LENGTH];
+    initstate(t.tv_nsec ^ t.tv_sec, state_buffer, PRNG_BUG_LENGTH);
 
     gtk_init(0, NULL);
 
@@ -156,6 +219,7 @@ int main(void)
     // display the main menu, where the user can choose what to do
     selection_window_t *selection_window = selection_window_new(kek);
     selection_window_main(selection_window);
+    free(selection_window);
 
     return EXIT_SUCCESS;
 }
@@ -191,11 +255,11 @@ int main(void)
 // -----------------------------------------------------------------------------*/
 // enum
 // {
-// 	INIT_VECTOR_LENGTH =    16,
-// 	ENCRYPT_KEY_LENGTH =    32,
-// 	BACKTRACE_ARR_SIZE =    48,
-// 	RNGS_BUFFER_LENGTH =   256,
-// 	HASH_COUNT         = 65535
+//     INIT_VECTOR_LENGTH =    16,
+//     ENCRYPT_KEY_LENGTH =    32,
+//     BACKTRACE_ARR_SIZE =    48,
+//     RNGS_BUFFER_LENGTH =   256,
+//     HASH_COUNT         = 65535
 // };
 // 
 // guint const TOOLTIP_MESSAGE_TIMEOUT  =  5 * G_TIME_SPAN_MILLISECOND;
@@ -204,12 +268,12 @@ int main(void)
 // // the order in which the different pieces of each item are stored
 // enum
 // {
-// 	I_SITE        = 0, // website
-// 	I_UNAME       = 1, // username
-// 	I_PW          = 2, // (encrypted) password
-// 	I_KEY         = 3, // (encrypted) key
-// 	I_IV          = 4, // initialisation vector
-// 	PTRS_PER_ITEM = 5  // total number of above items
+//     I_SITE        = 0, // website
+//     I_UNAME       = 1, // username
+//     I_PW          = 2, // (encrypted) password
+//     I_KEY         = 3, // (encrypted) key
+//     I_IV          = 4, // initialisation vector
+//     PTRS_PER_ITEM = 5  // total number of above items
 // };
 // 
 // char const *HIDDEN_PASSWORD_PLACEHOLDER = "[HIDDEN]";
@@ -243,27 +307,27 @@ int main(void)
 // -----------------------------------------------------------------------------*/
 // int main(int const argc, char const *argv[])
 // {
-// 	// install segmentation fault handler
-// 	signal(SIGSEGV, segmentation_fault_handler);
+//     // install segmentation fault handler
+//     signal(SIGSEGV, segmentation_fault_handler);
 // 
-// 	// disable output buffering
-// 	setvbuf(stdout, NULL, _IONBF, 0);
+//     // disable output buffering
+//     setvbuf(stdout, NULL, _IONBF, 0);
 // 
-// 	// seed the random number generator
-// 	struct timespec t;
-// 	timespec_get(&t, TIME_UTC);
-// 	char state_buffer[RNGS_BUFFER_LENGTH];
-// 	initstate(t.tv_nsec ^ t.tv_sec, state_buffer, RNGS_BUFFER_LENGTH);
+//     // seed the random number generator
+//     struct timespec t;
+//     timespec_get(&t, TIME_UTC);
+//     char state_buffer[RNGS_BUFFER_LENGTH];
+//     initstate(t.tv_nsec ^ t.tv_sec, state_buffer, RNGS_BUFFER_LENGTH);
 // 
-// 	gtk_init(0, NULL);
+//     gtk_init(0, NULL);
 // 
-// 	// get the passphrase
-// 	// to get past this point, user must enter correct passphrase
-// 	// otherwise, program will terminate here
-// 	request_passphrase();
+//     // get the passphrase
+//     // to get past this point, user must enter correct passphrase
+//     // otherwise, program will terminate here
+//     request_passphrase();
 // 
-// 	request_choice();
+//     request_choice();
 // 
-// 	return 0;
+//     return 0;
 // }
 

@@ -1,18 +1,12 @@
 /*-----------------------------------------------------------------------------
-Wrapper around the GTK window struct. The members of this struct are the GTK
-window itself and the passphrase entry of said window. This struct will be
-passed to the callback function as callback data. This will make it easy to
-obtain the passphrase.
-
-The third member is the key encryption key. Once the user enters the correct
-passphrase, this will no longer be a null pointer, and will be used to encrypt
-the keys which encrypt the passwords.
+Wrapper struct to allow easy but scoped access to the passphrase and the key
+encryption key.
 -----------------------------------------------------------------------------*/
 typedef struct
 {
-    GtkWidget *window;
+    GtkWidget *window;         // main window
     GtkWidget *passphrase_ent;
-    char unsigned *kek;
+    char unsigned *kek;        // key encryption key
 }
 passphrase_window_t;
 
@@ -48,7 +42,7 @@ passphrase_window_t *passphrase_window_new(void)
     gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
     gtk_widget_set_hexpand(grid, TRUE);
     gtk_container_add(GTK_CONTAINER(self->window), grid);
-    
+
     // header label
     GtkWidget *header = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(header), msg_passphrase);
