@@ -30,13 +30,13 @@ char const *const icon_warn = "./include/icons/warning.png";
 Compile-time constant strings. These are strings with formatting information in
 Pango (the markup language GTK understands).
 -----------------------------------------------------------------------------*/
-char const *const msg_passphrase = "<span weight=\"bold\" foreground=\"green\">Enter your passphrase to log in.</span>";
+char const *const msg_passphrase = "<span weight=\"bold\">Enter your passphrase to log in.</span>";
 char const *const msg_manage = "<span weight=\"normal\">Manage Passwords</span>";
-char const *const msg_manage_header = "<span weight=\"bold\" foreground=\"green\">Type into the search box to filter the list below.</span>";
+char const *const msg_manage_header = "<span weight=\"bold\">Type into the search box to filter the list below.</span>";
 char const *const msg_add = "<span weight=\"normal\">Add New Password</span>";
-char const *const msg_add_header = "<span weight=\"bold\" foreground=\"green\">Fill these fields to add a new password.</span>";
+char const *const msg_add_header = "<span weight=\"bold\">Fill these fields to add a new password.</span>";
 char const *const msg_change = "<span weight=\"normal\">Change Passphrase</span>";
-char const *const msg_change_header = "<span weight=\"bold\" foreground=\"green\">Fill these fields to change the passphrase.</span>";
+char const *const msg_change_header = "<span weight=\"bold\">Fill these fields to change the passphrase.</span>";
 
 /*-----------------------------------------------------------------------------
 Compile-time constant strings. Names of the files which contain the passphrase
