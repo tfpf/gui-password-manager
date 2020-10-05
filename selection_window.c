@@ -274,6 +274,7 @@ GtkWidget *manage_box_new(selection_window_t *self)
     gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(scrollable), FALSE);
     gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(scrollable), GTK_CORNER_TOP_LEFT);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollable), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+    gtk_widget_set_can_focus(scrollable, FALSE);
     gtk_box_pack_start(GTK_BOX(manage_box), scrollable, TRUE, TRUE, 0);
 
     // grid to be put in the scrollable window
