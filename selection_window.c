@@ -25,6 +25,7 @@ Function prototypes.
 -----------------------------------------------------------------------------*/
 selection_window_t *selection_window_new(char unsigned *kek);
 void selection_window_main(selection_window_t *self);
+void selection_window_sort_items(selection_window_t *self);
 int selection_window_ask_for_confirmation(selection_window_t *self, char *question);
 void selection_window_append(selection_window_t *self, password_item_t *item);
 void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer data);
@@ -32,6 +33,7 @@ void selection_window_clear_entry(GtkWidget *widget);
 void selection_window_quit(GtkWidget *window, gpointer data);
 GtkWidget *manage_box_new(selection_window_t *self);
 void manage_box_update(GtkEntry *search_ent, gpointer data);
+void manage_box_show_password(GtkButton *btn, gpointer data);
 GtkWidget *add_grid_new(selection_window_t *self);
 void add_grid_check(GtkButton *btn, gpointer data);
 GtkWidget *change_grid_new(selection_window_t *self);
@@ -81,6 +83,7 @@ selection_window_t *selection_window_new(char unsigned *kek)
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), change_grid, change_lbl);
 
     self->items = password_items_new_from_file(&(self->num_of_items), self->kek);
+    selection_window_sort_items(self);
 
     return self;
 }
@@ -94,6 +97,34 @@ void selection_window_main(selection_window_t *self)
     self->construction_in_progress = FALSE;
     g_signal_connect(self->window, "destroy", G_CALLBACK(selection_window_quit), NULL);
     gtk_main();
+}
+
+/*-----------------------------------------------------------------------------
+Sort the array of password items.
+
+Selection sort has been implemented here. The library function `qsort' was not
+used because the standard does not say anything on whether copies of the data
+are created. In this case, copies must strictly not be made, because the data
+contains passwords.
+-----------------------------------------------------------------------------*/
+void selection_window_sort_items(selection_window_t *self)
+{
+    for(int i = 0; i < self->num_of_items - 1; ++i)
+    {
+        int i_min = i;
+        for(int j = i + 1; j < self->num_of_items; ++j)
+        {
+            int website_compare = strcasecmp(self->items[i_min]->website, self->items[j]->website);
+            int username_compare = strcasecmp(self->items[i_min]->username, self->items[j]->username);
+            if(website_compare > 0 || (website_compare == 0 && username_compare > 0))
+            {
+                i_min = j;
+            }
+        }
+        password_item_t *temp = self->items[i_min];
+        self->items[i_min] = self->items[i];
+        self->items[i] = temp;
+    }
 }
 
 /*-----------------------------------------------------------------------------
@@ -167,6 +198,7 @@ void selection_window_append(selection_window_t *self, password_item_t *item)
     self->items = temp;
     self->items[self->num_of_items] = item;
     ++self->num_of_items;
+    selection_window_sort_items(self);
 }
 
 /*-----------------------------------------------------------------------------
@@ -193,8 +225,8 @@ void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guin
 }
 
 /*-----------------------------------------------------------------------------
-Clear the GTK entry given if it is possible to do so. Then set the text of that
-entry to an empty string.
+Clear the GTK entry given if it is possible to do so. Change the contents of
+the entry to a non-empty string, and clear it again.
 
 The latter action is not strictly necessary. But it causes the affected GTK
 entry to emit a signal indicating that its contents changed (this does not
@@ -203,12 +235,6 @@ password search results. That is why the additional action is also performed.
 -----------------------------------------------------------------------------*/
 void selection_window_clear_entry(GtkWidget *widget)
 {
-    // TODO check whether this `if' is required
-    if(!GTK_IS_ENTRY(widget))
-    {
-        // return;
-    }
-
     GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(widget));
     gtk_entry_buffer_delete_text(buffer, 0, -1);
     gtk_entry_buffer_set_text(buffer, " ", -1);
@@ -289,7 +315,7 @@ Wherefore, there is no need to refer to the entry as `self->search_ent'.
 void manage_box_update(GtkEntry *search_ent, gpointer data)
 {
     selection_window_t *self = data;
-    char const *search = gtk_entry_get_text(GTK_ENTRY(self->search_ent));
+    char const *search = gtk_entry_get_text(search_ent);
     gboolean found = FALSE;
 
     // clear all widgets in `bottom_grid' (if any)
@@ -323,8 +349,8 @@ void manage_box_update(GtkEntry *search_ent, gpointer data)
         // password button
         GtkWidget *password_btn = gtk_button_new_with_label("...");
         gtk_widget_set_can_focus(password_btn, FALSE);
-        gtk_widget_set_tooltip_text(password_btn, "Click to show passsword for a short duration.");
-        // g_signal_connect(password_btn, "clicked", G_CALLBACK(manage_box_show_password), self->items[i]);
+        gtk_widget_set_tooltip_text(password_btn, "Click to show passsword.");
+        g_signal_connect(password_btn, "clicked", G_CALLBACK(manage_box_show_password), self->items[i]);
         gtk_grid_attach(GTK_GRID(self->bottom_grid), password_btn, 2, i, 1, 1);
 
         // edit button
@@ -370,6 +396,17 @@ void manage_box_update(GtkEntry *search_ent, gpointer data)
     gtk_grid_attach(GTK_GRID(self->bottom_grid), header_password, 2, -1, 1, 1);
 
     gtk_widget_show_all(self->bottom_grid);
+}
+
+/*-----------------------------------------------------------------------------
+Display the password of the particular item whose button was clicked.
+-----------------------------------------------------------------------------*/
+void manage_box_show_password(GtkButton *btn, gpointer data)
+{
+    password_item_t *item = data;
+    gtk_button_set_label(btn, item->password);
+    gtk_widget_set_has_tooltip(GTK_WIDGET(btn), FALSE);
+    gtk_widget_set_sensitive(GTK_WIDGET(btn), FALSE);
 }
 
 /*-----------------------------------------------------------------------------
