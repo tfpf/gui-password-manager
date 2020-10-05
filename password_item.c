@@ -26,7 +26,6 @@ Function prototypes.
 -----------------------------------------------------------------------------*/
 password_item_t *password_item_new_from_plaintext(char const *website, char const *username, char const *password, char unsigned *kek);
 password_item_t **password_items_new_from_file(int *num_of_items, char unsigned *kek);
-void password_item_append(password_item_t *self);
 void password_item_delete(password_item_t *self);
 
 /*-----------------------------------------------------------------------------
@@ -108,29 +107,10 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
             exit(EXIT_FAILURE);
         }
         items = temp;
-
-        // append to array
         items[*num_of_items] = item;
     }
 
     return items;
-}
-
-/*-----------------------------------------------------------------------------
-Append the password item to the password file.
------------------------------------------------------------------------------*/
-void password_item_append(password_item_t *self)
-{
-    FILE *Slave_file = fopen(Slave, "ab");
-    fwrite(&(self->e_website_length), sizeof(int), 1, Slave_file);
-    fwrite(&(self->e_username_length), sizeof(int), 1, Slave_file);
-    fwrite(&(self->e_password_length), sizeof(int), 1, Slave_file);
-    fwrite(self->e_website, 1, self->e_website_length, Slave_file);
-    fwrite(self->e_username, 1, self->e_username_length, Slave_file);
-    fwrite(self->e_password, 1, self->e_password_length, Slave_file);
-    fwrite(self->e_key, 1, AES_KEY_LENGTH, Slave_file);
-    fwrite(self->iv, 1, INIT_VEC_LENGTH, Slave_file);
-    fclose(Slave_file);
 }
 
 /*-----------------------------------------------------------------------------

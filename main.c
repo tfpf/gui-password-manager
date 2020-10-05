@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <execinfo.h>
 #include <gtk/gtk.h>
 #include <openssl/conf.h>
@@ -25,6 +27,8 @@ in the GUI.
 char const *const icon_main = "./include/icons/favicon.png";
 char const *const icon_vis = "./include/icons/visible.png";
 char const *const icon_warn = "./include/icons/warning.png";
+char const *const icon_edit = "./include/icons/edit.png";
+char const *const icon_del = "./include/icons/delete.png";
 
 /*-----------------------------------------------------------------------------
 Compile-time constant strings. These are strings with formatting information in
@@ -32,7 +36,11 @@ Pango (the markup language GTK understands).
 -----------------------------------------------------------------------------*/
 char const *const msg_passphrase = "<span weight=\"bold\">Enter your passphrase to log in.</span>";
 char const *const msg_manage = "<span weight=\"normal\">Manage Passwords</span>";
-char const *const msg_manage_header = "<span weight=\"bold\">Type into the search box to filter the list below.</span>";
+char const *const msg_manage_header = "<span weight=\"bold\">Type into the search box to display matching items.</span>";
+char const *const msg_manage_website = "<span weight=\"bold\">                      Website                      </span>";
+char const *const msg_manage_username = "<span weight=\"bold\">                      Username                      </span>";
+char const *const msg_manage_password = "<span weight=\"bold\">                      Password                      </span>";
+char const *const msg_manage_error = "<span weight=\"bold\">No Matching Items</span>";
 char const *const msg_add = "<span weight=\"normal\">Add New Password</span>";
 char const *const msg_add_header = "<span weight=\"bold\">Fill these fields to add a new password.</span>";
 char const *const msg_change = "<span weight=\"normal\">Change Passphrase</span>";
@@ -227,7 +235,6 @@ int main(void)
 // /*-----------------------------------------------------------------------------
 // Preprocessor directives.
 // -----------------------------------------------------------------------------*/
-// #define _GNU_SOURCE
 // 
 // #include <ctype.h>
 // #include <execinfo.h>

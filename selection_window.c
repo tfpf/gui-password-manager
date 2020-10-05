@@ -26,6 +26,7 @@ Function prototypes.
 selection_window_t *selection_window_new(char unsigned *kek);
 void selection_window_main(selection_window_t *self);
 int selection_window_ask_for_confirmation(selection_window_t *self, char *question);
+void selection_window_append(selection_window_t *self, password_item_t *item);
 void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer data);
 void selection_window_clear_entry(GtkWidget *widget);
 void selection_window_quit(GtkWidget *window, gpointer data);
@@ -139,6 +140,36 @@ int selection_window_ask_for_confirmation(selection_window_t *self, char *questi
 }
 
 /*-----------------------------------------------------------------------------
+Write the new password item to the password file. Additionally, append it to
+the array of password items in memory.
+-----------------------------------------------------------------------------*/
+void selection_window_append(selection_window_t *self, password_item_t *item)
+{
+    // write to file
+    FILE *Slave_file = fopen(Slave, "ab");
+    fwrite(&(item->e_website_length), sizeof(int), 1, Slave_file);
+    fwrite(&(item->e_username_length), sizeof(int), 1, Slave_file);
+    fwrite(&(item->e_password_length), sizeof(int), 1, Slave_file);
+    fwrite(item->e_website, 1, item->e_website_length, Slave_file);
+    fwrite(item->e_username, 1, item->e_username_length, Slave_file);
+    fwrite(item->e_password, 1, item->e_password_length, Slave_file);
+    fwrite(item->e_key, 1, AES_KEY_LENGTH, Slave_file);
+    fwrite(item->iv, 1, INIT_VEC_LENGTH, Slave_file);
+    fclose(Slave_file);
+
+    // append to array
+    password_item_t **temp = realloc(self->items, (self->num_of_items + 1) * sizeof *temp);
+    if(temp == NULL)
+    {
+        fprintf(stderr, "Could not allocate memory to add password.\n");
+        exit(EXIT_FAILURE);
+    }
+    self->items = temp;
+    self->items[self->num_of_items] = item;
+    ++self->num_of_items;
+}
+
+/*-----------------------------------------------------------------------------
 Clear all entries on all pages of the GTK notebook in the window. This function
 is called whenever the GTK notebook page is changed, which also happens during
 page creation. In which case, the GTK window has not been drawn completely, so
@@ -180,7 +211,8 @@ void selection_window_clear_entry(GtkWidget *widget)
 
     GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(widget));
     gtk_entry_buffer_delete_text(buffer, 0, -1);
-    gtk_entry_buffer_set_text(buffer, "", -1);
+    gtk_entry_buffer_set_text(buffer, " ", -1);
+    gtk_entry_buffer_delete_text(buffer, 0, -1);
 }
 
 /*-----------------------------------------------------------------------------
@@ -246,7 +278,10 @@ GtkWidget *manage_box_new(selection_window_t *self)
 
 /*-----------------------------------------------------------------------------
 Create widgets to display those items for which the search term is a
-case-insensitive substring of either the website or the username.
+case-insensitive substring of either the website or the username. If such
+matches are found, they are added to the GTK grid, and the headers for the grid
+are created. If no matches are found, the headers are not created, and an error
+message is displayed instead.
 
 Note that the search entry is received as the first argument of the function.
 Wherefore, there is no need to refer to the entry as `self->search_ent'.
@@ -254,11 +289,87 @@ Wherefore, there is no need to refer to the entry as `self->search_ent'.
 void manage_box_update(GtkEntry *search_ent, gpointer data)
 {
     selection_window_t *self = data;
+    char const *search = gtk_entry_get_text(GTK_ENTRY(self->search_ent));
+    gboolean found = FALSE;
 
+    // clear all widgets in `bottom_grid' (if any)
+    GList *children = gtk_container_get_children(GTK_CONTAINER(self->bottom_grid));
+    for(GList *child = children; child != NULL; child = g_list_next(child))
+    {
+        gtk_widget_destroy(child->data);
+    }
+    g_list_free(children);
+
+    // show matching items
+    // if the array element at position `i' contains `search', it will be added
+    // the rows of the GTK grid do not have to be consecutive integers
+    // so, the item can simply be attached to row `i' of the grid
     for(int i = 0; i < self->num_of_items; ++i)
     {
-        printf("%s,%s,%s\n", self->items[i]->website, self->items[i]->username, self->items[i]->password);
+        if(!strcasestr(self->items[i]->website, search) && !strcasestr(self->items[i]->username, search))
+        {
+            continue;
+        }
+        found = TRUE;
+
+        // website label
+        GtkWidget *website_lbl = gtk_label_new(self->items[i]->website);
+        gtk_grid_attach(GTK_GRID(self->bottom_grid), website_lbl, 0, i, 1, 1);
+
+        // username label
+        GtkWidget *username_lbl = gtk_label_new(self->items[i]->username);
+        gtk_grid_attach(GTK_GRID(self->bottom_grid), username_lbl, 1, i, 1, 1);
+
+        // password button
+        GtkWidget *password_btn = gtk_button_new_with_label("...");
+        gtk_widget_set_can_focus(password_btn, FALSE);
+        gtk_widget_set_tooltip_text(password_btn, "Click to show passsword for a short duration.");
+        // g_signal_connect(password_btn, "clicked", G_CALLBACK(manage_box_show_password), self->items[i]);
+        gtk_grid_attach(GTK_GRID(self->bottom_grid), password_btn, 2, i, 1, 1);
+
+        // edit button
+        GtkWidget *edit_btn = gtk_button_new();
+        gtk_widget_set_can_focus(edit_btn, FALSE);
+        gtk_button_set_image(GTK_BUTTON(edit_btn), gtk_image_new_from_file(icon_edit));
+        gtk_widget_set_tooltip_text(edit_btn, "Click to edit this item.");
+        // g_signal_connect(edit_btn, "clicked", G_CALLBACK(manage_box_change_password), self->items[i]);
+        gtk_grid_attach(GTK_GRID(self->bottom_grid), edit_btn, 3, i, 1, 1);
+
+        // delete button
+        GtkWidget *delete_btn = gtk_button_new();
+        gtk_widget_set_can_focus(delete_btn, FALSE);
+        gtk_button_set_image(GTK_BUTTON(delete_btn), gtk_image_new_from_file(icon_del));
+        gtk_widget_set_tooltip_text(delete_btn, "Click to delete this item.");
+        // g_signal_connect(delete_btn, "clicked", G_CALLBACK(manage_box_delete_password), self->items[i]);
+        gtk_grid_attach(GTK_GRID(self->bottom_grid), delete_btn, 4, i, 1, 1);
     }
+
+    // if nothing was found, do not display the headers
+    if(!found)
+    {
+        GtkWidget *error_lbl = gtk_label_new(NULL);
+        gtk_label_set_markup(GTK_LABEL(error_lbl), msg_manage_error);
+        gtk_grid_attach(GTK_GRID(self->bottom_grid), error_lbl, 0, 0, 1, 1);
+        gtk_widget_show_all(self->bottom_grid);
+        return;
+    }
+
+    // website header label
+    GtkWidget *header_website = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(header_website), msg_manage_website);
+    gtk_grid_attach(GTK_GRID(self->bottom_grid), header_website, 0, -1, 1, 1);
+
+    // username header label
+    GtkWidget *header_username = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(header_username), msg_manage_username);
+    gtk_grid_attach(GTK_GRID(self->bottom_grid), header_username, 1, -1, 1, 1);
+
+    // password header label
+    GtkWidget *header_password = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(header_password), msg_manage_password);
+    gtk_grid_attach(GTK_GRID(self->bottom_grid), header_password, 2, -1, 1, 1);
+
+    gtk_widget_show_all(self->bottom_grid);
 }
 
 /*-----------------------------------------------------------------------------
@@ -381,12 +492,9 @@ void add_grid_check(GtkButton *btn, gpointer data)
 
     // encrypt and write to password file
     password_item_t *item = password_item_new_from_plaintext(website, username, password1, self->kek);
-    password_item_append(item);
-    password_item_delete(item);
-    free(item);
+    selection_window_append(self, item);
 
     selection_window_clear_entries(NULL, NULL, 0, self);
-
     widget_toast_show(self->window, "Password added successfully.");
 }
 
