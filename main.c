@@ -9,11 +9,13 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 
 /*-----------------------------------------------------------------------------
 Compile-time constant integers.
 -----------------------------------------------------------------------------*/
-enum { PRNG_BUG_LENGTH = 256 };
+enum { PRNG_BUF_LENGTH = 256 };
 enum { BACKTRACE_ARR_SIZE = 8 };
 enum { NUM_OF_HASHES = 65535 };
 enum { AES_KEY_LENGTH = 32 };
@@ -209,8 +211,8 @@ int main(void)
     // seed the random number generator
     struct timespec t;
     timespec_get(&t, TIME_UTC);
-    char state_buffer[PRNG_BUG_LENGTH];
-    initstate(t.tv_nsec ^ t.tv_sec, state_buffer, PRNG_BUG_LENGTH);
+    char state_buffer[PRNG_BUF_LENGTH];
+    initstate(t.tv_nsec ^ t.tv_sec, state_buffer, PRNG_BUF_LENGTH);
 
     gtk_init(0, NULL);
 

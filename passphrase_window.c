@@ -15,7 +15,7 @@ Function prototypes.
 -----------------------------------------------------------------------------*/
 passphrase_window_t *passphrase_window_new(void);
 void passphrase_window_quit(GtkWidget *window, gpointer data);
-void passphrase_window_check(GtkButton *btn, gpointer data);
+void passphrase_window_check(GtkButton *btn, passphrase_window_t *self);
 
 /*-----------------------------------------------------------------------------
 Initialiser for the struct defined above. Create the GTK window. Then save it
@@ -93,9 +93,8 @@ Read the passphrase entered by the user. Check whether its hash matches the
 hash stored in a file. If it matches, obtain the SHA256 of the passphrase (it
 will be used as the key encryption key). Otherwise, do nothing.
 -----------------------------------------------------------------------------*/
-void passphrase_window_check(GtkButton *btn, gpointer data)
+void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
 {
-    passphrase_window_t *self = data;
     char const *passphrase = gtk_entry_get_text(GTK_ENTRY(self->passphrase_ent));
 
     // calculate the hash of the passphrase
