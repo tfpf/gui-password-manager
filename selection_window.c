@@ -26,17 +26,17 @@ Function prototypes.
 selection_window_t *selection_window_new(char unsigned *kek);
 void selection_window_main(selection_window_t *self);
 void selection_window_sort_items(selection_window_t *self);
-int selection_window_ask_for_confirmation(selection_window_t *self, char *question, char *website, char *username);
-void selection_window_append(selection_window_t *self, password_item_t *item);
+int selection_window_ask_for_confirmation(char *question, char *website, char *username);
 void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, selection_window_t *self);
 void selection_window_clear_entry(GtkWidget *widget);
 void selection_window_quit(GtkWidget *window, gpointer data);
 GtkWidget *manage_box_new(selection_window_t *self);
 void manage_box_update(GtkEntry *search_ent, selection_window_t *self);
 void manage_box_show_password(GtkButton *btn, password_item_t *item);
-void manage_box_delete_password(GtkButton *btn, password_item_t *item);
+void manage_box_delete_password(GtkButton *btn, selection_window_t *self);
 GtkWidget *add_grid_new(selection_window_t *self);
 void add_grid_check(GtkButton *btn, selection_window_t *self);
+void add_grid_add_password(selection_window_t *self, password_item_t *item);
 GtkWidget *change_grid_new(selection_window_t *self);
 void change_grid_check(GtkButton *btn, selection_window_t *self);
 
@@ -129,11 +129,13 @@ void selection_window_sort_items(selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Display a dialog box asking for confirmation on whether the user wants to
-proceed with some action. If the last two arguments are not null pointers,
-display them as the website and username.
+Display a box asking for confirmation on whether the user wants to proceed with
+some action. If the last two arguments are not null pointers, display them as
+the website and username.
+
+If the user clicks outside the window, close the window.
 -----------------------------------------------------------------------------*/
-int selection_window_ask_for_confirmation(selection_window_t *self, char *question, char *website, char *username)
+int selection_window_ask_for_confirmation(char *question, char *website, char *username)
 {
     // window
     GtkWidget *window = gtk_dialog_new();
@@ -142,7 +144,7 @@ int selection_window_ask_for_confirmation(selection_window_t *self, char *questi
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
     gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
     gtk_window_set_title(GTK_WINDOW(window), "Confirmation");
-    gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self->window));
+    g_signal_connect(window, "focus-out-event", G_CALLBACK(close_confirmation_window), NULL);
 
     // grid
     GtkWidget *grid = gtk_grid_new();
@@ -159,7 +161,7 @@ int selection_window_ask_for_confirmation(selection_window_t *self, char *questi
 
     // header label
     GtkWidget *header = gtk_label_new(question);
-    gtk_grid_attach(GTK_GRID(grid), header, 1, 0, 1, 2);
+    gtk_grid_attach(GTK_GRID(grid), header, 1, 0, 2, 1);
 
     if(website != NULL && username != NULL)
     {
@@ -185,8 +187,15 @@ int selection_window_ask_for_confirmation(selection_window_t *self, char *questi
     gtk_dialog_add_button(GTK_DIALOG(window), "Yes", GTK_RESPONSE_ACCEPT);
 
     gtk_widget_show_all(window);
+    gtk_widget_grab_focus(window);
     int response = gtk_dialog_run(GTK_DIALOG(window));
-    gtk_widget_destroy(window);
+
+    // the window will already have been destroyed if the user clicked outside
+    // hence, check whether it exists before destroying it here
+    if(GTK_IS_WIDGET(window))
+    {
+        gtk_widget_destroy(window);
+    }
 
     return response;
 }
@@ -195,7 +204,7 @@ int selection_window_ask_for_confirmation(selection_window_t *self, char *questi
 Write the new password item to the password file. Additionally, append it to
 the array of password items in memory.
 -----------------------------------------------------------------------------*/
-void selection_window_append(selection_window_t *self, password_item_t *item)
+void add_grid_add_password(selection_window_t *self, password_item_t *item)
 {
     // write to file
     FILE *Slave_file = fopen(Slave, "ab");
@@ -373,21 +382,30 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
         g_signal_connect(password_btn, "clicked", G_CALLBACK(manage_box_show_password), self->items[i]);
         gtk_grid_attach(GTK_GRID(self->bottom_grid), password_btn, 2, i, 1, 1);
 
+        // name for identifying edit and delete buttons
+        int length = snprintf(NULL, 0, "%d", i);
+        char *name = malloc((length + 1) * sizeof *name);
+        snprintf(name, length + 1, "%d", i);
+
         // edit button
         GtkWidget *edit_btn = gtk_button_new();
-        gtk_widget_set_can_focus(edit_btn, FALSE);
         gtk_button_set_image(GTK_BUTTON(edit_btn), gtk_image_new_from_file(icon_edit));
+        gtk_widget_set_can_focus(edit_btn, FALSE);
+        gtk_widget_set_name(edit_btn, name);
         gtk_widget_set_tooltip_text(edit_btn, "Click to edit this item.");
         // g_signal_connect(edit_btn, "clicked", G_CALLBACK(manage_box_change_password), self->items[i]);
         gtk_grid_attach(GTK_GRID(self->bottom_grid), edit_btn, 3, i, 1, 1);
 
         // delete button
         GtkWidget *delete_btn = gtk_button_new();
-        gtk_widget_set_can_focus(delete_btn, FALSE);
         gtk_button_set_image(GTK_BUTTON(delete_btn), gtk_image_new_from_file(icon_del));
+        gtk_widget_set_can_focus(delete_btn, FALSE);
+        gtk_widget_set_name(delete_btn, name);
         gtk_widget_set_tooltip_text(delete_btn, "Click to delete this item.");
-        g_signal_connect(delete_btn, "clicked", G_CALLBACK(manage_box_delete_password), self->items[i]);
+        g_signal_connect(delete_btn, "clicked", G_CALLBACK(manage_box_delete_password), self);
         gtk_grid_attach(GTK_GRID(self->bottom_grid), delete_btn, 4, i, 1, 1);
+
+        free(name);
     }
 
     // if nothing was found, do not display the headers
@@ -429,17 +447,41 @@ void manage_box_show_password(GtkButton *btn, password_item_t *item)
 }
 
 /*-----------------------------------------------------------------------------
-Display the password of the particular item whose button was clicked.
------------------------------------------------------------------------------*/
-void manage_box_delete_password(GtkButton *btn, password_item_t *item)
-{
+Obtain the index of the password item in the array. Use it to delete that item.
 
-    // // confirmation
-    // int response = selection_window_ask_for_confirmation(self, "Are you sure you want to delete this password?", item->website, item->username);
-    // if(response != GTK_RESPONSE_ACCEPT)
-    // {
-    //     return;
-    // }
+The index could not be sent as an additional argument to this function because
+this is a callback function--its first argument is the button which triggered
+it, and the second, a pointer of my choice. In theory, I could have packed
+the index and `self' in a struct and received a pointer to the struct as the
+second argument, but I did not want to do that. (There are already three
+structs defined in this project.)
+-----------------------------------------------------------------------------*/
+void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
+{
+    int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
+    password_item_t *item = self->items[i];
+
+    // confirmation
+    int response = selection_window_ask_for_confirmation("Are you sure you want to delete this item?", item->website, item->username);
+    if(response != GTK_RESPONSE_ACCEPT)
+    {
+        return;
+    }
+
+    password_item_delete(item);
+    free(item);
+
+    // the array is not downsized--only `num_of_items' is modified
+    --self->num_of_items;
+    for(int j = i; j < self->num_of_items; ++j)
+    {
+        self->items[j] = self->items[j + 1];
+    }
+
+    password_items_write_to_file(self->items);
+
+    selection_window_clear_entries(NULL, NULL, 0, self);
+    widget_toast_show(self->window, "Password deleted successfully.");
 }
 
 /*-----------------------------------------------------------------------------
@@ -553,7 +595,7 @@ void add_grid_check(GtkButton *btn, selection_window_t *self)
     }
 
     // confirmation
-    int response = selection_window_ask_for_confirmation(self, "Are you sure you want to add this password?", NULL, NULL);
+    int response = selection_window_ask_for_confirmation("Are you sure you want to add this password?", NULL, NULL);
     if(response != GTK_RESPONSE_ACCEPT)
     {
         return;
@@ -561,7 +603,7 @@ void add_grid_check(GtkButton *btn, selection_window_t *self)
 
     // encrypt and write to password file
     password_item_t *item = password_item_new_from_plaintext(website, username, password1, self->kek);
-    selection_window_append(self, item);
+    add_grid_add_password(self, item);
 
     selection_window_clear_entries(NULL, NULL, 0, self);
     widget_toast_show(self->window, "Password added successfully.");

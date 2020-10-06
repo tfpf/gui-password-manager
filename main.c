@@ -68,6 +68,16 @@ void toggle_visibility(GtkButton *btn, gpointer data)
 }
 
 /*-----------------------------------------------------------------------------
+Automatically called when a confirmation dialogue box goes out of focus.
+Destroy said dialogue box.
+-----------------------------------------------------------------------------*/
+gboolean close_confirmation_window(GtkWidget *widget, gpointer data)
+{
+    gtk_widget_destroy(widget);
+    return TRUE;
+}
+
+/*-----------------------------------------------------------------------------
 Hide the tooltip.
 -----------------------------------------------------------------------------*/
 gboolean widget_toast_hide(gpointer data)

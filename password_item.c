@@ -26,6 +26,7 @@ Function prototypes.
 -----------------------------------------------------------------------------*/
 password_item_t *password_item_new_from_plaintext(char const *website, char const *username, char const *password, char unsigned *kek);
 password_item_t **password_items_new_from_file(int *num_of_items, char unsigned *kek);
+void password_items_write_to_file(password_item_t **items);
 void password_item_delete(password_item_t *self);
 
 /*-----------------------------------------------------------------------------
@@ -99,6 +100,9 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
         item->e_username = e_username;
         item->e_password = e_password;
         item->e_key = e_key;
+        item->e_website_length = e_website_length;
+        item->e_username_length = e_username_length;
+        item->e_password_length = e_password_length;
 
         password_item_t **temp = realloc(items, (*num_of_items + 1) * sizeof *temp);
         if(temp == NULL)
@@ -111,6 +115,14 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
     }
 
     return items;
+}
+
+/*-----------------------------------------------------------------------------
+Write all encrypted data to a new file. Use the same format it was read in.
+Once done, delete the old password file and rename this new file.
+-----------------------------------------------------------------------------*/
+void password_items_write_to_file(password_item_t **items)
+{
 }
 
 /*-----------------------------------------------------------------------------
