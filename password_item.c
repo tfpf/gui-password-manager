@@ -26,7 +26,7 @@ Function prototypes.
 -----------------------------------------------------------------------------*/
 password_item_t *password_item_new_from_plaintext(char const *website, char const *username, char const *password, char unsigned *kek);
 password_item_t **password_items_new_from_file(int *num_of_items, char unsigned *kek);
-void password_items_write_to_file(password_item_t **items);
+void password_items_write_to_file(password_item_t **items, int num_of_items);
 void password_item_delete(password_item_t *self);
 
 /*-----------------------------------------------------------------------------
@@ -121,8 +121,25 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
 Write all encrypted data to a new file. Use the same format it was read in.
 Once done, delete the old password file and rename this new file.
 -----------------------------------------------------------------------------*/
-void password_items_write_to_file(password_item_t **items)
+void password_items_write_to_file(password_item_t **items, int num_of_items)
 {
+    FILE *Slave_file = fopen(Slave__, "w");
+    for(int i = 0; i < num_of_items; ++i)
+    {
+        password_item_t *item = items[i];
+        fwrite(&(item->e_website_length), sizeof(int), 1, Slave_file);
+        fwrite(&(item->e_username_length), sizeof(int), 1, Slave_file);
+        fwrite(&(item->e_password_length), sizeof(int), 1, Slave_file);
+        fwrite(item->e_website, 1, item->e_website_length, Slave_file);
+        fwrite(item->e_username, 1, item->e_username_length, Slave_file);
+        fwrite(item->e_password, 1, item->e_password_length, Slave_file);
+        fwrite(item->e_key, 1, AES_KEY_LENGTH, Slave_file);
+        fwrite(item->iv, 1, INIT_VEC_LENGTH, Slave_file);
+    }
+    fclose(Slave_file);
+
+    remove(Slave);
+    rename(Slave__, Slave);
 }
 
 /*-----------------------------------------------------------------------------
@@ -139,5 +156,6 @@ void password_item_delete(password_item_t *self)
     zero_and_free(self->e_username, self->e_username_length);
     zero_and_free(self->e_password, self->e_password_length);
     zero_and_free(self->e_key, AES_KEY_LENGTH);
+    free(self);
 }
 

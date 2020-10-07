@@ -26,15 +26,16 @@ Function prototypes.
 selection_window_t *selection_window_new(char unsigned *kek);
 void selection_window_main(selection_window_t *self);
 void selection_window_sort_items(selection_window_t *self);
-int selection_window_ask_for_confirmation(char *question, char *website, char *username);
 void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, selection_window_t *self);
 void selection_window_clear_entry(GtkWidget *widget);
 void selection_window_quit(GtkWidget *window, gpointer data);
 GtkWidget *manage_box_new(selection_window_t *self);
 void manage_box_update(GtkEntry *search_ent, selection_window_t *self);
 void manage_box_show_password(GtkButton *btn, password_item_t *item);
+void manage_box_change_password(GtkButton *btn, selection_window_t *self);
 void manage_box_delete_password(GtkButton *btn, selection_window_t *self);
 GtkWidget *add_grid_new(selection_window_t *self);
+void add_grid_autofill(GtkButton *btn, selection_window_t *self);
 void add_grid_check(GtkButton *btn, selection_window_t *self);
 void add_grid_add_password(selection_window_t *self, password_item_t *item);
 GtkWidget *change_grid_new(selection_window_t *self);
@@ -126,109 +127,6 @@ void selection_window_sort_items(selection_window_t *self)
         self->items[i_min] = self->items[i];
         self->items[i] = temp;
     }
-}
-
-/*-----------------------------------------------------------------------------
-Display a box asking for confirmation on whether the user wants to proceed with
-some action. If the last two arguments are not null pointers, display them as
-the website and username.
-
-If the user clicks outside the window, close the window.
------------------------------------------------------------------------------*/
-int selection_window_ask_for_confirmation(char *question, char *website, char *username)
-{
-    // window
-    GtkWidget *window = gtk_dialog_new();
-    gtk_container_set_border_width(GTK_CONTAINER(window), 0);
-    gtk_window_set_icon_from_file(GTK_WINDOW(window), icon_main, NULL);
-    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-    gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
-    gtk_window_set_title(GTK_WINDOW(window), "Confirmation");
-    g_signal_connect(window, "focus-out-event", G_CALLBACK(close_confirmation_window), NULL);
-
-    // grid
-    GtkWidget *grid = gtk_grid_new();
-    gtk_container_set_border_width(GTK_CONTAINER(grid), 25);
-    gtk_grid_set_column_spacing(GTK_GRID(grid), 15);
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 15);
-    gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
-    gtk_widget_set_hexpand(grid, TRUE);
-    gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(window))), grid);
-
-    // warning icon
-    GtkWidget *image = gtk_image_new_from_file(icon_warn);
-    gtk_grid_attach(GTK_GRID(grid), image, 0, 0, 1, 3);
-
-    // header label
-    GtkWidget *header = gtk_label_new(question);
-    gtk_grid_attach(GTK_GRID(grid), header, 1, 0, 2, 1);
-
-    if(website != NULL && username != NULL)
-    {
-        // website prompt label
-        GtkWidget *website1_lbl = gtk_label_new("Website:");
-        gtk_grid_attach(GTK_GRID(grid), website1_lbl, 1, 1, 1, 1);
-
-        // website response label
-        GtkWidget *website2_lbl = gtk_label_new(website);
-        gtk_grid_attach(GTK_GRID(grid), website2_lbl, 2, 1, 1, 1);
-
-        // username prompt label
-        GtkWidget *username1_lbl = gtk_label_new("Username:");
-        gtk_grid_attach(GTK_GRID(grid), username1_lbl, 1, 2, 1, 1);
-
-        // username response label
-        GtkWidget *username2_lbl = gtk_label_new(username);
-        gtk_grid_attach(GTK_GRID(grid), username2_lbl, 2, 2, 1, 1);
-    }
-
-    // buttons
-    gtk_dialog_add_button(GTK_DIALOG(window), "No", GTK_RESPONSE_REJECT);
-    gtk_dialog_add_button(GTK_DIALOG(window), "Yes", GTK_RESPONSE_ACCEPT);
-
-    gtk_widget_show_all(window);
-    gtk_widget_grab_focus(window);
-    int response = gtk_dialog_run(GTK_DIALOG(window));
-
-    // the window will already have been destroyed if the user clicked outside
-    // hence, check whether it exists before destroying it here
-    if(GTK_IS_WIDGET(window))
-    {
-        gtk_widget_destroy(window);
-    }
-
-    return response;
-}
-
-/*-----------------------------------------------------------------------------
-Write the new password item to the password file. Additionally, append it to
-the array of password items in memory.
------------------------------------------------------------------------------*/
-void add_grid_add_password(selection_window_t *self, password_item_t *item)
-{
-    // write to file
-    FILE *Slave_file = fopen(Slave, "ab");
-    fwrite(&(item->e_website_length), sizeof(int), 1, Slave_file);
-    fwrite(&(item->e_username_length), sizeof(int), 1, Slave_file);
-    fwrite(&(item->e_password_length), sizeof(int), 1, Slave_file);
-    fwrite(item->e_website, 1, item->e_website_length, Slave_file);
-    fwrite(item->e_username, 1, item->e_username_length, Slave_file);
-    fwrite(item->e_password, 1, item->e_password_length, Slave_file);
-    fwrite(item->e_key, 1, AES_KEY_LENGTH, Slave_file);
-    fwrite(item->iv, 1, INIT_VEC_LENGTH, Slave_file);
-    fclose(Slave_file);
-
-    // append to array
-    password_item_t **temp = realloc(self->items, (self->num_of_items + 1) * sizeof *temp);
-    if(temp == NULL)
-    {
-        fprintf(stderr, "Could not allocate memory to add password.\n");
-        exit(EXIT_FAILURE);
-    }
-    self->items = temp;
-    self->items[self->num_of_items] = item;
-    ++self->num_of_items;
-    selection_window_sort_items(self);
 }
 
 /*-----------------------------------------------------------------------------
@@ -393,7 +291,7 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
         gtk_widget_set_can_focus(edit_btn, FALSE);
         gtk_widget_set_name(edit_btn, name);
         gtk_widget_set_tooltip_text(edit_btn, "Click to edit this item.");
-        // g_signal_connect(edit_btn, "clicked", G_CALLBACK(manage_box_change_password), self->items[i]);
+        g_signal_connect(edit_btn, "clicked", G_CALLBACK(manage_box_change_password), self);
         gtk_grid_attach(GTK_GRID(self->bottom_grid), edit_btn, 3, i, 1, 1);
 
         // delete button
@@ -447,7 +345,8 @@ void manage_box_show_password(GtkButton *btn, password_item_t *item)
 }
 
 /*-----------------------------------------------------------------------------
-Obtain the index of the password item in the array. Use it to delete that item.
+Obtain the index of the password item in the array. Use it to determine which
+item has to be changed. Then open a window to allow the user to do so.
 
 The index could not be sent as an additional argument to this function because
 this is a callback function--its first argument is the button which triggered
@@ -456,20 +355,31 @@ the index and `self' in a struct and received a pointer to the struct as the
 second argument, but I did not want to do that. (There are already three
 structs defined in this project.)
 -----------------------------------------------------------------------------*/
+void manage_box_change_password(GtkButton *btn, selection_window_t *self)
+{
+    int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
+    password_item_t *item = self->items[i];
+}
+
+/*-----------------------------------------------------------------------------
+Obtain the index of the password item in the array. Use it to determine which
+item has to be changed. Then open a window to allow the user to do so.
+
+Same comments as `manage_box_change_password' apply.
+-----------------------------------------------------------------------------*/
 void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
 {
     int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
     password_item_t *item = self->items[i];
 
     // confirmation
-    int response = selection_window_ask_for_confirmation("Are you sure you want to delete this item?", item->website, item->username);
+    int response = request_confirmation(self->window, "Are you sure you want to delete this item? This action is irreversible.", item->website, item->username);
     if(response != GTK_RESPONSE_ACCEPT)
     {
         return;
     }
 
     password_item_delete(item);
-    free(item);
 
     // the array is not downsized--only `num_of_items' is modified
     --self->num_of_items;
@@ -478,7 +388,7 @@ void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
         self->items[j] = self->items[j + 1];
     }
 
-    password_items_write_to_file(self->items);
+    password_items_write_to_file(self->items, self->num_of_items);
 
     selection_window_clear_entries(NULL, NULL, 0, self);
     widget_toast_show(self->window, "Password deleted successfully.");
@@ -508,15 +418,17 @@ GtkWidget *add_grid_new(selection_window_t *self)
 
     // website response entry
     self->website_ent = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(self->website_ent), "e.g. FB, Twitter");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(self->website_ent), "e.g. Twitter, ICICI, Google");
+    gtk_entry_set_width_chars(GTK_ENTRY(self->website_ent), ENTRY_WIDTH);
     gtk_grid_attach(GTK_GRID(add_grid), self->website_ent, 1, 1, 1, 1);
 
     // username prompt label
     GtkWidget *username_lbl = gtk_label_new("Username");
     gtk_grid_attach(GTK_GRID(add_grid), username_lbl, 0, 2, 1, 1);
 
-    // username response label
+    // username response entry
     self->username_ent = gtk_entry_new();
+    gtk_entry_set_width_chars(GTK_ENTRY(self->username_ent), ENTRY_WIDTH);
     gtk_grid_attach(GTK_GRID(add_grid), self->username_ent, 1, 2, 1, 1);
 
     // password prompt label
@@ -526,6 +438,7 @@ GtkWidget *add_grid_new(selection_window_t *self)
     // password response entry
     self->password1_ent = gtk_entry_new();
     gtk_entry_set_visibility(GTK_ENTRY(self->password1_ent), FALSE);
+    gtk_entry_set_width_chars(GTK_ENTRY(self->password1_ent), ENTRY_WIDTH);
     gtk_grid_attach(GTK_GRID(add_grid), self->password1_ent, 1, 3, 1, 1);
 
     // password visibility toggling button
@@ -543,6 +456,7 @@ GtkWidget *add_grid_new(selection_window_t *self)
     // confirm password response entry
     self->password2_ent = gtk_entry_new();
     gtk_entry_set_visibility(GTK_ENTRY(self->password2_ent), FALSE);
+    gtk_entry_set_width_chars(GTK_ENTRY(self->password2_ent), ENTRY_WIDTH);
     gtk_grid_attach(GTK_GRID(add_grid), self->password2_ent, 1, 4, 1, 1);
 
     // confirm password visibility toggling button
@@ -557,7 +471,7 @@ GtkWidget *add_grid_new(selection_window_t *self)
     GtkWidget *autofill_btn = gtk_button_new_with_label("Generate Random Password");
     gtk_widget_set_can_focus(autofill_btn, FALSE);
     gtk_widget_set_tooltip_text(autofill_btn, "Click to suggest a strong password.");
-    // g_signal_connect(GTK_BUTTON(autofill_btn), "clicked", G_CALLBACK(autofill_passwords), self);
+    g_signal_connect(GTK_BUTTON(autofill_btn), "clicked", G_CALLBACK(add_grid_autofill), self);
     gtk_grid_attach(GTK_GRID(add_grid), autofill_btn, 0, 5, 3, 1);
 
     // submit button
@@ -567,6 +481,17 @@ GtkWidget *add_grid_new(selection_window_t *self)
     gtk_grid_attach(GTK_GRID(add_grid), submit_btn, 0, 6, 3, 1);
 
     return add_grid;
+}
+
+/*-----------------------------------------------------------------------------
+Suggest a random password. By being random and long, it will also hopefully be
+strong.
+-----------------------------------------------------------------------------*/
+void add_grid_autofill(GtkButton *btn, selection_window_t *self)
+{
+    char *suggestion = gen_rand_constrained(20, 30);
+    gtk_entry_set_text(GTK_ENTRY(self->password1_ent), suggestion);
+    gtk_entry_set_text(GTK_ENTRY(self->password2_ent), suggestion);
 }
 
 /*-----------------------------------------------------------------------------
@@ -595,7 +520,7 @@ void add_grid_check(GtkButton *btn, selection_window_t *self)
     }
 
     // confirmation
-    int response = selection_window_ask_for_confirmation("Are you sure you want to add this password?", NULL, NULL);
+    int response = request_confirmation(self->window, "Are you sure you want to add this password?", NULL, NULL);
     if(response != GTK_RESPONSE_ACCEPT)
     {
         return;
@@ -607,6 +532,37 @@ void add_grid_check(GtkButton *btn, selection_window_t *self)
 
     selection_window_clear_entries(NULL, NULL, 0, self);
     widget_toast_show(self->window, "Password added successfully.");
+}
+
+/*-----------------------------------------------------------------------------
+Write the new password item to the password file. Additionally, append it to
+the array of password items in memory.
+-----------------------------------------------------------------------------*/
+void add_grid_add_password(selection_window_t *self, password_item_t *item)
+{
+    // write to file
+    FILE *Slave_file = fopen(Slave, "ab");
+    fwrite(&(item->e_website_length), sizeof(int), 1, Slave_file);
+    fwrite(&(item->e_username_length), sizeof(int), 1, Slave_file);
+    fwrite(&(item->e_password_length), sizeof(int), 1, Slave_file);
+    fwrite(item->e_website, 1, item->e_website_length, Slave_file);
+    fwrite(item->e_username, 1, item->e_username_length, Slave_file);
+    fwrite(item->e_password, 1, item->e_password_length, Slave_file);
+    fwrite(item->e_key, 1, AES_KEY_LENGTH, Slave_file);
+    fwrite(item->iv, 1, INIT_VEC_LENGTH, Slave_file);
+    fclose(Slave_file);
+
+    // append to array
+    password_item_t **temp = realloc(self->items, (self->num_of_items + 1) * sizeof *temp);
+    if(temp == NULL)
+    {
+        fprintf(stderr, "Could not allocate memory to add password.\n");
+        exit(EXIT_FAILURE);
+    }
+    self->items = temp;
+    self->items[self->num_of_items] = item;
+    ++self->num_of_items;
+    selection_window_sort_items(self);
 }
 
 /*-----------------------------------------------------------------------------
@@ -634,6 +590,7 @@ GtkWidget *change_grid_new(selection_window_t *self)
     // passphrase response entry
     self->passphrase1_ent = gtk_entry_new();
     gtk_entry_set_visibility(GTK_ENTRY(self->passphrase1_ent), FALSE);
+    gtk_entry_set_width_chars(GTK_ENTRY(self->passphrase1_ent), ENTRY_WIDTH);
     gtk_grid_attach(GTK_GRID(change_grid), self->passphrase1_ent, 1, 1, 1, 1);
 
     // passphrase visibility toggling button
@@ -651,6 +608,7 @@ GtkWidget *change_grid_new(selection_window_t *self)
     // confirm passphrase response entry
     self->passphrase2_ent = gtk_entry_new();
     gtk_entry_set_visibility(GTK_ENTRY(self->passphrase2_ent), FALSE);
+    gtk_entry_set_width_chars(GTK_ENTRY(self->passphrase2_ent), ENTRY_WIDTH);
     gtk_grid_attach(GTK_GRID(change_grid), self->passphrase2_ent, 1, 2, 1, 1);
 
     // confirm passphrase visibility toggling button
