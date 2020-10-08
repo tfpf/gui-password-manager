@@ -1,23 +1,26 @@
 # Password Manager
-Stores your passwords under AES256 encryption. Sensitive data is cleared from
-RAM when the application exits.
+Stores your passwords under two layers of AES256 encryption. Sensitive data is
+cleared from RAM when the application exits.
 
 Uses GTK+3.0 (to display GUI windows) and OpenSSL (to hash and encrypt data).
-Requires a POSIX-compliant system, because I have used stuff not specified in
-the C standard, but specified by POSIX.
+Requires a POSIX-compliant system, because I have used functions not specified
+in the C standard, but specified by POSIX.
 
 # Usage
-I have ceased development on this project. There is an extremely rare bug which
-causes a segmentation fault while repeatedly performing all the actions
-(changing, deleting and adding) in quick succession, and I am not able to
-reproduce it. For all intents and purposes, the bug is random.
-* Install the required libraries.
-  * GTK+3.0: on Debian, enter the command `sudo apt install libgtk-3-dev`.
-  * OpenSSL: on Debian, enter the command `sudo apt install libssl-dev`.
-* Download/Clone the repository to some convenient location on your computer.
+* Download or clone the repository to a convenient location on your computer.
 * Open a terminal window to that location.
+* Enter the command `make exec`. (This will run the Linux executable `main`.)
+
+The Linux executable was compiled for a 64-bit CPU, so it may not run on your
+system if you have a 32-bit CPU. In which case, you could compile the program
+yourself and run it. (This is tested only on Debian; it is not guaranteed to
+work on all systems. And I have ceased active development on this project, and
+may never get around to test it further.)
+* Install the required libraries.
+  * GTK+3.0: `sudo apt install libgtk-3-dev`
+  * OpenSSL: `sudo apt install libssl-dev`
 * Enter the command `make run`.
 
 The current passphrase is `q`, and you can change it. Some sample passwords are
-already saved, and you can view them once you have entered the passphrase.
+already saved. You can view them once you have entered the passphrase.
 
