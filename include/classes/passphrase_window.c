@@ -6,6 +6,7 @@ typedef struct
 {
     GtkWidget *window;         // main window
     GtkWidget *passphrase_ent;
+
     char unsigned *kek;        // key encryption key
 }
 passphrase_window_t;
@@ -32,7 +33,8 @@ passphrase_window_t *passphrase_window_new(void)
     gtk_window_set_icon_from_file(GTK_WINDOW(self->window), icon_main, NULL);
     gtk_window_set_position(GTK_WINDOW(self->window), GTK_WIN_POS_CENTER);
     gtk_window_set_resizable(GTK_WINDOW(self->window), FALSE);
-    gtk_window_set_title(GTK_WINDOW(self->window), "Password Manager");
+    gtk_window_set_title(GTK_WINDOW(self->window), str_title);
+    g_signal_connect(self->window, "destroy", G_CALLBACK(passphrase_window_quit), NULL);
 
     // grid
     GtkWidget *grid = gtk_grid_new();
@@ -49,7 +51,7 @@ passphrase_window_t *passphrase_window_new(void)
     gtk_grid_attach(GTK_GRID(grid), header, 0, 0, 3, 1);
 
     // passphrase prompt label
-    GtkWidget *passphrase_lbl = gtk_label_new("Passphrase");
+    GtkWidget *passphrase_lbl = gtk_label_new(str_passphrase);
     gtk_grid_attach(GTK_GRID(grid), passphrase_lbl, 0, 1, 1, 1);
 
     // passphrase response entry
@@ -63,12 +65,12 @@ passphrase_window_t *passphrase_window_new(void)
     GtkWidget *toggle_btn = gtk_button_new();
     gtk_widget_set_can_focus(toggle_btn, FALSE);
     gtk_button_set_image(GTK_BUTTON(toggle_btn), gtk_image_new_from_file(icon_vis));
-    gtk_widget_set_tooltip_text(toggle_btn, "Click to show or hide passphrase.");
+    gtk_widget_set_tooltip_text(toggle_btn, str_toggle_passphrase);
     g_signal_connect(toggle_btn, "clicked", G_CALLBACK(toggle_visibility), self->passphrase_ent);
     gtk_grid_attach(GTK_GRID(grid), toggle_btn, 2, 1, 1, 1);
 
     // submit button
-    GtkWidget *submit_btn = gtk_button_new_with_label("Submit");
+    GtkWidget *submit_btn = gtk_button_new_with_label(str_submit);
     gtk_widget_set_can_focus(submit_btn, FALSE);
     g_signal_connect(GTK_BUTTON(submit_btn), "clicked", G_CALLBACK(passphrase_window_check), self);
     gtk_grid_attach(GTK_GRID(grid), submit_btn, 0, 2, 3, 1);
@@ -84,7 +86,6 @@ Call the main GTK loop, which will open the window.
 void passphrase_window_main(passphrase_window_t *self)
 {
     gtk_widget_show_all(self->window);
-    g_signal_connect(self->window, "destroy", G_CALLBACK(passphrase_window_quit), NULL);
     gtk_main();
 }
 
@@ -96,14 +97,7 @@ will be used as the key encryption key). Otherwise, do nothing.
 void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
 {
     char const *passphrase = gtk_entry_get_text(GTK_ENTRY(self->passphrase_ent));
-
-    // calculate the hash of the passphrase
-    char unsigned *passphrase_hash = malloc(SHA512_DIGEST_LENGTH * sizeof *passphrase_hash);
-    SHA512((char unsigned *)passphrase, strlen(passphrase), passphrase_hash);
-    for(int i = 0; i < NUM_OF_HASHES; ++i)
-    {
-        SHA512(passphrase_hash, SHA512_DIGEST_LENGTH, passphrase_hash);
-    }
+    char unsigned *passphrase_hash = hash_custom(passphrase);
 
     // read the hash stored in the file
     char unsigned *stored_hash = malloc(SHA512_DIGEST_LENGTH * sizeof *stored_hash);
@@ -114,7 +108,7 @@ void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
     // compare
     if(memcmp(passphrase_hash, stored_hash, SHA512_DIGEST_LENGTH))
     {
-        widget_toast_show(self->window, "Cannot log in. Wrong passphrase entered.");
+        widget_toast_show(self->window, str_wrong_passphrase);
         zero_and_free(passphrase_hash, SHA512_DIGEST_LENGTH);
         zero_and_free(stored_hash, SHA512_DIGEST_LENGTH);
         return;

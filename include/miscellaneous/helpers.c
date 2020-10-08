@@ -1,200 +1,255 @@
-// prototypes
-void wait(int unsigned delay);
-gboolean hide_tooltip(gpointer data);
-char *digest_to_hexdigest(char unsigned *digest, size_t size);
-char unsigned *hexdigest_to_digest(char *hexdigest, size_t size);
-void clear_all_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer data);
-void __clear_all_entries(GtkWidget *widget, gpointer data);
+/*-----------------------------------------------------------------------------
+Function prototypes.
+-----------------------------------------------------------------------------*/
+char unsigned *gen_rand(int length);
+char *gen_rand_constrained(int lower, int upper);
+char unsigned *hash_custom(char const *passphrase);
+int encrypt_AES(char unsigned *pt, int ptlen, char unsigned *key, char unsigned *iv, char unsigned **ct);
+int decrypt_AES(char unsigned *ct, int ctlen, char unsigned *key, char unsigned *iv, char unsigned **pt);
+void toggle_visibility(GtkButton *btn, GtkEntry *entry);
+void widget_toast_show(GtkWidget *widget, char const *toast);
+gboolean widget_toast_hide(gpointer data);
+int request_confirmation(GtkWidget *window, char const *question, char *website, char *username);
+void segfault_handler(int sig);
+void zero_and_free(char volatile unsigned *data, int length);
 
 /*-----------------------------------------------------------------------------
-Block program execution for some amount of time. This will not be used in the
-code, but is being left just for fun (and in case it is required later).
+Generate an array of random bytes. It is used to generate an encryption key
+and initialisation vector for AES. The length is the number of bytes, not bits.
+
+`random' returns a number between 0 and `RAND_MAX'. `RAND_MAX' is guaranteed to
+be at least 32767. Hence, it may be assigned to each byte, because only the
+bottom 8 bits are required.
 -----------------------------------------------------------------------------*/
-void wait_time_delay(int unsigned delay)
+char unsigned *gen_rand(int length)
 {
-	int unsigned end_time = time(NULL) + delay;
-	while(time(NULL) < end_time);
+    char unsigned *arr = malloc(length * sizeof *arr);
+    for(int i = 0; i < length; ++i)
+    {
+        arr[i] = random();
+    }
+
+    return arr;
 }
 
 /*-----------------------------------------------------------------------------
-Represent a sequence of bits as a hexadecimal number. The input is an array of
-bytes. Each byte in this array can be represented using two hexadecimal
-symbols. Thus, the hexadecimal result is a string whose length is twice that
-of the input array. This result is supposed to be in printable form. A null
-character is appended at the end automatically by `sprintf'.
+Generate a random printable string. It is used to suggest strong passwords.
 -----------------------------------------------------------------------------*/
-char *digest_to_hexdigest(char unsigned *digest, size_t size)
+char *gen_rand_constrained(int lower, int upper)
 {
-	char *hexdigest = malloc((2 * size + 1) * sizeof *hexdigest);
-	for(size_t i = 0; i < size; ++i)
-	{
-		sprintf(hexdigest + 2 * i, "%02x", digest[i]);
-	}
-	return hexdigest;
+    int length = lower + random() % (upper - lower);
+    char alphabet[] = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ123456789";
+    char special[] = "!@-#?";
+
+    char *arr = malloc((length + 1) * sizeof *arr);
+    for(int i = 0; i < length; ++i)
+    {
+        if(i != 0 && i % 6 == 0)
+        {
+            arr[i] = special[random() % strlen(special)];
+            continue;
+        }
+        arr[i] = alphabet[random() % strlen(alphabet)];
+    }
+    arr[length] = '\0';
+
+    return arr;
 }
 
 /*-----------------------------------------------------------------------------
-Reverse whatever `digest_to_hexdigest' does. The input array is the hexadecimal
-representation of some sequence of bits. Every two characters in it can be
-written as a single byte. This result is not expected to be printed. Do not
-append a null character at the end.
+Repeatedly hash the input array of bytes. This is expected to be used on the
+passphrase only.
 -----------------------------------------------------------------------------*/
-char unsigned *hexdigest_to_digest(char *hexdigest, size_t size)
+char unsigned *hash_custom(char const *passphrase)
 {
-	// Question. Why am I allocating twice the memory required?
-	// Answer. If the exact amount required is allocated, then sometimes,
-	// trying to free the allocated memory fails with this error.
-	// free(): invalid next size (fast)
-	// an explanation may be found here
-	// https://stackoverflow.com/a/44940249/6286575
-	char unsigned *digest = malloc(2 * size * sizeof *digest);
-	for(size_t i = 0; i < size; ++i)
-	{
-		#pragma GCC diagnostic push
-		#pragma GCC diagnostic ignored "-Wformat"
-		sscanf(hexdigest + 2 * i, "%2x", digest + i);
-		#pragma GCC diagnostic pop
-	}
-	return digest;
+    char unsigned *passphrase_hash = malloc(SHA512_DIGEST_LENGTH * sizeof *passphrase_hash);
+    SHA512((char unsigned *)passphrase, strlen(passphrase), passphrase_hash);
+    for(int i = 0; i < NUM_OF_HASHES; ++i)
+    {
+        SHA512(passphrase_hash, SHA512_DIGEST_LENGTH, passphrase_hash);
+    }
+
+    return passphrase_hash;
 }
 
 /*-----------------------------------------------------------------------------
-Check if the input is a valid GTK widget. If it is, hide the tooltip (if any)
-associated with the widget.
+Encrypt the input array of bytes using 256-bit AES. Allocate sufficient memory
+to store the ciphertext. Return the actual length of the ciphertext.
 -----------------------------------------------------------------------------*/
-gboolean hide_tooltip(gpointer data)
+int encrypt_AES(char unsigned *pt, int ptlen, char unsigned *key, char unsigned *iv, char unsigned **ct)
 {
-	GtkWidget *widget = data;
-	if(GTK_IS_WIDGET(widget) == TRUE)
-	{
-		gtk_widget_set_has_tooltip(widget, FALSE);
-		return FALSE;
-	}
+    *ct = malloc(2 * ptlen * sizeof **ct);
 
-	return FALSE;
+    // encrypt
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, key, iv);
+    int len;
+    EVP_EncryptUpdate(ctx, *ct, &len, pt, ptlen);
+    int ctlen = len;
+    EVP_EncryptFinal_ex(ctx, *ct + len, &len);
+    ctlen += len;
+    EVP_CIPHER_CTX_free(ctx);
+
+    return ctlen;
 }
 
 /*-----------------------------------------------------------------------------
-Case-insensitive substring searching. It uses the naive substring searching
-algorithm, because the text is not expected to be very long. This is no longer
-needed, because I figured out how to use `strcasestr', a non-standard extension
-which happens to be available on my system.
+Decrypt the input array of bytes using 256-bit AES. Allocate sufficient memory
+to store the plaintext. Delimit it with a null byte, since it is expected to be
+a printable string. Return the length of the plaintext, which (ideally) should
+be the same as the result of calling `strlen' on the plaintext.
 -----------------------------------------------------------------------------*/
-char *strstr_ci(char const *txt, char const *pat)
+int decrypt_AES(char unsigned *ct, int ctlen, char unsigned *key, char unsigned *iv, char unsigned **pt)
 {
-	// corner case checks
-	if(pat[0] == '\0')
-	{
-		return (char *)txt;
-	}
-	size_t patlen = strlen(pat);
-	if(patlen > strnlen(txt, patlen + 256))
-	{
-		return NULL;
-	}
+    *pt = malloc(2 * ctlen * sizeof **pt);
 
-	// traverse the text until the last potential match location
-	for(; txt[patlen - 1] != '\0'; ++txt)
-	{
-		// locate first character match
-		for(char *loc_txt = (char *)txt, *loc_pat = (char *)pat;; ++loc_txt, ++loc_pat)
-		{
-			if(*loc_pat == '\0')
-			{
-				return (char *)txt;
-			}
+    // decrypt
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, key, iv);
+    int len;
+    EVP_DecryptUpdate(ctx, *pt, &len, ct, ctlen);
+    int ptlen = len;
+    EVP_DecryptFinal_ex(ctx, *pt + len, &len);
+    (*pt)[ptlen] = '\0';
+    ptlen += len;
+    EVP_CIPHER_CTX_free(ctx);
 
-			if(tolower(*loc_txt) != tolower(*loc_pat))
-			{
-				break;
-			}
-		}
-	}
-
-	return NULL;
+    return ptlen;
 }
 
 /*-----------------------------------------------------------------------------
-Hand over the provided GTK container to the `__clear_single_entry' function,
-which will recursively clear each GTK entry which is a child (direct or
-indirect) of the container.
+Toggle the appearance of the characters in a GTK entry. 'Appearance' means
+whether they are readable or are shown as dots, just like passwords are shown.
 -----------------------------------------------------------------------------*/
-void clear_all_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer data)
+void toggle_visibility(GtkButton *btn, GtkEntry *entry)
 {
-	GtkWidget *widget = data;
-	gtk_container_foreach(GTK_CONTAINER(widget), __clear_all_entries, NULL);
+    gboolean visibility = gtk_entry_get_visibility(entry);
+    gtk_entry_set_visibility(entry, !visibility);
 }
 
 /*-----------------------------------------------------------------------------
-If the widget is an entry, clear it. If it is container, check its children
-and clear those which are entries.
-Question. Why did I create a separate function `__clear_all_entries'? I could
-just have inserted the below code in `clear_all_entries'. That way, there need
-be only one function.
-Answer. `clear_all_entries' is a callback for the `switch-page' signal of a
-notebook. `__clear_all_entries' is a callback for the `foreach' function. They
-have different signatures. That is why I created the latter, a separate
-function.
+Display a tooltip. Schedule a function to hide the tooltip after some time.
+This makes it look like it was a toast.
 -----------------------------------------------------------------------------*/
-void __clear_all_entries(GtkWidget *widget, gpointer data)
+void widget_toast_show(GtkWidget *widget, char const *toast)
 {
-	if(GTK_IS_ENTRY(widget) == TRUE)
-	{
-		// calling `gtk_entry_buffer_set_text' after deleting text
-		// this forces the entry to emit the "changed" signal
-		GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(widget));
-		gtk_entry_buffer_delete_text(buffer, 0, -1);
-		gtk_entry_buffer_set_text(buffer, "", -1);
-		return;
-	}
-
-	if(GTK_IS_CONTAINER(widget) == TRUE)
-	{
-		gtk_container_foreach(GTK_CONTAINER(widget), __clear_all_entries, NULL);
-	}
+    gtk_widget_set_tooltip_text(widget, toast);
+    g_timeout_add(TOAST_TIMEOUT, widget_toast_hide, widget);
 }
 
 /*-----------------------------------------------------------------------------
-Show or hide the string written in the provided GTK entry.
+Hide the tooltip of a widget. If the widget has no tooltip, or if the widget is
+no more (perhaps because its parent was destroyed), this has no effect.
 -----------------------------------------------------------------------------*/
-void toggle_visibility(GtkButton *button, gpointer data)
+gboolean widget_toast_hide(gpointer data)
 {
-	GtkEntry *entry = data;
-	if(gtk_entry_get_visibility(entry) == FALSE)
-	{
-		gtk_entry_set_visibility(entry, TRUE);
-		gtk_button_set_image(button, gtk_image_new_from_file(icon_vis));
-		return;
-	}
+    GtkWidget *widget = data;
+    if(GTK_IS_WIDGET(widget))
+    {
+        gtk_widget_set_has_tooltip(widget, FALSE);
+    }
 
-	gtk_entry_set_visibility(entry, FALSE);
-	gtk_button_set_image(button, gtk_image_new_from_file(icon_invis));
+    return FALSE;
 }
 
 /*-----------------------------------------------------------------------------
-Write a randomly generated string in the teo GTK entries provided.
+Display a box asking for confirmation on whether the user wants to proceed with
+some action. If the last two arguments are not null pointers, display them as
+the website and username.
 -----------------------------------------------------------------------------*/
-void auto_fill_entry(GtkButton *button, gpointer data)
+int request_confirmation(GtkWidget *window, char const *question, char *website, char *username)
 {
-	GtkEntry **callback_data = data;
-	GtkEntry *pw_entry = callback_data[0];
-	GtkEntry *cp_entry = callback_data[1];
+    // dialogue box
+    GtkWidget *dialogue = gtk_dialog_new();
+    gtk_container_set_border_width(GTK_CONTAINER(dialogue), 0);
+    gtk_dialog_set_default_response(GTK_DIALOG(dialogue), GTK_RESPONSE_REJECT);
+    gtk_window_set_destroy_with_parent(GTK_WINDOW(dialogue), TRUE);
+    gtk_window_set_icon_from_file(GTK_WINDOW(dialogue), icon_main, NULL);
+    gtk_window_set_modal(GTK_WINDOW(dialogue), TRUE);
+    gtk_window_set_position(GTK_WINDOW(dialogue), GTK_WIN_POS_CENTER);
+    gtk_window_set_resizable(GTK_WINDOW(dialogue), FALSE);
+    gtk_window_set_title(GTK_WINDOW(dialogue), str_confirmation);
+    gtk_window_set_transient_for(GTK_WINDOW(dialogue), GTK_WINDOW(window));
 
-	char *password = generate_random_constrained(8, 16);
-	gtk_entry_set_text(pw_entry, password);
-	gtk_entry_set_text(cp_entry, password);
+    // grid
+    GtkWidget *grid = gtk_grid_new();
+    gtk_container_set_border_width(GTK_CONTAINER(grid), 25);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 15);
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 15);
+    gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(grid, TRUE);
+    gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(dialogue))), grid);
+
+    // warning icon
+    GtkWidget *image = gtk_image_new_from_file(icon_warn);
+    gtk_grid_attach(GTK_GRID(grid), image, 0, 0, 1, 1);
+
+    // header label
+    GtkWidget *header = gtk_label_new(question);
+    gtk_grid_attach(GTK_GRID(grid), header, 1, 0, 2, 1);
+
+    if(website != NULL && username != NULL)
+    {
+        // website prompt label
+        GtkWidget *website1_lbl = gtk_label_new(str_website);
+        gtk_grid_attach(GTK_GRID(grid), website1_lbl, 1, 1, 1, 1);
+
+        // website response label
+        GtkWidget *website2_lbl = gtk_label_new(website);
+        gtk_grid_attach(GTK_GRID(grid), website2_lbl, 2, 1, 1, 1);
+
+        // username prompt label
+        GtkWidget *username1_lbl = gtk_label_new(str_username);
+        gtk_grid_attach(GTK_GRID(grid), username1_lbl, 1, 2, 1, 1);
+
+        // username response label
+        GtkWidget *username2_lbl = gtk_label_new(username);
+        gtk_grid_attach(GTK_GRID(grid), username2_lbl, 2, 2, 1, 1);
+    }
+
+    // buttons
+    gtk_dialog_add_button(GTK_DIALOG(dialogue), str_reject, GTK_RESPONSE_REJECT);
+    gtk_dialog_add_button(GTK_DIALOG(dialogue), str_accept, GTK_RESPONSE_ACCEPT);
+
+    gtk_widget_show_all(dialogue);
+    gtk_widget_grab_focus(dialogue);
+    int response = gtk_dialog_run(GTK_DIALOG(dialogue));
+    gtk_widget_destroy(dialogue);
+
+    return response;
 }
 
 /*-----------------------------------------------------------------------------
 Segmentation fault handler. Whenever the program crashes because of a
 segmentation fault, write the backtrace.
 -----------------------------------------------------------------------------*/
-void segmentation_fault_handler(int sig)
+void segfault_handler(int sig)
 {
-	fprintf(stderr, "\033[1;31mSegmentation fault: backtrace is as follows.\033[0m\n");
-	void *backtrace_array[BACKTRACE_ARR_SIZE];
-	size_t size = backtrace(backtrace_array, BACKTRACE_ARR_SIZE);
-	backtrace_symbols_fd(backtrace_array, size, STDERR_FILENO);
-	exit(EXIT_FAILURE);
+    fprintf(stderr, "\033[1;31msignal %d; backtrace:\033[0m\n", sig);
+    void *backtrace_array[BACKTRACE_ARR_SIZE];
+    size_t size = backtrace(backtrace_array, BACKTRACE_ARR_SIZE);
+    backtrace_symbols_fd(backtrace_array, size, STDERR_FILENO);
+    exit(EXIT_FAILURE);
+}
+
+/*-----------------------------------------------------------------------------
+Overwrite the given memory chunk with zeros. Then release the memory. Whatever
+the input pointer type may have been, assume that it is volatile when it is
+passed to this function. This ensures that the zeroing operation does not get
+removed because of compiler optimisation.
+
+It is not possible to replace this loop with a call to the `memset' function,
+because `memset' discards the `volatile' qualifier.
+
+The final cast to a pointer of type `void' ensures that the compiler does not
+give a warning about `free' discarding the `volatile' qualifier.
+-----------------------------------------------------------------------------*/
+void zero_and_free(char volatile unsigned *data, int length)
+{
+    for(int i = 0; i < length; ++i)
+    {
+        data[i] = '\0';
+    }
+    free((void *)data);
 }
 

@@ -9,12 +9,15 @@ typedef struct
     char *website;
     char *username;
     char *password;
+
     char unsigned *e_website;  // encrypted website
     char unsigned *e_username; // encrypted username
     char unsigned *e_password; // encrypted password
+
     int e_website_length;
     int e_username_length;
     int e_password_length;
+
     char unsigned *iv;         // initialisation vector
     char unsigned *key;        // encryption key
     char unsigned *e_key;      // key encrypted with the key encryption key

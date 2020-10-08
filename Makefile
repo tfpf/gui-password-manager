@@ -9,11 +9,12 @@ WIGN   = -Wno-unused-parameter
 SEGVTR = -g -rdynamic
 SSL    = -lcrypto -lssl
 GTK    = $(shell pkg-config --libs --cflags gtk+-3.0)
-SEARCH = #-I./include/miscellaneous -I./include/classes
+SEARCH = -I./include/miscellaneous -I./include/classes
+
 
 Source     = main.c
 Assembly   = main.s
-Binary     = main.elf
+Binary     = main
 
 
 .PHONY: clean asm comp exec run all
