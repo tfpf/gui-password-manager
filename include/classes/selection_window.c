@@ -776,7 +776,7 @@ GtkWidget *change_grid_new(selection_window_t *self)
     gtk_grid_attach(GTK_GRID(change_grid), header, 0, 0, 3, 1);
 
     // passphrase prompt label
-    GtkWidget *passphrase1_lbl = gtk_label_new(str_passphrase);
+    GtkWidget *passphrase1_lbl = gtk_label_new(str_passphrase1);
     gtk_grid_attach(GTK_GRID(change_grid), passphrase1_lbl, 0, 1, 1, 1);
 
     // passphrase response entry
@@ -850,16 +850,12 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
         return;
     }
 
-    // write passphrase to file
-    char unsigned *passphrase_hash = hash_custom(passphrase1);
-    FILE *Master_file = fopen(Master__, "w");
-    fwrite(passphrase_hash, 1, SHA512_DIGEST_LENGTH, Master_file);
-    fclose(Master_file);
-    remove(Master);
-    rename(Master__, Master);
+    passphrase_hash_to_file(passphrase1);
 
     // obtain new key encryption key
-    // remember that the AES key is 256 bits long, and so is an SHA256 hash
+    // remember that the encryption system is AES256
+    // whence, the AES key is 256 bits long
+    // so is an SHA256 hash
     zero_and_free(self->kek, AES_KEY_LENGTH);
     self->kek = malloc(SHA256_DIGEST_LENGTH * sizeof *(self->kek));
     SHA256((char unsigned *)passphrase1, strlen(passphrase1), self->kek);

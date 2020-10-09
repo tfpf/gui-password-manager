@@ -15,8 +15,11 @@ passphrase_window_t;
 Function prototypes.
 -----------------------------------------------------------------------------*/
 passphrase_window_t *passphrase_window_new(void);
-void passphrase_window_quit(GtkWidget *window, gpointer data);
+void passphrase_window_main(passphrase_window_t *self);
 void passphrase_window_check(GtkButton *btn, passphrase_window_t *self);
+char unsigned *passphrase_hash_from_file(void);
+void passphrase_hash_to_file(char const *passphrase);
+void passphrase_window_quit(GtkWidget *window, gpointer data);
 
 /*-----------------------------------------------------------------------------
 Initialiser for the struct defined above. Create the GTK window. Then save it
@@ -98,12 +101,7 @@ void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
 {
     char const *passphrase = gtk_entry_get_text(GTK_ENTRY(self->passphrase_ent));
     char unsigned *passphrase_hash = hash_custom(passphrase);
-
-    // read the hash stored in the file
-    char unsigned *stored_hash = malloc(SHA512_DIGEST_LENGTH * sizeof *stored_hash);
-    FILE *Master_file = fopen(Master, "rb");
-    fread(stored_hash, 1, SHA512_DIGEST_LENGTH, Master_file);
-    fclose(Master_file);
+    char unsigned *stored_hash = passphrase_hash_from_file();
 
     // compare
     if(memcmp(passphrase_hash, stored_hash, SHA512_DIGEST_LENGTH))
@@ -121,6 +119,34 @@ void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
     zero_and_free(stored_hash, SHA512_DIGEST_LENGTH);
 
     passphrase_window_quit(self->window, NULL);
+}
+
+/*-----------------------------------------------------------------------------
+Read the hash from the passphrase file.
+-----------------------------------------------------------------------------*/
+char unsigned *passphrase_hash_from_file(void)
+{
+    char unsigned *hash = malloc(SHA512_DIGEST_LENGTH * sizeof *hash);
+    FILE *Master_file = fopen(Master, "rb");
+    fread(hash, 1, SHA512_DIGEST_LENGTH, Master_file);
+    fclose(Master_file);
+
+    return hash;
+}
+
+/*-----------------------------------------------------------------------------
+Write the hash to the passphrase file. This will be used while changing the
+passphrase.
+-----------------------------------------------------------------------------*/
+void passphrase_hash_to_file(char const *passphrase)
+{
+    char unsigned *passphrase_hash = hash_custom(passphrase);
+    FILE *Master_file = fopen(Master__, "w");
+    fwrite(passphrase_hash, 1, SHA512_DIGEST_LENGTH, Master_file);
+    fclose(Master_file);
+
+    remove(Master);
+    rename(Master__, Master);
 }
 
 /*-----------------------------------------------------------------------------
