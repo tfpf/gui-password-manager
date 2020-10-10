@@ -1,17 +1,41 @@
 /*-----------------------------------------------------------------------------
-Wrapper around the GTK window struct. Allows easy access to all sensitive
-data and the key encryption key.
+Wrapper struct. Store the widgets of interest so that they can be accessed
+easily when required.
+
+Members:
+    window: main window in which widgets will be added
+    notif_revealer: struct which shows notifications in `window'
+    search_ent: entry in which the user can type to search for something
+    bottom_grid: grid in which search results will be populated
+    website_add_ent: entry to type the website while adding a new item
+    username_add_ent: entry to type the username while adding a new item
+    password1_add_ent: entry to type the password while adding a new item
+    password2_add_ent: entry to retype the password while adding a new item
+    construction_in_progress: whether all child widgets of `window' are created
+    window_edit: secondary window which is used to edit an existing item
+    notif_revealer_edit: struct which shows notifications in `window_edit'
+    website_edit_ent: entry to type the website while editing a new item
+    username_edit_ent: entry to type the username while editing a new item
+    password1_edit_ent: entry to type the password while editing a new item
+    password2_edit_ent: entry to retype the password while editing a new item
+    items: array of all existing items
+    num_of_items
+    kek: key encryption key
 -----------------------------------------------------------------------------*/
 typedef struct
 {
-    GtkWidget *window;                 // main window
+    GtkWidget *window;
+    notification_revealer_t *notif_revealer;
     GtkWidget *search_ent;
-    GtkWidget *bottom_grid;            // grid containing search results
+    GtkWidget *bottom_grid;
     GtkWidget *website_add_ent;
     GtkWidget *username_add_ent;
     GtkWidget *password1_add_ent;
     GtkWidget *password2_add_ent;
-    GtkWidget *window_edit;            // window to edit a password
+    gboolean construction_in_progress;
+
+    GtkWidget *window_edit;
+    notification_revealer_t *notif_revealer_edit;
     GtkWidget *website_edit_ent;
     GtkWidget *username_edit_ent;
     GtkWidget *password1_edit_ent;
@@ -19,15 +43,10 @@ typedef struct
     GtkWidget *passphrase1_ent;
     GtkWidget *passphrase2_ent;
 
-    GtkWidget *revealer;               // container for notifications
-    GtkWidget *notify_lbl;
-
-    gboolean construction_in_progress; // whether all widgets have been created
-
-    password_item_t **items;           // array containing data read from file
+    password_item_t **items;
     int num_of_items;
 
-    char unsigned *kek;                // key encryption key
+    char unsigned *kek;
 }
 selection_window_t;
 
@@ -61,8 +80,8 @@ void change_grid_check(GtkButton *btn, selection_window_t *self);
 void change_grid_change_passphrase(selection_window_t *self);
 
 /*-----------------------------------------------------------------------------
-Initialiser for the struct defined above. Create the GTK window. Then save it
-and its passphrase entry as the struct members.
+Initialiser for the `selection_window_t' struct. Create a GTK window and
+populate it with widgets. Save the widgets of interest as member of the struct.
 -----------------------------------------------------------------------------*/
 selection_window_t *selection_window_new(char unsigned *kek)
 {
@@ -108,23 +127,9 @@ selection_window_t *selection_window_new(char unsigned *kek)
     gtk_label_set_markup(GTK_LABEL(change_lbl), msg_change);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), change_grid, change_lbl);
 
-    // revealer
-    self->revealer = gtk_revealer_new();
-    gtk_revealer_set_transition_duration(GTK_REVEALER(self->revealer), TOAST_TIMEOUT);
-    gtk_revealer_set_transition_type(GTK_REVEALER(self->revealer), GTK_REVEALER_TRANSITION_TYPE_CROSSFADE);
-    gtk_widget_set_halign(self->revealer, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(self->revealer, GTK_ALIGN_START);
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->revealer);
-
-    // box
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    GtkStyleContext *style = gtk_widget_get_style_context(box);
-    gtk_style_context_add_class(style, "app-notification");
-    gtk_container_add(GTK_CONTAINER(self->revealer), box);
-
-    // notification label
-    self->notify_lbl = gtk_label_new(NULL);
-    gtk_container_add(GTK_CONTAINER(box), self->notify_lbl);
+    // notification revealer
+    self->notif_revealer = notification_revealer_new();
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->notif_revealer->revealer);
 
     self->items = password_items_new_from_file(&(self->num_of_items), self->kek);
     selection_window_sort_items(self);
@@ -133,7 +138,7 @@ selection_window_t *selection_window_new(char unsigned *kek)
 }
 
 /*-----------------------------------------------------------------------------
-Call the main GTK loop, which will open the window.
+Start the main event loop.
 -----------------------------------------------------------------------------*/
 void selection_window_main(selection_window_t *self)
 {
@@ -172,9 +177,11 @@ void selection_window_sort_items(selection_window_t *self)
 
 /*-----------------------------------------------------------------------------
 Clear all entries on all pages of the GTK notebook in the window. This function
-is called whenever the GTK notebook page is changed, which also happens during
-page creation. In which case, the GTK window has not been drawn completely, so
-nothing needs to be done.
+is called automatically when:
+    (1) the GTK notebook page is changed.
+    (2) GTK notebook page creation.
+In the latter case, the GTK window has not been drawn completely, so nothing
+needs to be done.
 -----------------------------------------------------------------------------*/
 void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, selection_window_t *self)
 {
@@ -193,13 +200,12 @@ void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guin
 }
 
 /*-----------------------------------------------------------------------------
-Clear the GTK entry given if it is possible to do so. Change the contents of
-the entry to a non-empty string, and clear it again.
+Clear the given GTK entry.
 
-The latter action is not strictly necessary. But it causes the affected GTK
-entry to emit a signal indicating that its contents changed (this does not
-happen on simply clearing the contents). This signal is used to populate the
-password search results. That is why the additional action is also performed.
+Calling `gtk_entry_buffer_delete_text' will clear the text, but it will not
+cause the entry to emit a `changed' signal. I use this signal to update the
+search results, so I need the entry to emit this signal. Hence, the contents of
+the entry are first set to a non-empty string, and then cleared again.
 -----------------------------------------------------------------------------*/
 void selection_window_clear_entry(GtkWidget *widget)
 {
@@ -210,7 +216,7 @@ void selection_window_clear_entry(GtkWidget *widget)
 }
 
 /*-----------------------------------------------------------------------------
-Automatically called when the window is closed. Quit the GTK main loop.
+Stop the main event loop.
 -----------------------------------------------------------------------------*/
 void selection_window_quit(GtkWidget *window, selection_window_t *self)
 {
@@ -423,7 +429,7 @@ void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
     password_items_write_to_file(self->items, self->num_of_items);
 
     selection_window_clear_entries(NULL, NULL, 0, self);
-    notification_show(self->revealer, self->notify_lbl, str_delete_password_done);
+    notification_revealer_show(self->notif_revealer, str_delete_password_done);
 }
 
 /*-----------------------------------------------------------------------------
@@ -455,6 +461,10 @@ void edit_window_new(GtkButton *btn, selection_window_t *self)
     gtk_window_set_transient_for(GTK_WINDOW(self->window_edit), GTK_WINDOW(self->window));
     g_signal_connect(self->window_edit, "destroy", G_CALLBACK(edit_window_quit), NULL);
 
+    // overlay
+    GtkWidget *overlay = gtk_overlay_new();
+    gtk_container_add(GTK_CONTAINER(self->window_edit), overlay);
+
     // grid
     GtkWidget *grid = gtk_grid_new();
     gtk_container_set_border_width(GTK_CONTAINER(grid), 50);
@@ -462,7 +472,7 @@ void edit_window_new(GtkButton *btn, selection_window_t *self)
     gtk_grid_set_row_spacing(GTK_GRID(grid), 25);
     gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
     gtk_widget_set_hexpand(grid, TRUE);
-    gtk_container_add(GTK_CONTAINER(self->window_edit), grid);
+    gtk_container_add(GTK_CONTAINER(overlay), grid);
 
     // header label
     GtkWidget *header = gtk_label_new(NULL);
@@ -541,6 +551,10 @@ void edit_window_new(GtkButton *btn, selection_window_t *self)
     g_signal_connect(GTK_BUTTON(submit_btn), "clicked", G_CALLBACK(edit_window_check), self);
     gtk_grid_attach(GTK_GRID(grid), submit_btn, 0, 6, 3, 1);
 
+    // notification revealer
+    self->notif_revealer_edit = notification_revealer_new();
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->notif_revealer_edit->revealer);
+
     gtk_widget_show_all(self->window_edit);
     gtk_main();
 }
@@ -570,14 +584,14 @@ void edit_window_check(GtkButton *btn, selection_window_t *self)
     // sanity 1
     if(!strcmp(website, "") || !strcmp(username, "") || !strcmp(password1, "") || !strcmp(password2, ""))
     {
-        notification_show(self->revealer, self->notify_lbl, str_edit_err1);
+        notification_revealer_show(self->notif_revealer_edit, str_edit_err1);
         return;
     }
 
     // sanity 2
     if(strcmp(password1, password2))
     {
-        notification_show(self->revealer, self->notify_lbl, str_edit_err2);
+        notification_revealer_show(self->notif_revealer_edit, str_edit_err2);
         return;
     }
 
@@ -598,7 +612,7 @@ void edit_window_check(GtkButton *btn, selection_window_t *self)
 
     selection_window_sort_items(self);
     selection_window_clear_entries(NULL, NULL, 0, self);
-    notification_show(self->revealer, self->notify_lbl, str_edit_password_done);
+    notification_revealer_show(self->notif_revealer, str_edit_password_done);
 }
 
 /*-----------------------------------------------------------------------------
@@ -725,14 +739,14 @@ void add_grid_check(GtkButton *btn, selection_window_t *self)
     // sanity 1
     if(!strcmp(website, "") || !strcmp(username, "") || !strcmp(password1, "") || !strcmp(password2, ""))
     {
-        notification_show(self->revealer, self->notify_lbl, str_add_err1);
+        notification_revealer_show(self->notif_revealer, str_add_err1);
         return;
     }
 
     // sanity 2
     if(strcmp(password1, password2))
     {
-        notification_show(self->revealer, self->notify_lbl, str_add_err2);
+        notification_revealer_show(self->notif_revealer, str_add_err2);
         return;
     }
 
@@ -749,7 +763,7 @@ void add_grid_check(GtkButton *btn, selection_window_t *self)
 
     selection_window_sort_items(self);
     selection_window_clear_entries(NULL, NULL, 0, self);
-    notification_show(self->revealer, self->notify_lbl, str_add_password_done);
+    notification_revealer_show(self->notif_revealer, str_add_password_done);
 }
 
 /*-----------------------------------------------------------------------------
@@ -857,14 +871,14 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
     // sanity 1
     if(!strcmp(passphrase1, "") || !strcmp(passphrase2, ""))
     {
-        notification_show(self->revealer, self->notify_lbl, str_change_passphrase_err1);
+        notification_revealer_show(self->notif_revealer, str_change_passphrase_err1);
         return;
     }
 
     // sanity 2
     if(strcmp(passphrase1, passphrase2))
     {
-        notification_show(self->revealer, self->notify_lbl, str_change_passphrase_err2);
+        notification_revealer_show(self->notif_revealer, str_change_passphrase_err2);
         return;
     }
 
@@ -888,7 +902,7 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
     change_grid_change_passphrase(self);
 
     selection_window_clear_entries(NULL, NULL, 0, self);
-    notification_show(self->revealer, self->notify_lbl, str_change_passphrase_done);
+    notification_revealer_show(self->notif_revealer, str_change_passphrase_done);
 }
 
 /*-----------------------------------------------------------------------------
