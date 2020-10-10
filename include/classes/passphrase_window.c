@@ -1,16 +1,20 @@
 /*-----------------------------------------------------------------------------
-Wrapper struct to allow easy but scoped access to the passphrase and the key
-encryption key.
+Wrapper struct. Store the widgets of interest so that they can be accessed
+easily when required.
+
+Members:
+    window: main window in which widgets will be added
+    notif_revealer: struct which shows or hides a notification
+    passphrase_ent: entry in which the user can type their passphrase
+    kek: key encryption key
 -----------------------------------------------------------------------------*/
 typedef struct
 {
-    GtkWidget *window;         // main window
+    GtkWidget *window;
+    notification_revealer_t *notif_revealer;
     GtkWidget *passphrase_ent;
 
-    GtkWidget *revealer;       // container for notifications
-    GtkWidget *notify_lbl;
-
-    char unsigned *kek;        // key encryption key
+    char unsigned *kek;
 }
 passphrase_window_t;
 
@@ -25,8 +29,9 @@ void passphrase_hash_to_file(char const *passphrase);
 void passphrase_window_quit(GtkWidget *window, gpointer data);
 
 /*-----------------------------------------------------------------------------
-Initialiser for the struct defined above. Create the GTK window. Then save it
-and its passphrase entry as the struct members.
+Initialiser for the `passphrase_window_t' struct. Create a GTK window and
+populate it with widgets. Of these widgets, the ones which are required for
+processing are saved as members of the struct.
 -----------------------------------------------------------------------------*/
 passphrase_window_t *passphrase_window_new(void)
 {
@@ -87,29 +92,15 @@ passphrase_window_t *passphrase_window_new(void)
     gtk_widget_set_can_default(submit_btn, TRUE);
     gtk_widget_grab_default(submit_btn);
 
-    // revealer
-    self->revealer = gtk_revealer_new();
-    gtk_revealer_set_transition_duration(GTK_REVEALER(self->revealer), TOAST_TIMEOUT);
-    gtk_revealer_set_transition_type(GTK_REVEALER(self->revealer), GTK_REVEALER_TRANSITION_TYPE_CROSSFADE);
-    gtk_widget_set_halign(self->revealer, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(self->revealer, GTK_ALIGN_START);
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->revealer);
-
-    // box
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    GtkStyleContext *style = gtk_widget_get_style_context(box);
-    gtk_style_context_add_class(style, "app-notification");
-    gtk_container_add(GTK_CONTAINER(self->revealer), box);
-
-    // notification label
-    self->notify_lbl = gtk_label_new(NULL);
-    gtk_container_add(GTK_CONTAINER(box), self->notify_lbl);
+    // notification revealer
+    self->notif_revealer = notification_revealer_new();
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->notif_revealer->revealer);
 
     return self;
 }
 
 /*-----------------------------------------------------------------------------
-Call the main GTK loop, which will open the window.
+Start the main event loop.
 -----------------------------------------------------------------------------*/
 void passphrase_window_main(passphrase_window_t *self)
 {
@@ -118,9 +109,13 @@ void passphrase_window_main(passphrase_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Read the passphrase entered by the user. Check whether its hash matches the
-hash stored in a file. If it matches, obtain the SHA256 of the passphrase (it
-will be used as the key encryption key). Otherwise, do nothing.
+Calculate the hash of the passphrase entered by the user. Compare it with the
+hash stored in the passphrase file. If the hashes match, calculate the SHA256
+of the passphrase and use it as the 256-bit key encryption key. (This key
+encryption key will be used to encrypt 256-bit keys, which will themselves be
+used to encrypt plaintext data using AES256.) And then close the window.
+
+If the hashes do not match, display a notification and do nothing else.
 -----------------------------------------------------------------------------*/
 void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
 {
@@ -131,7 +126,7 @@ void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
     // compare
     if(memcmp(passphrase_hash, stored_hash, SHA512_DIGEST_LENGTH))
     {
-        notification_show(self->revealer, self->notify_lbl, str_wrong_passphrase);
+        notification_revealer_show(self->notif_revealer, str_wrong_passphrase);
         zero_and_free(passphrase_hash, SHA512_DIGEST_LENGTH);
         zero_and_free(stored_hash, SHA512_DIGEST_LENGTH);
         return;
@@ -160,8 +155,7 @@ char unsigned *passphrase_hash_from_file(void)
 }
 
 /*-----------------------------------------------------------------------------
-Write the hash to the passphrase file. This will be used while changing the
-passphrase.
+Write the hash to the passphrase file.
 -----------------------------------------------------------------------------*/
 void passphrase_hash_to_file(char const *passphrase)
 {
@@ -175,7 +169,7 @@ void passphrase_hash_to_file(char const *passphrase)
 }
 
 /*-----------------------------------------------------------------------------
-Automatically called when the window is closed. Quit the GTK main loop.
+Stop the main event loop.
 -----------------------------------------------------------------------------*/
 void passphrase_window_quit(GtkWidget *window, gpointer data)
 {
