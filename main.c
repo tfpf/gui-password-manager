@@ -14,6 +14,7 @@
 
 #include "global_constants.c"
 #include "helpers.c"
+#include "notification_revealer.c"
 #include "passphrase_window.c"
 #include "password_item.c"
 #include "selection_window.c"
@@ -42,6 +43,8 @@ int main(void)
     passphrase_window_main(passphrase_window);
     char unsigned *kek = passphrase_window->kek;
     free(passphrase_window);
+
+    // `kek' will be a null pointer if the correct passphrase was not entered
     if(kek == NULL)
     {
         return EXIT_FAILURE;
