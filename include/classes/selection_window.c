@@ -63,6 +63,7 @@ void selection_window_quit(GtkWidget *window, selection_window_t *self);
 GtkWidget *manage_box_new(selection_window_t *self);
 void manage_box_update(GtkEntry *search_ent, selection_window_t *self);
 void manage_box_show_password(GtkButton *btn, password_item_t *item);
+void manage_box_copy_password(GtkButton *btn, selection_window_t *self);
 void manage_box_delete_password(GtkButton *btn, selection_window_t *self);
 
 void edit_window_new(GtkButton *btn, selection_window_t *self);
@@ -230,11 +231,14 @@ void selection_window_quit(GtkWidget *window, selection_window_t *self)
     }
     free(self->items);
     zero_and_free(self->kek, AES_KEY_LENGTH);
+
+    GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+    gtk_clipboard_clear(clipboard);
 }
 
 /*-----------------------------------------------------------------------------
-Create a GTK box. Populate it with all the password items present in the
-password file.
+Create a GTK box. Add a grid in it. This grid is saved as a member of the
+`selection_window_t' struct.
 -----------------------------------------------------------------------------*/
 GtkWidget *manage_box_new(selection_window_t *self)
 {
@@ -340,6 +344,15 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
         char *name = malloc((length + 1) * sizeof *name);
         snprintf(name, length + 1, "%d", i);
 
+        // copy button
+        GtkWidget *copy_btn = gtk_button_new();
+        gtk_button_set_image(GTK_BUTTON(copy_btn), gtk_image_new_from_file(icon_copy));
+        gtk_widget_set_can_focus(copy_btn, FALSE);
+        gtk_widget_set_name(copy_btn, name);
+        gtk_widget_set_tooltip_text(copy_btn, str_copy_password);
+        g_signal_connect(copy_btn, "clicked", G_CALLBACK(manage_box_copy_password), self);
+        gtk_grid_attach(GTK_GRID(self->bottom_grid), copy_btn, 3, i, 1, 1);
+
         // edit button
         GtkWidget *edit_btn = gtk_button_new();
         gtk_button_set_image(GTK_BUTTON(edit_btn), gtk_image_new_from_file(icon_edit));
@@ -347,7 +360,7 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
         gtk_widget_set_name(edit_btn, name);
         gtk_widget_set_tooltip_text(edit_btn, str_edit_password);
         g_signal_connect(edit_btn, "clicked", G_CALLBACK(edit_window_new), self);
-        gtk_grid_attach(GTK_GRID(self->bottom_grid), edit_btn, 3, i, 1, 1);
+        gtk_grid_attach(GTK_GRID(self->bottom_grid), edit_btn, 4, i, 1, 1);
 
         // delete button
         GtkWidget *delete_btn = gtk_button_new();
@@ -356,7 +369,7 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
         gtk_widget_set_name(delete_btn, name);
         gtk_widget_set_tooltip_text(delete_btn, str_delete_password);
         g_signal_connect(delete_btn, "clicked", G_CALLBACK(manage_box_delete_password), self);
-        gtk_grid_attach(GTK_GRID(self->bottom_grid), delete_btn, 4, i, 1, 1);
+        gtk_grid_attach(GTK_GRID(self->bottom_grid), delete_btn, 5, i, 1, 1);
 
         free(name);
     }
@@ -390,7 +403,7 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Display the password of the particular item whose button was clicked.
+Display a password on the button which was clicked.
 -----------------------------------------------------------------------------*/
 void manage_box_show_password(GtkButton *btn, password_item_t *item)
 {
@@ -400,14 +413,38 @@ void manage_box_show_password(GtkButton *btn, password_item_t *item)
 }
 
 /*-----------------------------------------------------------------------------
-Obtain the index of the password item in the array. Use it to determine which
-item has to be changed. Then open a window to allow the user to do so.
+Copy a password to the clipboard.
+-----------------------------------------------------------------------------*/
+void manage_box_copy_password(GtkButton *btn, selection_window_t *self)
+{
+    char const *name = gtk_widget_get_name(GTK_WIDGET(btn));
+    int i = atoi(name);
+    password_item_t *item = self->items[i];
 
-Same comments as `edit_window_new' apply.
+    GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+    gtk_clipboard_set_text(clipboard, item->password, -1);
+    notification_revealer_show(self->notif_revealer, str_copy_password_done);
+}
+
+/*-----------------------------------------------------------------------------
+Delete a password from the array in memory. Then write it to the password file.
+
+The array index of the element to be deleted could not be passed to this
+function, because this is a callback function (it cannot take more than two
+arguments). So, I set the name of the button (the first argument) to the string
+form of the array index. Hence, the index can be obtained by querying for the
+name of the button.
+
+Another way to send the index was to pack `self' and the index into a struct
+and receive a pointer to that struct as the second argument, but I didn't want
+to add another struct to this project.
+
+These comments apply to the function `edit_window_new', too.
 -----------------------------------------------------------------------------*/
 void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
 {
-    int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
+    char const *name = gtk_widget_get_name(GTK_WIDGET(btn));
+    int i = atoi(name);
     password_item_t *item = self->items[i];
 
     // confirmation
@@ -433,15 +470,7 @@ void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Obtain the index of the password item in the array. Use it to determine which
-item has to be changed. Then open a window to allow the user to do so.
-
-The index could not be sent as an additional argument to this function because
-this is a callback function--its first argument is the button which triggered
-it, and the second, a pointer of my choice. In theory, I could have packed
-the index and `self' in a struct and received a pointer to the struct as the
-second argument, but I did not want to do that. (There are already three
-structs defined in this project.)
+Open a window to edit an item of the array.
 -----------------------------------------------------------------------------*/
 void edit_window_new(GtkButton *btn, selection_window_t *self)
 {
@@ -560,7 +589,7 @@ void edit_window_new(GtkButton *btn, selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Suggest a random password for the edit window.
+Suggest a random password.
 -----------------------------------------------------------------------------*/
 void edit_window_autofill(GtkButton *btn, selection_window_t *self)
 {
@@ -571,8 +600,8 @@ void edit_window_autofill(GtkButton *btn, selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Validate the entries for updating a new password. If valid, encrypt the data
-and write a new file.
+Validate the entries for editing an item. If valid, save it to the array and
+write it to the password file.
 -----------------------------------------------------------------------------*/
 void edit_window_check(GtkButton *btn, selection_window_t *self)
 {
@@ -616,7 +645,7 @@ void edit_window_check(GtkButton *btn, selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Close the window which was opened for editing.
+Stop the main event loop.
 -----------------------------------------------------------------------------*/
 void edit_window_quit(GtkWidget *window, gpointer data)
 {
@@ -714,8 +743,7 @@ GtkWidget *add_grid_new(selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Suggest a random password. By being random and long, it will also hopefully be
-strong.
+Suggest a random password.
 -----------------------------------------------------------------------------*/
 void add_grid_autofill(GtkButton *btn, selection_window_t *self)
 {
@@ -861,7 +889,8 @@ GtkWidget *change_grid_new(selection_window_t *self)
 
 /*-----------------------------------------------------------------------------
 Validate the entries for changing the passphrase. If valid, obtain the new key
-encryption key, re-encrypt the passwords, and overwrite the password file.
+encryption key, re-encrypt the passwords, and write to the passphrase and
+password file.
 -----------------------------------------------------------------------------*/
 void change_grid_check(GtkButton *btn, selection_window_t *self)
 {
@@ -906,7 +935,9 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Modify all password items. Rewrite both password files.
+Modify each item in the array. Generate a new key and initialisation vector to
+encrypt all data. Encrypt the key with the new key encryption key. Then write
+the array to the file.
 -----------------------------------------------------------------------------*/
 void change_grid_change_passphrase(selection_window_t *self)
 {
