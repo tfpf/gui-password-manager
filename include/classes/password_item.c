@@ -1,8 +1,24 @@
 /*-----------------------------------------------------------------------------
-Container to save and easily access the encrypted and decrypted data.
+Wrapper struct. Store the plaintext and ciphertext data, and the lengths of the
+ciphertext data. (The lengths of `key' and `e_key' are not stored, because they
+are already known: both will be of length `AES_KEY_LENGTH'.)
 
 There is no need to store the length of the encrypted key, because it is known.
 Encrypting a 256-bit value using AES256 gives a 256-bit value.
+
+Members:
+    website
+    username
+    password
+    e_website: `website' encrypted with `key'
+    e_username: `username' encrypted with `key'
+    e_password: `password' encrypted with `key'
+    e_website_length
+    e_username_length
+    e_password_length
+    iv: initialisation vector for encryption
+    key: encryption key (it is also used for decryption)
+    e_key: `key' encrypted with the key encryption key
 -----------------------------------------------------------------------------*/
 typedef struct
 {
@@ -10,17 +26,17 @@ typedef struct
     char *username;
     char *password;
 
-    char unsigned *e_website;  // encrypted website
-    char unsigned *e_username; // encrypted username
-    char unsigned *e_password; // encrypted password
+    char unsigned *e_website;
+    char unsigned *e_username;
+    char unsigned *e_password;
 
     int e_website_length;
     int e_username_length;
     int e_password_length;
 
-    char unsigned *iv;         // initialisation vector
-    char unsigned *key;        // encryption key
-    char unsigned *e_key;      // key encrypted with the key encryption key
+    char unsigned *iv;
+    char unsigned *key;
+    char unsigned *e_key;
 }
 password_item_t;
 
@@ -33,9 +49,9 @@ void password_items_write_to_file(password_item_t **items, int num_of_items);
 void password_item_delete(password_item_t *self);
 
 /*-----------------------------------------------------------------------------
-Read the plaintext data. Encrypt and save the ciphertext data. Copies of the
-plaintext are created. The original plaintext strings come from GTK entries,
-and must not be modified.
+Initialiser for the `password_item_t' struct. Encrypt the plaintext data and
+set up all members of the struct. Note that copies of the plaintext data are
+created.
 -----------------------------------------------------------------------------*/
 password_item_t *password_item_new_from_plaintext(char const *website, char const *username, char const *password, char unsigned *kek)
 {
@@ -56,14 +72,16 @@ password_item_t *password_item_new_from_plaintext(char const *website, char cons
 }
 
 /*-----------------------------------------------------------------------------
-Load all the passwords saved in the password file into an array.
+Read the ciphertext data in the password file into an array.
 -----------------------------------------------------------------------------*/
 password_item_t **password_items_new_from_file(int *num_of_items, char unsigned *kek)
 {
-    // the array in which everything will be stored
+    // this is initialised to a null pointer
+    // because I intend to call `realloc' on it later
     password_item_t **items = NULL;
 
-    // read the data the same way it is written in `password_item_append'
+    // check `password_item_append' to see the format in which data is written
+    // here data is read conforming to the same format
     FILE *Slave_file = fopen(Slave, "rb");
     for(*num_of_items = 0;; ++*num_of_items)
     {
@@ -74,6 +92,7 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
             break;
         }
 
+        // read
         char unsigned *e_website = malloc(e_website_length * sizeof *e_website);
         char unsigned *e_username = malloc(e_username_length * sizeof *e_username);
         char unsigned *e_password = malloc(e_password_length * sizeof *e_password);
@@ -85,6 +104,7 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
         fread(e_key, 1, AES_KEY_LENGTH, Slave_file);
         fread(iv, 1, INIT_VEC_LENGTH, Slave_file);
 
+        // decrypt
         char *website, *username, *password;
         char unsigned *key;
         decrypt_AES(e_key, AES_KEY_LENGTH, kek, iv, &key);
@@ -92,7 +112,7 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
         decrypt_AES(e_username, e_username_length, key, iv, (char unsigned **)&username);
         decrypt_AES(e_password, e_password_length, key, iv, (char unsigned **)&password);
 
-        // create struct and assign these variables
+        // create struct with these variables as members
         password_item_t *item = malloc(sizeof *item);
         item->website = website;
         item->username = username;
@@ -121,8 +141,7 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
 }
 
 /*-----------------------------------------------------------------------------
-Write all encrypted data to a new file. Use the same format it was read in.
-Once done, delete the old password file and rename this new file.
+Write the ciphertext data in the array to the password file.
 -----------------------------------------------------------------------------*/
 void password_items_write_to_file(password_item_t **items, int num_of_items)
 {
@@ -146,7 +165,7 @@ void password_items_write_to_file(password_item_t **items, int num_of_items)
 }
 
 /*-----------------------------------------------------------------------------
-Sanitise the sensitive data and release the memory.
+Sanitise and release the memory used by the struct and its members.
 -----------------------------------------------------------------------------*/
 void password_item_delete(password_item_t *self)
 {
