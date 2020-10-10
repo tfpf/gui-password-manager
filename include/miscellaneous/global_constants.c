@@ -16,11 +16,12 @@ Paths to the icons used in the application.
 char const *const icon_main = "./include/icons/favicon.png";
 char const *const icon_vis  = "./include/icons/visible.png";
 char const *const icon_warn = "./include/icons/warning.png";
+char const *const icon_copy = "./include/icons/clipboard.png";
 char const *const icon_edit = "./include/icons/edit.png";
 char const *const icon_del  = "./include/icons/delete.png";
 
 /*-----------------------------------------------------------------------------
-Title and label strings.
+Title, labels, etc.
 -----------------------------------------------------------------------------*/
 char const *const str_title        = "Password Manager";
 char const *const str_passphrase   = "Passphrase";
@@ -45,16 +46,22 @@ char const *const str_change       = "Change";
 /*-----------------------------------------------------------------------------
 Tooltip strings.
 -----------------------------------------------------------------------------*/
-char const *const str_toggle_passphrase      = "Click to show or hide passphrase.";
+char const *const str_toggle_passphrase = "Click to show or hide passphrase.";
+char const *const str_show_password     = "Click to show password.";
+char const *const str_toggle_password   = "Click to show or hide password.";
+char const *const str_suggest_password  = "Click to suggest a strong password.";
+char const *const str_copy_password     = "Click to copy this password.";
+char const *const str_edit_password     = "Click to update this item.";
+char const *const str_delete_password   = "Click to delete this item.";
+
+/*-----------------------------------------------------------------------------
+Notification strings.
+-----------------------------------------------------------------------------*/
 char const *const str_wrong_passphrase       = "Cannot log in. Wrong passphrase entered.";
-char const *const str_show_password          = "Click to show password.";
-char const *const str_toggle_password        = "Click to show or hide password.";
-char const *const str_suggest_password       = "Click to suggest a strong password.";
-char const *const str_edit_password          = "Click to update this item.";
+char const *const str_copy_password_done     = "Copied password to clipboard.";
 char const *const str_edit_err1              = "Cannot update item. One or more fields are empty.";
 char const *const str_edit_err2              = "Cannot update item. Fields \'Password\' and \'Confirm Password\' do not match.";
 char const *const str_edit_password_done     = "Updated successfully.";
-char const *const str_delete_password        = "Click to delete this item.";
 char const *const str_delete_password_done   = "Deleted successfully.";
 char const *const str_add_err1               = "Cannot add password. One or more fields are empty.";
 char const *const str_add_err2               = "Cannot add password. Fields \'Password\' and \'Confirm Password\' do not match.";
@@ -75,16 +82,16 @@ char const *const str_change_passphrase_question = "Are you sure you want to cha
 Strings formatted using Pango (which is the markup language GTK understands).
 -----------------------------------------------------------------------------*/
 char const *const msg_passphrase      = "<span weight=\"bold\">Enter your passphrase to log in.</span>";
-char const *const msg_manage          = "<span weight=\"normal\">Manage Passwords</span>";
+char const *const msg_manage          = "<span weight=\"bold\">Manage Passwords</span>";
 char const *const msg_manage_header   = "<span weight=\"bold\">Type into the search box to display matching items.</span>";
-char const *const msg_manage_website  = "<span weight=\"bold\">                              Website                              </span>";
-char const *const msg_manage_username = "<span weight=\"bold\">                              Username                              </span>";
+char const *const msg_manage_website  = "<span weight=\"bold\">                      Website                      </span>";
+char const *const msg_manage_username = "<span weight=\"bold\">                      Username                      </span>";
 char const *const msg_manage_password = "<span weight=\"bold\">                              Password                              </span>";
 char const *const msg_manage_error    = "<span weight=\"bold\">No Matching Items</span>";
 char const *const msg_edit_header     = "<span weight=\"bold\">Fill these fields to update this item.</span>";
-char const *const msg_add             = "<span weight=\"normal\">Add New Password</span>";
+char const *const msg_add             = "<span weight=\"bold\">Add New Password</span>";
 char const *const msg_add_header      = "<span weight=\"bold\">Fill these fields to add a new password.</span>";
-char const *const msg_change          = "<span weight=\"normal\">Change Passphrase</span>";
+char const *const msg_change          = "<span weight=\"bold\">Change Passphrase</span>";
 char const *const msg_change_header   = "<span weight=\"bold\">Fill these fields to change the passphrase.</span>";
 
 /*-----------------------------------------------------------------------------
