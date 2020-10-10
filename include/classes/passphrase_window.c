@@ -7,6 +7,9 @@ typedef struct
     GtkWidget *window;         // main window
     GtkWidget *passphrase_ent;
 
+    GtkWidget *revealer;       // container for notifications
+    GtkWidget *notify_lbl;
+
     char unsigned *kek;        // key encryption key
 }
 passphrase_window_t;
@@ -39,6 +42,10 @@ passphrase_window_t *passphrase_window_new(void)
     gtk_window_set_title(GTK_WINDOW(self->window), str_title);
     g_signal_connect(self->window, "destroy", G_CALLBACK(passphrase_window_quit), NULL);
 
+    // overlay
+    GtkWidget *overlay = gtk_overlay_new();
+    gtk_container_add(GTK_CONTAINER(self->window), overlay);
+
     // grid
     GtkWidget *grid = gtk_grid_new();
     gtk_container_set_border_width(GTK_CONTAINER(grid), 50);
@@ -46,7 +53,7 @@ passphrase_window_t *passphrase_window_new(void)
     gtk_grid_set_row_spacing(GTK_GRID(grid), 25);
     gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
     gtk_widget_set_hexpand(grid, TRUE);
-    gtk_container_add(GTK_CONTAINER(self->window), grid);
+    gtk_container_add(GTK_CONTAINER(overlay), grid);
 
     // header label
     GtkWidget *header = gtk_label_new(NULL);
@@ -80,6 +87,24 @@ passphrase_window_t *passphrase_window_new(void)
     gtk_widget_set_can_default(submit_btn, TRUE);
     gtk_widget_grab_default(submit_btn);
 
+    // revealer
+    self->revealer = gtk_revealer_new();
+    gtk_revealer_set_transition_duration(GTK_REVEALER(self->revealer), TOAST_TIMEOUT);
+    gtk_revealer_set_transition_type(GTK_REVEALER(self->revealer), GTK_REVEALER_TRANSITION_TYPE_CROSSFADE);
+    gtk_widget_set_halign(self->revealer, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(self->revealer, GTK_ALIGN_START);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->revealer);
+
+    // box
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkStyleContext *style = gtk_widget_get_style_context(box);
+    gtk_style_context_add_class(style, "app-notification");
+    gtk_container_add(GTK_CONTAINER(self->revealer), box);
+
+    // notification label
+    self->notify_lbl = gtk_label_new(NULL);
+    gtk_container_add(GTK_CONTAINER(box), self->notify_lbl);
+
     return self;
 }
 
@@ -106,7 +131,7 @@ void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
     // compare
     if(memcmp(passphrase_hash, stored_hash, SHA512_DIGEST_LENGTH))
     {
-        widget_toast_show(self->window, str_wrong_passphrase);
+        notification_show(self->revealer, self->notify_lbl, str_wrong_passphrase);
         zero_and_free(passphrase_hash, SHA512_DIGEST_LENGTH);
         zero_and_free(stored_hash, SHA512_DIGEST_LENGTH);
         return;

@@ -19,6 +19,9 @@ typedef struct
     GtkWidget *passphrase1_ent;
     GtkWidget *passphrase2_ent;
 
+    GtkWidget *revealer;               // container for notifications
+    GtkWidget *notify_lbl;
+
     gboolean construction_in_progress; // whether all widgets have been created
 
     password_item_t **items;           // array containing data read from file
@@ -77,10 +80,14 @@ selection_window_t *selection_window_new(char unsigned *kek)
     gtk_window_set_title(GTK_WINDOW(self->window), str_title);
     g_signal_connect(self->window, "destroy", G_CALLBACK(selection_window_quit), self);
 
+    // overlay
+    GtkWidget *overlay = gtk_overlay_new();
+    gtk_container_add(GTK_CONTAINER(self->window), overlay);
+
     // notebook
     GtkWidget *notebook = gtk_notebook_new();
     gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_LEFT);
-    gtk_container_add(GTK_CONTAINER(self->window), notebook);
+    gtk_container_add(GTK_CONTAINER(overlay), notebook);
     g_signal_connect(GTK_NOTEBOOK(notebook), "switch-page", G_CALLBACK(selection_window_clear_entries), self);
 
     // notebook page to manage passwords
@@ -100,6 +107,24 @@ selection_window_t *selection_window_new(char unsigned *kek)
     GtkWidget *change_lbl = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(change_lbl), msg_change);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), change_grid, change_lbl);
+
+    // revealer
+    self->revealer = gtk_revealer_new();
+    gtk_revealer_set_transition_duration(GTK_REVEALER(self->revealer), TOAST_TIMEOUT);
+    gtk_revealer_set_transition_type(GTK_REVEALER(self->revealer), GTK_REVEALER_TRANSITION_TYPE_CROSSFADE);
+    gtk_widget_set_halign(self->revealer, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(self->revealer, GTK_ALIGN_START);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->revealer);
+
+    // box
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkStyleContext *style = gtk_widget_get_style_context(box);
+    gtk_style_context_add_class(style, "app-notification");
+    gtk_container_add(GTK_CONTAINER(self->revealer), box);
+
+    // notification label
+    self->notify_lbl = gtk_label_new(NULL);
+    gtk_container_add(GTK_CONTAINER(box), self->notify_lbl);
 
     self->items = password_items_new_from_file(&(self->num_of_items), self->kek);
     selection_window_sort_items(self);
@@ -398,7 +423,7 @@ void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
     password_items_write_to_file(self->items, self->num_of_items);
 
     selection_window_clear_entries(NULL, NULL, 0, self);
-    widget_toast_show(self->window, str_delete_password_done);
+    notification_show(self->revealer, self->notify_lbl, str_delete_password_done);
 }
 
 /*-----------------------------------------------------------------------------
@@ -545,14 +570,14 @@ void edit_window_check(GtkButton *btn, selection_window_t *self)
     // sanity 1
     if(!strcmp(website, "") || !strcmp(username, "") || !strcmp(password1, "") || !strcmp(password2, ""))
     {
-        widget_toast_show(self->window_edit, str_edit_err1);
+        notification_show(self->revealer, self->notify_lbl, str_edit_err1);
         return;
     }
 
     // sanity 2
     if(strcmp(password1, password2))
     {
-        widget_toast_show(self->window_edit, str_edit_err2);
+        notification_show(self->revealer, self->notify_lbl, str_edit_err2);
         return;
     }
 
@@ -573,7 +598,7 @@ void edit_window_check(GtkButton *btn, selection_window_t *self)
 
     selection_window_sort_items(self);
     selection_window_clear_entries(NULL, NULL, 0, self);
-    widget_toast_show(self->window, str_edit_password_done);
+    notification_show(self->revealer, self->notify_lbl, str_edit_password_done);
 }
 
 /*-----------------------------------------------------------------------------
@@ -700,14 +725,14 @@ void add_grid_check(GtkButton *btn, selection_window_t *self)
     // sanity 1
     if(!strcmp(website, "") || !strcmp(username, "") || !strcmp(password1, "") || !strcmp(password2, ""))
     {
-        widget_toast_show(self->window, str_add_err1);
+        notification_show(self->revealer, self->notify_lbl, str_add_err1);
         return;
     }
 
     // sanity 2
     if(strcmp(password1, password2))
     {
-        widget_toast_show(self->window, str_add_err2);
+        notification_show(self->revealer, self->notify_lbl, str_add_err2);
         return;
     }
 
@@ -724,7 +749,7 @@ void add_grid_check(GtkButton *btn, selection_window_t *self)
 
     selection_window_sort_items(self);
     selection_window_clear_entries(NULL, NULL, 0, self);
-    widget_toast_show(self->window, str_add_password_done);
+    notification_show(self->revealer, self->notify_lbl, str_add_password_done);
 }
 
 /*-----------------------------------------------------------------------------
@@ -832,14 +857,14 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
     // sanity 1
     if(!strcmp(passphrase1, "") || !strcmp(passphrase2, ""))
     {
-        widget_toast_show(self->window, str_change_passphrase_err1);
+        notification_show(self->revealer, self->notify_lbl, str_change_passphrase_err1);
         return;
     }
 
     // sanity 2
     if(strcmp(passphrase1, passphrase2))
     {
-        widget_toast_show(self->window, str_change_passphrase_err2);
+        notification_show(self->revealer, self->notify_lbl, str_change_passphrase_err2);
         return;
     }
 
@@ -863,7 +888,7 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
     change_grid_change_passphrase(self);
 
     selection_window_clear_entries(NULL, NULL, 0, self);
-    widget_toast_show(self->window, str_change_passphrase_done);
+    notification_show(self->revealer, self->notify_lbl, str_change_passphrase_done);
 }
 
 /*-----------------------------------------------------------------------------
