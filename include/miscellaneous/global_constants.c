@@ -84,8 +84,8 @@ Strings formatted using Pango (which is the markup language GTK understands).
 char const *const msg_passphrase      = "<span weight=\"bold\">Enter your passphrase to log in.</span>";
 char const *const msg_manage          = "<span weight=\"bold\">Manage Passwords</span>";
 char const *const msg_manage_header   = "<span weight=\"bold\">Type into the search box to display matching items.</span>";
-char const *const msg_manage_website  = "<span weight=\"bold\">                      Website                      </span>";
-char const *const msg_manage_username = "<span weight=\"bold\">                      Username                      </span>";
+char const *const msg_manage_website  = "<span weight=\"bold\">                   Website                   </span>";
+char const *const msg_manage_username = "<span weight=\"bold\">                   Username                   </span>";
 char const *const msg_manage_password = "<span weight=\"bold\">                              Password                              </span>";
 char const *const msg_manage_error    = "<span weight=\"bold\">No Matching Items</span>";
 char const *const msg_edit_header     = "<span weight=\"bold\">Fill these fields to update this item.</span>";
