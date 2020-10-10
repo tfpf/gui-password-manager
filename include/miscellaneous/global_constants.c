@@ -6,7 +6,8 @@ enum { BACKTRACE_ARR_SIZE =     8 };                           // segmentation f
 enum { NUM_OF_HASHES      = 65535 };                           // number of times passphrase is hashed
 enum { AES_KEY_LENGTH     =    32 };                           // AES encryption key length (bytes)
 enum { INIT_VEC_LENGTH    =    16 };                           // AES initialisation vector length (bytes)
-enum { TOAST_TIMEOUT      =     5 * G_TIME_SPAN_MILLISECOND }; // time for which toast is shown
+enum { NOTIF_FADE_TIME    =     1 * G_TIME_SPAN_MILLISECOND }; // time for notification to fade in or out
+enum { NOTIF_VIEW_TIME    =     5 * G_TIME_SPAN_MILLISECOND }; // time for which notification is visible
 enum { ENTRY_WIDTH        =    40 };                           // GTK entry width in characters
 
 /*-----------------------------------------------------------------------------
@@ -87,10 +88,11 @@ char const *const msg_change          = "<span weight=\"normal\">Change Passphra
 char const *const msg_change_header   = "<span weight=\"bold\">Fill these fields to change the passphrase.</span>";
 
 /*-----------------------------------------------------------------------------
-File names. The first two are the names of the files which contain the
-passphrase and the passwords respectively. The other two are the names which
-will be used to create temporary files when the contents of the original files
-have to be changed.
+File names. The first is the passphrase file. It contains the hash of the
+passphrase. The second is the password file. All user data is stored in it
+(encrypted, of course). The other two are the names which will be used to
+create temporary files when the contents of the original files have to be
+changed.
 -----------------------------------------------------------------------------*/
 char const *const Master   = ".Master.bin";
 char const *const Slave    = ".Slave.bin";

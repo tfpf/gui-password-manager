@@ -7,10 +7,6 @@ char unsigned *hash_custom(char const *passphrase);
 int encrypt_AES(char unsigned *pt, int ptlen, char unsigned *key, char unsigned *iv, char unsigned **ct);
 int decrypt_AES(char unsigned *ct, int ctlen, char unsigned *key, char unsigned *iv, char unsigned **pt);
 void toggle_visibility(GtkButton *btn, GtkEntry *entry);
-void notification_show(GtkWidget *revealer, GtkWidget *notify_lbl, char const *message);
-gboolean notification_hide(gpointer data);
-void widget_toast_show(GtkWidget *widget, char const *toast);
-gboolean widget_toast_hide(gpointer data);
 int request_confirmation(GtkWidget *window, char const *question, char *website, char *username);
 void segfault_handler(int sig);
 void zero_and_free(char volatile unsigned *data, int length);
@@ -127,29 +123,6 @@ void toggle_visibility(GtkButton *btn, GtkEntry *entry)
 {
     gboolean visibility = gtk_entry_get_visibility(entry);
     gtk_entry_set_visibility(entry, !visibility);
-}
-
-/*-----------------------------------------------------------------------------
-Display a tooltip. Schedule a function to hide the tooltip after some time.
-This makes it look like it was a toast.
------------------------------------------------------------------------------*/
-void notification_show(GtkWidget *revealer, GtkWidget *notify_lbl, char const *message)
-{
-    gtk_label_set_text(GTK_LABEL(notify_lbl), message);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(revealer), TRUE);
-    g_timeout_add(TOAST_TIMEOUT, notification_hide, revealer);
-}
-
-/*-----------------------------------------------------------------------------
-Hide the tooltip of a widget. If the widget has no tooltip, or if the widget is
-no more (perhaps because its parent was destroyed), this has no effect.
------------------------------------------------------------------------------*/
-gboolean notification_hide(gpointer data)
-{
-    GtkRevealer *revealer = data;
-    gtk_revealer_set_reveal_child(GTK_REVEALER(revealer), FALSE);
-
-    return FALSE;
 }
 
 /*-----------------------------------------------------------------------------
