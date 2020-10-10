@@ -93,7 +93,7 @@ selection_window_t *selection_window_new(char unsigned *kek)
     // window
     self->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_container_set_border_width(GTK_CONTAINER(self->window), 0);
-    // gtk_window_maximize(GTK_WINDOW(self->window));
+    gtk_window_maximize(GTK_WINDOW(self->window));
     gtk_window_set_icon_from_file(GTK_WINDOW(self->window), icon_main, NULL);
     gtk_window_set_position(GTK_WINDOW(self->window), GTK_WIN_POS_CENTER);
     gtk_window_set_resizable(GTK_WINDOW(self->window), TRUE);
@@ -145,6 +145,7 @@ void selection_window_main(selection_window_t *self)
 {
     gtk_widget_show_all(self->window);
     self->construction_in_progress = FALSE;
+    manage_box_update(GTK_ENTRY(self->search_ent), self);
     gtk_main();
 }
 
