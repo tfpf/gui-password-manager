@@ -26,11 +26,11 @@ clean:
 
 asm:
 	@$(PRINT) "Assembling ...\n"
-	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SEGVTR) $(SSL) $(GFLAGS) $(SEARCH) -S -o $(Assembly) $(Source) $(GLIBS)
+	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SEGVTR) $(GFLAGS) $(SEARCH) -S -o $(Assembly) $(Source) $(GLIBS) $(SSL)
 
 comp:
 	@$(PRINT) "Compiling ...\n"
-	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SEGVTR) $(SSL) $(GFLAGS) $(SEARCH) -o $(Binary) $(Source) $(GLIBS)
+	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SEGVTR) $(GFLAGS) $(SEARCH) -o $(Binary) $(Source) $(GLIBS) $(SSL)
 
 exec:
 	@$(PRINT) "Running ...\n"
