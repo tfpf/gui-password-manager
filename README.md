@@ -21,10 +21,10 @@ may never get around to test it further.)
   * OpenSSL: `sudo apt install libssl-dev`
 * Enter the command `make run`.
 
+The current passphrase is `q`, and you can change it. Some sample passwords are
+already saved. You can view them once you have entered the passphrase.
+
 It is possible to run this on Windows, too. However, most of the features will
 be disabled. (You can only view passwords.) To get the Windows executable, look
 for [releases](https://github.com/tfpf/gtk-windowing/releases).
-
-The current passphrase is `q`, and you can change it. Some sample passwords are
-already saved. You can view them once you have entered the passphrase.
 
