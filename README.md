@@ -18,8 +18,11 @@ not specified in the C standard, but specified by POSIX.
 # Usage
 
 ### The Easy Way
-See [releases](https://github.com/tfpf/gtk-windowing/releases) and follow the
-instructions there.
+See [releases](https://github.com/tfpf/gtk-windowing/releases) and download the
+latest release. (It will be a ZIP file.) Once downloaded, extract the ZIP file.
+Navigate to `bin` in the extracted folder.
+* If you are on a Linux distribution, open the file `main`.
+* If you are on Windows, open the file `main.exe`.
 
 ### The Hard Way
 * Install the following dependencies.
