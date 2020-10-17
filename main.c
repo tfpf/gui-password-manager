@@ -1,5 +1,4 @@
-#define _GNU_SOURCE
-
+#include <ctype.h>
 #include <gtk/gtk.h>
 #include <openssl/conf.h>
 #include <openssl/err.h>

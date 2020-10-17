@@ -9,6 +9,7 @@ int decrypt_AES(char unsigned *ct, int ctlen, char unsigned *key, char unsigned 
 void toggle_visibility(GtkButton *btn, GtkEntry *entry);
 int request_confirmation(GtkWidget *window, char const *question, char *website, char *username);
 void segfault_handler(int sig);
+char *my_strcasestr(char const *txt, char const *pat);
 void zero_and_free(char volatile unsigned *data, int length);
 
 /*-----------------------------------------------------------------------------
@@ -207,6 +208,37 @@ void segfault_handler(int sig)
     exit(EXIT_FAILURE);
 }
 #endif
+
+/*-----------------------------------------------------------------------------
+Case-insensitive substring indicator. The non-standard extension `strcasestr'
+is not available on Windows, but `strncasecmp' is.
+-----------------------------------------------------------------------------*/
+char *my_strcasestr(char const *txt, char const *pat)
+{
+    // sanity 1
+    if(pat[0] == '\0')
+    {
+        return (char *)txt;
+    }
+
+    // sanity 2
+    size_t patlen = strlen(pat);
+    if(patlen > strnlen(txt, patlen + 256))
+    {
+        return NULL;
+    }
+
+    // search
+    for(char *loc = (char *)txt; loc[patlen - 1] != '\0'; ++loc)
+    {
+        if(!strncasecmp(pat, loc, patlen))
+        {
+            return loc;
+        }
+    }
+
+    return NULL;
+}
 
 /*-----------------------------------------------------------------------------
 Overwrite the given memory chunk with zeros. Then release the memory. Whatever

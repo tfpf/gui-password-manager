@@ -319,7 +319,7 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
     // so, the item can simply be attached to row `i' of the grid
     for(int i = 0; i < self->num_of_items; ++i)
     {
-        if(!strcasestr(self->items[i]->website, search) && !strcasestr(self->items[i]->username, search))
+        if(!my_strcasestr(self->items[i]->website, search) && !my_strcasestr(self->items[i]->username, search))
         {
             continue;
         }
