@@ -210,7 +210,7 @@ void segfault_handler(int sig)
 #endif
 
 /*-----------------------------------------------------------------------------
-Case-insensitive substring indicator. The non-standard extension `strcasestr'
+Case-insensitive substring search. The non-standard extension `strcasestr'
 is not available on Windows, but `strncasecmp' is.
 -----------------------------------------------------------------------------*/
 char *my_strcasestr(char const *txt, char const *pat)
