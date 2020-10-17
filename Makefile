@@ -14,7 +14,7 @@ LExecutable = main
 WExecutable = main.exe
 
 
-.PHONY: clean comp exec run
+.PHONY: clean lcomp wcomp lexec wexec lrun wrun
 
 
 clean:
