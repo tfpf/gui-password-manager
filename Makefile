@@ -13,30 +13,34 @@ GLIBS  = $(shell pkg-config --libs gtk+-3.0)
 SEARCH = -I./include/miscellaneous -I./include/classes
 
 
-Source     = main.c
-Assembly   = main.s
-Binary     = main
+Source      = main.c
+LExecutable = main
+WExecutable = main.exe
 
 
-.PHONY: clean asm comp exec run all
+.PHONY: clean comp exec run
 
 
 clean:
-	$(RM) $(Binary) $(Assembly)
+	$(RM) $(LExecutable) $(WExecutable)
 
-asm:
-	@$(PRINT) "Assembling ...\n"
-	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SEGVTR) $(GFLAGS) $(SEARCH) -S -o $(Assembly) $(Source) $(GLIBS) $(SSL)
-
-comp:
+lcomp:
 	@$(PRINT) "Compiling ...\n"
-	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SEGVTR) $(GFLAGS) $(SEARCH) -o $(Binary) $(Source) $(GLIBS) $(SSL)
+	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SEGVTR) $(GFLAGS) $(SEARCH) -o $(LExecutable) $(Source) $(GLIBS) $(SSL)
 
-exec:
+wcomp:
+	@$(PRINT) "Compiling ...\n"
+	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(GFLAGS) $(SEARCH) -o $(WExecutable) $(Source) $(GLIBS) $(SSL)
+
+lexec:
 	@$(PRINT) "Running ...\n"
-	./$(Binary)
+	./$(LExecutable)
 
-run: comp exec
+wexec:
+	@$(PRINT) "Running ...\n"
+	./$(WExecutable)
 
-all: asm comp exec
+lrun: lcomp lexec
+
+wrun: wcomp wexec
 
