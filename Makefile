@@ -1,16 +1,12 @@
-SHELL  = /bin/sh
-RM     = rm -f
-PRINT  = printf
-CLEAR  = clear
-CC     = gcc
-CFLAGS = -O2 -s
-WFLAGS = -Wall -Wextra
-WIGN   = -Wno-unused-parameter
-SEGVTR = -g -rdynamic
-SSL    = -lcrypto -lssl
-GFLAGS = $(shell pkg-config --cflags gtk+-3.0)
-GLIBS  = $(shell pkg-config --libs gtk+-3.0)
-SEARCH = -I./include/miscellaneous -I./include/classes
+SHELL   = /bin/sh
+RM      = rm -f
+PRINT   = printf
+CLEAR   = clear
+CC      = gcc
+CFLAGS  = -O2 -s -Wall -Wextra -Wno-unused-parameter $(shell pkg-config --cflags gtk+-3.0) $(shell pkg-config --cflags libsodium)
+LDFLAGS = -lcrypto -lssl $(shell pkg-config --libs gtk+-3.0) $(shell pkg-config --libs libsodium)
+SEGVTR  = -g -rdynamic
+SEARCH  = -I./include/miscellaneous -I./include/classes
 
 
 Source      = main.c
@@ -25,12 +21,12 @@ clean:
 	$(RM) $(LExecutable) $(WExecutable)
 
 lcomp:
-	@$(PRINT) "Compiling ...\n"
-	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(SEGVTR) $(GFLAGS) $(SEARCH) -o $(LExecutable) $(Source) $(GLIBS) $(SSL)
+	@$(PRINT) "Compiling for Linux ...\n"
+	$(CC) $(CFLAGS) $(SEGVTR) $(SEARCH) -o $(LExecutable) $(Source) $(LDFLAGS)
 
 wcomp:
-	@$(PRINT) "Compiling ...\n"
-	$(CC) $(CFLAGS) $(WFLAGS) $(WIGN) $(GFLAGS) $(SEARCH) -o $(WExecutable) $(Source) $(GLIBS) $(SSL)
+	@$(PRINT) "Compiling for Windows ...\n"
+	$(CC) $(CFLAGS) $(SEARCH) -o $(WExecutable) $(Source) $(LDFLAGS)
 
 lexec:
 	@$(PRINT) "Running ...\n"
