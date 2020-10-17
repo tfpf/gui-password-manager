@@ -145,7 +145,7 @@ Write the ciphertext data in the array to the password file.
 -----------------------------------------------------------------------------*/
 void password_items_write_to_file(password_item_t **items, int num_of_items)
 {
-    FILE *Slave_file = fopen(Slave__, "w");
+    FILE *Slave_file = fopen(Slave__, "wb");
     for(int i = 0; i < num_of_items; ++i)
     {
         password_item_t *item = items[i];

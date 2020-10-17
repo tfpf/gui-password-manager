@@ -160,7 +160,7 @@ Write the hash to the passphrase file.
 void passphrase_hash_to_file(char const *passphrase)
 {
     char unsigned *passphrase_hash = hash_custom(passphrase);
-    FILE *Master_file = fopen(Master__, "w");
+    FILE *Master_file = fopen(Master__, "wb");
     fwrite(passphrase_hash, 1, SHA512_DIGEST_LENGTH, Master_file);
     fclose(Master_file);
 
