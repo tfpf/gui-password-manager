@@ -4,6 +4,7 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
+#include <sodium.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,14 +32,15 @@ int main(void)
     signal(SIGSEGV, segfault_handler);
     #endif
 
+    // initialise random number generator
+    if(sodium_init() == -1)
+    {
+        fprintf(stderr, "Failed to initialise Sodium.\n");
+        return 1;
+    }
+
     // disable output buffering
     setvbuf(stdout, NULL, _IONBF, 0);
-
-    // seed the random number generator
-    struct timespec t;
-    timespec_get(&t, TIME_UTC);
-    char state_buffer[PRNG_BUF_LENGTH];
-    initstate(t.tv_nsec ^ t.tv_sec, state_buffer, PRNG_BUF_LENGTH);
 
     gtk_init(0, NULL);
 
