@@ -194,8 +194,10 @@ int request_confirmation(GtkWidget *window, char const *question, char *website,
 
 /*-----------------------------------------------------------------------------
 Segmentation fault handler. Whenever the program crashes because of a
-segmentation fault, write the backtrace.
+segmentation fault, write the backtrace. This functionality is available only
+on Linux.
 -----------------------------------------------------------------------------*/
+#ifdef __linux__
 void segfault_handler(int sig)
 {
     fprintf(stderr, "\033[1;31msignal %d; backtrace:\033[0m\n", sig);
@@ -204,6 +206,7 @@ void segfault_handler(int sig)
     backtrace_symbols_fd(backtrace_array, size, STDERR_FILENO);
     exit(EXIT_FAILURE);
 }
+#endif
 
 /*-----------------------------------------------------------------------------
 Overwrite the given memory chunk with zeros. Then release the memory. Whatever

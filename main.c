@@ -1,16 +1,19 @@
 #define _GNU_SOURCE
 
-#include <execinfo.h>
 #include <gtk/gtk.h>
 #include <openssl/conf.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+
+#ifdef __linux__
+    #include <execinfo.h>
+    #include <signal.h>
+#endif
 
 #include "global_constants.c"
 #include "helpers.c"
@@ -25,7 +28,9 @@ Main function.
 int main(void)
 {
     // install segmentation fault handler
+    #ifdef __linux__
     signal(SIGSEGV, segfault_handler);
+    #endif
 
     // disable output buffering
     setvbuf(stdout, NULL, _IONBF, 0);
