@@ -1,7 +1,6 @@
 /*-----------------------------------------------------------------------------
 Compile-time constant integers.
 -----------------------------------------------------------------------------*/
-enum { PRNG_BUF_LENGTH    =   256 };                           // pseudorandom noise generator buffer size
 enum { BACKTRACE_ARR_SIZE =     8 };                           // segmentation fault backtrace depth
 enum { NUM_OF_HASHES      = 65535 };                           // number of times passphrase is hashed
 enum { AES_KEY_LENGTH     =    32 };                           // AES encryption key length (bytes)
