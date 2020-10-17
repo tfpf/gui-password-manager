@@ -101,8 +101,8 @@ passphrase. The second is the password file. All user data is stored in it
 create temporary files when the contents of the original files have to be
 changed.
 -----------------------------------------------------------------------------*/
-char const *const Master   = ".Master.bin";
-char const *const Slave    = ".Slave.bin";
-char const *const Master__ = ".Master.tmp";
-char const *const Slave__  = ".Slave.tmp";
+char const *const Master   = "Master.bin";
+char const *const Slave    = "Slave.bin";
+char const *const Master__ = "Master.tmp";
+char const *const Slave__  = "Slave.tmp";
 
