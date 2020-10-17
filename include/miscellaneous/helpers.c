@@ -15,18 +15,11 @@ void zero_and_free(char volatile unsigned *data, int length);
 /*-----------------------------------------------------------------------------
 Generate an array of random bytes. It is used to generate an encryption key
 and initialisation vector for AES. The length is the number of bytes, not bits.
-
-`random' returns a number between 0 and `RAND_MAX'. `RAND_MAX' is guaranteed to
-be at least 32767. Hence, it may be assigned to each byte, because only the
-bottom 8 bits are required.
 -----------------------------------------------------------------------------*/
 char unsigned *gen_rand(int length)
 {
     char unsigned *arr = malloc(length * sizeof *arr);
-    for(int i = 0; i < length; ++i)
-    {
-        arr[i] = random();
-    }
+    randombytes_buf(arr, length);
 
     return arr;
 }
@@ -36,7 +29,7 @@ Generate a random printable string. It is used to suggest strong passwords.
 -----------------------------------------------------------------------------*/
 char *gen_rand_constrained(int lower, int upper)
 {
-    int length = lower + random() % (upper - lower);
+    int length = lower + randombytes_uniform(upper - lower);
     char alphabet[] = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ123456789";
     char special[] = "!@-#?";
 
@@ -45,10 +38,10 @@ char *gen_rand_constrained(int lower, int upper)
     {
         if(i != 0 && i % 6 == 0)
         {
-            arr[i] = special[random() % strlen(special)];
+            arr[i] = special[randombytes_uniform(strlen(special))];
             continue;
         }
-        arr[i] = alphabet[random() % strlen(alphabet)];
+        arr[i] = alphabet[randombytes_uniform(strlen(alphabet))];
     }
     arr[length] = '\0';
 
