@@ -17,11 +17,11 @@ not specified in the C standard, but specified by POSIX.
 
 # Usage
 
-## The Easy Way
+### The Easy Way
 See [releases](https://github.com/tfpf/gtk-windowing/releases) and follow the
 instructions there.
 
-## The Hard Way
+### The Hard Way
 * Install the following dependencies.
   * GTK+3.0 (GUI widget toolkit)
   * OpenSSL (cryptography toolkit)
@@ -30,6 +30,7 @@ instructions there.
 * Depending on your environment, enter the correct run command.
   * Linux terminal: `make lrun`
   * Windows MSYS2 (MinGW shell): `make wrun`
+
 If you are using any other environment, you will have to find out how to run
 the program on your own.
 
