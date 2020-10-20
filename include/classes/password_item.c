@@ -1,24 +1,23 @@
 /*-----------------------------------------------------------------------------
-Wrapper struct. Store the plaintext and ciphertext data, and the lengths of the
-ciphertext data. (The lengths of `key' and `e_key' are not stored, because they
-are already known: both will be of length `AES_KEY_LENGTH'.)
-
-There is no need to store the length of the encrypted key, because it is known.
-Encrypting a 256-bit value using AES256 gives a 256-bit value.
+Wrapper struct to store the plaintext and ciphertext data, and the lengths of
+the ciphertext data.
 
 Members:
     website
     username
     password
-    e_website: `website' encrypted with `key'
-    e_username: `username' encrypted with `key'
-    e_password: `password' encrypted with `key'
+
+    e_website: result of encrypting `website'
+    e_username: result of encrypting `username'
+    e_password: result of encrypting `password'
+
     e_website_length
     e_username_length
     e_password_length
-    iv: initialisation vector for encryption
-    key: encryption key (it is also used for decryption)
-    e_key: `key' encrypted with the key encryption key
+
+    iv: AES initialisation vector (length: INIT_VEC_LENGTH)
+    key: AES encryption/decryption key (length: AES_KEY_LENGTH)
+    e_key: result of encrypting `key' (length: AES_KEY_LENGTH)
 -----------------------------------------------------------------------------*/
 typedef struct
 {

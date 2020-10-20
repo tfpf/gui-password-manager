@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------
-Wrapper struct. Handles notifications.
+Wrapper struct to handle notifications.
 
 Members:
     revealer: container used to display a notification

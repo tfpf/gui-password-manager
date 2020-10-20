@@ -1,11 +1,11 @@
 /*-----------------------------------------------------------------------------
-Wrapper struct. Store the widgets of interest so that they can be accessed
-easily when required.
+Wrapper struct to handle passphrase validation.
 
 Members:
     window: main window in which widgets will be added
     notif_revealer: struct which shows or hides a notification
     passphrase_ent: entry in which the user can type their passphrase
+
     kek: key encryption key
 -----------------------------------------------------------------------------*/
 typedef struct

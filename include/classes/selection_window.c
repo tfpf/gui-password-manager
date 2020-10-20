@@ -1,6 +1,6 @@
 /*-----------------------------------------------------------------------------
-Wrapper struct. Store the widgets of interest so that they can be accessed
-easily when required.
+Wrapper struct to handle addition, deletion and updation of password items, and
+updation of the passphrase.
 
 Members:
     window: main window in which widgets will be added
@@ -91,11 +91,9 @@ void edit_window_quit(GtkWidget *window, gpointer data);
 GtkWidget *add_grid_new(selection_window_t *self);
 void add_grid_autofill(GtkButton *btn, selection_window_t *self);
 void add_grid_check(GtkButton *btn, selection_window_t *self);
-void add_grid_add_password(selection_window_t *self, password_item_t *item);
 
 GtkWidget *change_grid_new(selection_window_t *self);
 void change_grid_check(GtkButton *btn, selection_window_t *self);
-void change_grid_change_passphrase(selection_window_t *self);
 
 /*-----------------------------------------------------------------------------
 Initialiser for the `selection_window_t' struct. Create a GTK window and
@@ -107,7 +105,6 @@ selection_window_t *selection_window_new(char unsigned *kek)
     selection_window_t *self = malloc(sizeof *self);
     self->construction_in_progress = TRUE;
     self->kek = kek;
-
     self->items = password_items_new_from_file(&(self->num_of_items), self->kek);
     selection_window_sort_items(self);
 
@@ -473,13 +470,13 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
     // username header label
     GtkWidget *header_username = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(header_username), msg_manage_username);
-    gtk_widget_set_size_request(header_username, self->website_width, -1);
+    gtk_widget_set_size_request(header_username, self->username_width, -1);
     gtk_grid_attach(GTK_GRID(self->bottom_grid), header_username, 1, -1, 1, 1);
 
     // password header label
     GtkWidget *header_password = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(header_password), msg_manage_password);
-    gtk_widget_set_size_request(header_password, self->website_width, -1);
+    gtk_widget_set_size_request(header_password, self->password_width, -1);
     gtk_grid_attach(GTK_GRID(self->bottom_grid), header_password, 2, -1, 1, 1);
 
     gtk_widget_show_all(self->bottom_grid);
