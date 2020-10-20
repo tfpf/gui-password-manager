@@ -222,7 +222,7 @@ void selection_window_get_widths_of_columns(selection_window_t *self)
         }
     }
 
-    float multiplier = 1.1;
+    float multiplier = 1.2;
     self->website_width *= multiplier;
     self->username_width *= multiplier;
     self->password_width *= multiplier;
