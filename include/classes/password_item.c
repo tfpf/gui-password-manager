@@ -45,8 +45,10 @@ Function prototypes.
 -----------------------------------------------------------------------------*/
 password_item_t *password_item_new_from_plaintext(char const *website, char const *username, char const *password, char unsigned *kek);
 password_item_t **password_items_new_from_file(int *num_of_items, char unsigned *kek);
+void password_item_write_to_file(password_item_t *item);
 void password_items_write_to_file(password_item_t **items, int num_of_items);
 void password_item_delete(password_item_t *self);
+void password_items_delete(password_item_t **items, int num_of_items);
 
 /*-----------------------------------------------------------------------------
 Initialiser for the `password_item_t' struct. Encrypt the plaintext data and
@@ -141,7 +143,24 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
 }
 
 /*-----------------------------------------------------------------------------
-Write the ciphertext data in the array to the password file.
+Write the ciphertext data in a single item to the pasword file.
+-----------------------------------------------------------------------------*/
+void password_item_write_to_file(password_item_t *self)
+{
+    FILE *Slave_file = fopen(Slave, "ab");
+    fwrite(&(self->e_website_length), sizeof(int), 1, Slave_file);
+    fwrite(&(self->e_username_length), sizeof(int), 1, Slave_file);
+    fwrite(&(self->e_password_length), sizeof(int), 1, Slave_file);
+    fwrite(self->e_website, 1, self->e_website_length, Slave_file);
+    fwrite(self->e_username, 1, self->e_username_length, Slave_file);
+    fwrite(self->e_password, 1, self->e_password_length, Slave_file);
+    fwrite(self->e_key, 1, AES_KEY_LENGTH, Slave_file);
+    fwrite(self->iv, 1, INIT_VEC_LENGTH, Slave_file);
+    fclose(Slave_file);
+}
+
+/*-----------------------------------------------------------------------------
+Write the ciphertext data in the array of items to the password file.
 -----------------------------------------------------------------------------*/
 void password_items_write_to_file(password_item_t **items, int num_of_items)
 {
@@ -179,5 +198,17 @@ void password_item_delete(password_item_t *self)
     zero_and_free(self->e_password, self->e_password_length);
     zero_and_free(self->e_key, AES_KEY_LENGTH);
     free(self);
+}
+
+/*-----------------------------------------------------------------------------
+Sanitise and release the memory used by all structs in the array.
+-----------------------------------------------------------------------------*/
+void password_items_delete(password_item_t **items, int num_of_items)
+{
+    for(int i = 0; i < num_of_items; ++i)
+    {
+        password_item_delete(items[i]);
+    }
+    free(items);
 }
 
