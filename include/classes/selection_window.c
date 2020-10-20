@@ -5,34 +5,46 @@ easily when required.
 Members:
     window: main window in which widgets will be added
     notif_revealer: struct which shows notifications in `window'
+    construction_in_progress: whether all child widgets of `window' are created
     search_ent: entry in which the user can type to search for something
     bottom_grid: grid in which search results will be populated
     website_add_ent: entry to type the website while adding a new item
     username_add_ent: entry to type the username while adding a new item
     password1_add_ent: entry to type the password while adding a new item
     password2_add_ent: entry to retype the password while adding a new item
-    construction_in_progress: whether all child widgets of `window' are created
+    passphrase1_ent: entry to type the new passphrase while changing it
+    passphrase2_ent: entry to retype the new passphrase while changing it
+
     window_edit: secondary window which is used to edit an existing item
     notif_revealer_edit: struct which shows notifications in `window_edit'
     website_edit_ent: entry to type the website while editing a new item
     username_edit_ent: entry to type the username while editing a new item
     password1_edit_ent: entry to type the password while editing a new item
     password2_edit_ent: entry to retype the password while editing a new item
+
+    layout: Pango layout used to calculate the rendered text size
+    website_width: width of the column which displays websites
+    username_width: width of the column which displays usernames
+    password_width: width of the column which displays passwords
+
     items: array of all existing items
-    num_of_items
+    num_of_items: number of items in `items' (duh)
+
     kek: key encryption key
 -----------------------------------------------------------------------------*/
 typedef struct
 {
     GtkWidget *window;
     notification_revealer_t *notif_revealer;
+    gboolean construction_in_progress;
     GtkWidget *search_ent;
     GtkWidget *bottom_grid;
     GtkWidget *website_add_ent;
     GtkWidget *username_add_ent;
     GtkWidget *password1_add_ent;
     GtkWidget *password2_add_ent;
-    gboolean construction_in_progress;
+    GtkWidget *passphrase1_ent;
+    GtkWidget *passphrase2_ent;
 
     GtkWidget *window_edit;
     notification_revealer_t *notif_revealer_edit;
@@ -40,8 +52,6 @@ typedef struct
     GtkWidget *username_edit_ent;
     GtkWidget *password1_edit_ent;
     GtkWidget *password2_edit_ent;
-    GtkWidget *passphrase1_ent;
-    GtkWidget *passphrase2_ent;
 
     PangoLayout *layout;
     int website_width;
@@ -61,7 +71,7 @@ Function prototypes.
 selection_window_t *selection_window_new(char unsigned *kek);
 void selection_window_main(selection_window_t *self);
 int selection_window_get_width_of_string(selection_window_t *self, char const *string);
-void selection_window_get_column_widths(selection_window_t *self);
+void selection_window_get_widths_of_columns(selection_window_t *self);
 void selection_window_sort_items(selection_window_t *self);
 void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, selection_window_t *self);
 void selection_window_clear_entry(GtkWidget *widget);
@@ -89,7 +99,8 @@ void change_grid_change_passphrase(selection_window_t *self);
 
 /*-----------------------------------------------------------------------------
 Initialiser for the `selection_window_t' struct. Create a GTK window and
-populate it with widgets. Save the widgets of interest as member of the struct.
+populate it with widgets. Save the widgets of interest as members of the
+struct.
 -----------------------------------------------------------------------------*/
 selection_window_t *selection_window_new(char unsigned *kek)
 {
@@ -145,15 +156,14 @@ selection_window_t *selection_window_new(char unsigned *kek)
     // obtain font description
     PangoFontDescription *font;
     GtkStyleContext *style = gtk_widget_get_style_context(self->window);
-    // gtk_style_context_get(style, GTK_STATE_FLAG_SELECTED, GTK_STYLE_PROPERTY_FONT, &font, NULL);
     gtk_style_context_get(style, gtk_style_context_get_state(style), GTK_STYLE_PROPERTY_FONT, &font, NULL);
+    // gtk_style_context_get(style, GTK_STATE_FLAG_SELECTED, GTK_STYLE_PROPERTY_FONT, &font, NULL);
 
     // obtain Pango layout
-    // this will be used to determine the rendered text size
     self->layout = pango_layout_new(gtk_widget_get_pango_context(self->window));
     pango_layout_set_font_description(self->layout, font);
 
-    selection_window_get_column_widths(self);
+    selection_window_get_widths_of_columns(self);
 
     return self;
 }
@@ -169,7 +179,23 @@ void selection_window_main(selection_window_t *self)
     gtk_main();
 }
 
-void selection_window_get_column_widths(selection_window_t *self)
+/*-----------------------------------------------------------------------------
+Obtain the size (in pixels) of a string as it is rendered.
+-----------------------------------------------------------------------------*/
+int selection_window_get_width_of_string(selection_window_t *self, char const *string)
+{
+    pango_layout_set_text(self->layout, string, -1);
+    int w;
+    pango_layout_get_pixel_size(self->layout, &w, NULL);
+    return w;
+}
+
+/*-----------------------------------------------------------------------------
+Obtain the sizes of the columns which display the website, username and
+password. The size of a column would be the size of the widest string which
+goes into that column.
+-----------------------------------------------------------------------------*/
+void selection_window_get_widths_of_columns(selection_window_t *self)
 {
     self->website_width = -1;
     self->username_width = -1;
@@ -196,20 +222,10 @@ void selection_window_get_column_widths(selection_window_t *self)
         }
     }
 
-    self->website_width *= 1.2;
-    self->username_width *= 1.2;
-    self->password_width *= 1.2;
-}
-
-/*-----------------------------------------------------------------------------
-Obtain the size (in pixels) of a string as it is rendered.
------------------------------------------------------------------------------*/
-int selection_window_get_width_of_string(selection_window_t *self, char const *string)
-{
-    pango_layout_set_text(self->layout, string, -1);
-    int w;
-    pango_layout_get_pixel_size(self->layout, &w, NULL);
-    return w;
+    float multiplier = 1.1;
+    self->website_width *= multiplier;
+    self->username_width *= multiplier;
+    self->password_width *= multiplier;
 }
 
 /*-----------------------------------------------------------------------------
@@ -289,12 +305,9 @@ void selection_window_quit(GtkWidget *window, selection_window_t *self)
     gtk_main_quit();
 
     // clear the sensitive data from memory
-    for(int i = 0; i < self->num_of_items; ++i)
-    {
-        password_item_delete(self->items[i]);
-    }
-    free(self->items);
+    password_items_delete(self->items, self->num_of_items);
     zero_and_free(self->kek, AES_KEY_LENGTH);
+    g_object_unref(self->layout);
 
     GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
     gtk_clipboard_clear(clipboard);
@@ -309,7 +322,7 @@ GtkWidget *manage_box_new(selection_window_t *self)
     // box
     GtkWidget *manage_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
-    // grid
+    // grid to be put in the box
     GtkWidget *top_grid = gtk_grid_new();
     gtk_container_set_border_width(GTK_CONTAINER(top_grid), 50);
     gtk_grid_set_column_spacing(GTK_GRID(top_grid), 25);
@@ -318,7 +331,21 @@ GtkWidget *manage_box_new(selection_window_t *self)
     gtk_widget_set_hexpand(top_grid, TRUE);
     gtk_box_pack_start(GTK_BOX(manage_box), top_grid, FALSE, FALSE, 0);
 
-    // scrollable window
+    // header label
+    GtkWidget *header = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(header), msg_manage_header);
+    gtk_grid_attach(GTK_GRID(top_grid), header, 0, 0, 2, 1);
+
+    // search prompt label
+    GtkWidget *search_lbl = gtk_label_new(str_search);
+    gtk_grid_attach(GTK_GRID(top_grid), search_lbl, 0, 1, 1, 1);
+
+    // search response entry
+    self->search_ent = gtk_entry_new();
+    gtk_grid_attach(GTK_GRID(top_grid), self->search_ent, 1, 1, 1, 1);
+    g_signal_connect(self->search_ent, "changed", G_CALLBACK(manage_box_update), self);
+
+    // scrollable window to be put in the box
     GtkWidget *scrollable = gtk_scrolled_window_new(NULL, NULL);
     gtk_container_set_border_width(GTK_CONTAINER(scrollable), 0);
     gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(scrollable), FALSE);
@@ -336,20 +363,6 @@ GtkWidget *manage_box_new(selection_window_t *self)
     gtk_widget_set_hexpand(self->bottom_grid, TRUE);
     gtk_container_add(GTK_CONTAINER(scrollable), self->bottom_grid);
 
-    // header label
-    GtkWidget *header = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(header), msg_manage_header);
-    gtk_grid_attach(GTK_GRID(top_grid), header, 0, 0, 2, 1);
-
-    // search prompt label
-    GtkWidget *search_lbl = gtk_label_new(str_search);
-    gtk_grid_attach(GTK_GRID(top_grid), search_lbl, 0, 1, 1, 1);
-
-    // search response entry
-    self->search_ent = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(top_grid), self->search_ent, 1, 1, 1, 1);
-    g_signal_connect(self->search_ent, "changed", G_CALLBACK(manage_box_update), self);
-
     return manage_box;
 }
 
@@ -357,8 +370,11 @@ GtkWidget *manage_box_new(selection_window_t *self)
 Create widgets to display those items for which the search term is a
 case-insensitive substring of either the website or the username. If such
 matches are found, they are added to the GTK grid, and the headers for the grid
-are created. If no matches are found, the headers are not created, and an error
-message is displayed instead.
+are created. The widths of these headers are such that all strings can fit in
+them comfortably.
+
+If no matches are found, the headers are not created, and an error message is
+displayed instead.
 
 Note that the search entry is received as the first argument of the function.
 Wherefore, there is no need to refer to the entry as `self->search_ent'.
@@ -494,19 +510,7 @@ void manage_box_copy_password(GtkButton *btn, selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Delete a password from the array in memory. Then write it to the password file.
-
-The array index of the element to be deleted could not be passed to this
-function, because this is a callback function (it cannot take more than two
-arguments). So, I set the name of the button (the first argument) to the string
-form of the array index. Hence, the index can be obtained by querying for the
-name of the button.
-
-Another way to send the index was to pack `self' and the index into a struct
-and receive a pointer to that struct as the second argument, but I didn't want
-to add another struct to this project.
-
-These comments apply to the function `edit_window_new', too.
+Delete an item.
 -----------------------------------------------------------------------------*/
 void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
 {
@@ -522,17 +526,15 @@ void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
     }
 
     password_item_delete(item);
-
-    // the array is not downsized--only `num_of_items' is modified
     --self->num_of_items;
     for(int j = i; j < self->num_of_items; ++j)
     {
         self->items[j] = self->items[j + 1];
     }
-
     password_items_write_to_file(self->items, self->num_of_items);
 
-    selection_window_clear_entries(NULL, NULL, 0, self);
+    selection_window_get_widths_of_columns(self);
+    manage_box_update(GTK_ENTRY(self->search_ent), self);
     notification_revealer_show(self->notif_revealer, str_delete_password_done);
 }
 
@@ -698,16 +700,17 @@ void edit_window_check(GtkButton *btn, selection_window_t *self)
         return;
     }
 
-    // change the correct item
     char const *name = gtk_widget_get_name(GTK_WIDGET(btn));
     int i = atoi(name);
+
     password_item_delete(self->items[i]);
     self->items[i] = password_item_new_from_plaintext(website, username, password1, self->kek);
     password_items_write_to_file(self->items, self->num_of_items);
-    edit_window_quit(self->window_edit, NULL);
 
+    edit_window_quit(self->window_edit, NULL);
     selection_window_sort_items(self);
-    selection_window_clear_entries(NULL, NULL, 0, self);
+    selection_window_get_widths_of_columns(self);
+    manage_box_update(GTK_ENTRY(self->search_ent), self);
     notification_revealer_show(self->notif_revealer, str_edit_password_done);
 }
 
@@ -852,34 +855,6 @@ void add_grid_check(GtkButton *btn, selection_window_t *self)
         return;
     }
 
-    // encrypt and write to password file
-    password_item_t *item = password_item_new_from_plaintext(website, username, password1, self->kek);
-    add_grid_add_password(self, item);
-
-    selection_window_sort_items(self);
-    selection_window_clear_entries(NULL, NULL, 0, self);
-    notification_revealer_show(self->notif_revealer, str_add_password_done);
-}
-
-/*-----------------------------------------------------------------------------
-Write the new password item to the password file. Additionally, append it to
-the array of password items in memory.
------------------------------------------------------------------------------*/
-void add_grid_add_password(selection_window_t *self, password_item_t *item)
-{
-    // write to file
-    FILE *Slave_file = fopen(Slave, "ab");
-    fwrite(&(item->e_website_length), sizeof(int), 1, Slave_file);
-    fwrite(&(item->e_username_length), sizeof(int), 1, Slave_file);
-    fwrite(&(item->e_password_length), sizeof(int), 1, Slave_file);
-    fwrite(item->e_website, 1, item->e_website_length, Slave_file);
-    fwrite(item->e_username, 1, item->e_username_length, Slave_file);
-    fwrite(item->e_password, 1, item->e_password_length, Slave_file);
-    fwrite(item->e_key, 1, AES_KEY_LENGTH, Slave_file);
-    fwrite(item->iv, 1, INIT_VEC_LENGTH, Slave_file);
-    fclose(Slave_file);
-
-    // append to array
     password_item_t **temp = realloc(self->items, (self->num_of_items + 1) * sizeof *temp);
     if(temp == NULL)
     {
@@ -887,8 +862,16 @@ void add_grid_add_password(selection_window_t *self, password_item_t *item)
         exit(EXIT_FAILURE);
     }
     self->items = temp;
+
+    password_item_t *item = password_item_new_from_plaintext(website, username, password1, self->kek);
     self->items[self->num_of_items] = item;
     ++self->num_of_items;
+    password_item_write_to_file(item);
+
+    selection_window_sort_items(self);
+    selection_window_get_widths_of_columns(self);
+    selection_window_clear_entries(NULL, NULL, 0, self);
+    notification_revealer_show(self->notif_revealer, str_add_password_done);
 }
 
 /*-----------------------------------------------------------------------------
@@ -985,8 +968,6 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
         return;
     }
 
-    passphrase_hash_to_file(passphrase1);
-
     // obtain new key encryption key
     // remember that the encryption system is AES256
     // whence, the AES key is 256 bits long
@@ -995,19 +976,6 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
     self->kek = malloc(SHA256_DIGEST_LENGTH * sizeof *(self->kek));
     SHA256((char unsigned *)passphrase1, strlen(passphrase1), self->kek);
 
-    change_grid_change_passphrase(self);
-
-    selection_window_clear_entries(NULL, NULL, 0, self);
-    notification_revealer_show(self->notif_revealer, str_change_passphrase_done);
-}
-
-/*-----------------------------------------------------------------------------
-Modify each item in the array. Generate a new key and initialisation vector to
-encrypt all data. Encrypt the key with the new key encryption key. Then write
-the array to the file.
------------------------------------------------------------------------------*/
-void change_grid_change_passphrase(selection_window_t *self)
-{
     for(int i = 0; i < self->num_of_items; ++i)
     {
         password_item_t *item = self->items[i];
@@ -1015,5 +983,9 @@ void change_grid_change_passphrase(selection_window_t *self)
         password_item_delete(item);
     }
     password_items_write_to_file(self->items, self->num_of_items);
+    passphrase_hash_to_file(passphrase1);
+
+    selection_window_clear_entries(NULL, NULL, 0, self);
+    notification_revealer_show(self->notif_revealer, str_change_passphrase_done);
 }
 
