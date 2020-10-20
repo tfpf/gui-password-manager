@@ -43,6 +43,11 @@ typedef struct
     GtkWidget *passphrase1_ent;
     GtkWidget *passphrase2_ent;
 
+    PangoLayout *layout;
+    int website_width;
+    int username_width;
+    int password_width;
+
     password_item_t **items;
     int num_of_items;
 
@@ -55,6 +60,8 @@ Function prototypes.
 -----------------------------------------------------------------------------*/
 selection_window_t *selection_window_new(char unsigned *kek);
 void selection_window_main(selection_window_t *self);
+int selection_window_get_width_of_string(selection_window_t *self, char const *string);
+void selection_window_get_column_widths(selection_window_t *self);
 void selection_window_sort_items(selection_window_t *self);
 void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, selection_window_t *self);
 void selection_window_clear_entry(GtkWidget *widget);
@@ -89,6 +96,9 @@ selection_window_t *selection_window_new(char unsigned *kek)
     selection_window_t *self = malloc(sizeof *self);
     self->construction_in_progress = TRUE;
     self->kek = kek;
+
+    self->items = password_items_new_from_file(&(self->num_of_items), self->kek);
+    selection_window_sort_items(self);
 
     // window
     self->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -132,8 +142,18 @@ selection_window_t *selection_window_new(char unsigned *kek)
     self->notif_revealer = notification_revealer_new();
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->notif_revealer->revealer);
 
-    self->items = password_items_new_from_file(&(self->num_of_items), self->kek);
-    selection_window_sort_items(self);
+    // obtain font description
+    PangoFontDescription *font;
+    GtkStyleContext *style = gtk_widget_get_style_context(self->window);
+    // gtk_style_context_get(style, GTK_STATE_FLAG_SELECTED, GTK_STYLE_PROPERTY_FONT, &font, NULL);
+    gtk_style_context_get(style, gtk_style_context_get_state(style), GTK_STYLE_PROPERTY_FONT, &font, NULL);
+
+    // obtain Pango layout
+    // this will be used to determine the rendered text size
+    self->layout = pango_layout_new(gtk_widget_get_pango_context(self->window));
+    pango_layout_set_font_description(self->layout, font);
+
+    selection_window_get_column_widths(self);
 
     return self;
 }
@@ -147,6 +167,49 @@ void selection_window_main(selection_window_t *self)
     self->construction_in_progress = FALSE;
     manage_box_update(GTK_ENTRY(self->search_ent), self);
     gtk_main();
+}
+
+void selection_window_get_column_widths(selection_window_t *self)
+{
+    self->website_width = -1;
+    self->username_width = -1;
+    self->password_width = -1;
+
+    for(int i = 0; i < self->num_of_items; ++i)
+    {
+        int website_width = selection_window_get_width_of_string(self, self->items[i]->website);
+        if(website_width > self->website_width)
+        {
+            self->website_width = website_width;
+        }
+
+        int username_width = selection_window_get_width_of_string(self, self->items[i]->username);
+        if(username_width > self->username_width)
+        {
+            self->username_width = username_width;
+        }
+
+        int password_width = selection_window_get_width_of_string(self, self->items[i]->password);
+        if(password_width > self->password_width)
+        {
+            self->password_width = password_width;
+        }
+    }
+
+    self->website_width *= 1.2;
+    self->username_width *= 1.2;
+    self->password_width *= 1.2;
+}
+
+/*-----------------------------------------------------------------------------
+Obtain the size (in pixels) of a string as it is rendered.
+-----------------------------------------------------------------------------*/
+int selection_window_get_width_of_string(selection_window_t *self, char const *string)
+{
+    pango_layout_set_text(self->layout, string, -1);
+    int w;
+    pango_layout_get_pixel_size(self->layout, &w, NULL);
+    return w;
 }
 
 /*-----------------------------------------------------------------------------
@@ -388,16 +451,19 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
     // website header label
     GtkWidget *header_website = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(header_website), msg_manage_website);
+    gtk_widget_set_size_request(header_website, self->website_width, -1);
     gtk_grid_attach(GTK_GRID(self->bottom_grid), header_website, 0, -1, 1, 1);
 
     // username header label
     GtkWidget *header_username = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(header_username), msg_manage_username);
+    gtk_widget_set_size_request(header_username, self->website_width, -1);
     gtk_grid_attach(GTK_GRID(self->bottom_grid), header_username, 1, -1, 1, 1);
 
     // password header label
     GtkWidget *header_password = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(header_password), msg_manage_password);
+    gtk_widget_set_size_request(header_password, self->website_width, -1);
     gtk_grid_attach(GTK_GRID(self->bottom_grid), header_password, 2, -1, 1, 1);
 
     gtk_widget_show_all(self->bottom_grid);
