@@ -7,6 +7,7 @@ Members:
     notif_revealer: struct which shows notifications in `window'
     construction_in_progress: whether all child widgets of `window' are created
     search_ent: entry in which the user can type to search for something
+    listbox: list box in which search results will be populated
     bottom_grid: grid in which search results will be populated
     website_add_ent: entry to type the website while adding a new item
     username_add_ent: entry to type the username while adding a new item
@@ -38,6 +39,7 @@ typedef struct
     gboolean construction_in_progress;
     GtkWidget *search_ent;
     GtkWidget *bottom_grid;
+    GtkWidget *listbox;
     GtkWidget *website_add_ent;
     GtkWidget *username_add_ent;
     GtkWidget *password1_add_ent;
@@ -69,15 +71,15 @@ Function prototypes.
 selection_window_t *selection_window_new(char unsigned *kek);
 void selection_window_main(selection_window_t *self);
 int selection_window_get_width_of_string(selection_window_t *self, char const *string);
-void selection_window_get_widths_of_columns(selection_window_t *self);
-void selection_window_sort_items(selection_window_t *self);
 void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guint page_num, selection_window_t *self);
 void selection_window_clear_entry(GtkWidget *widget);
 void selection_window_quit(GtkWidget *window, selection_window_t *self);
 
 GtkWidget *manage_box_new(selection_window_t *self);
+gboolean manage_box_filter(GtkListBoxRow *row, gpointer data);
+int manage_box_sort(GtkListBoxRow *row_i, GtkListBoxRow *row_j, gpointer data);
 void manage_box_update(GtkEntry *search_ent, selection_window_t *self);
-void manage_box_show_password(GtkButton *btn, password_item_t *item);
+void manage_box_show_password(GtkButton *btn, selection_window_t *self);
 void manage_box_copy_password(GtkButton *btn, selection_window_t *self);
 void manage_box_delete_password(GtkButton *btn, selection_window_t *self);
 
@@ -104,7 +106,6 @@ selection_window_t *selection_window_new(char unsigned *kek)
     self->construction_in_progress = TRUE;
     self->kek = kek;
     self->items = password_items_new_from_file(&(self->num_of_items), self->kek);
-    selection_window_sort_items(self);
 
     // window
     self->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -148,8 +149,6 @@ selection_window_t *selection_window_new(char unsigned *kek)
     self->notif_revealer = notification_revealer_new();
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->notif_revealer->revealer);
 
-    selection_window_get_widths_of_columns(self);
-
     return self;
 }
 
@@ -182,72 +181,6 @@ int selection_window_get_width_of_string(selection_window_t *self, char const *s
     g_object_unref(layout);
 
     return w;
-}
-
-/*-----------------------------------------------------------------------------
-Obtain the sizes of the columns which display the website, username and
-password. The size of a column would be the size of the widest string which
-goes into that column.
------------------------------------------------------------------------------*/
-void selection_window_get_widths_of_columns(selection_window_t *self)
-{
-    self->website_width = -1;
-    self->username_width = -1;
-    self->password_width = -1;
-
-    for(int i = 0; i < self->num_of_items; ++i)
-    {
-        int website_width = selection_window_get_width_of_string(self, self->items[i]->website);
-        if(website_width > self->website_width)
-        {
-            self->website_width = website_width;
-        }
-
-        int username_width = selection_window_get_width_of_string(self, self->items[i]->username);
-        if(username_width > self->username_width)
-        {
-            self->username_width = username_width;
-        }
-
-        int password_width = selection_window_get_width_of_string(self, self->items[i]->password);
-        if(password_width > self->password_width)
-        {
-            self->password_width = password_width;
-        }
-    }
-
-    float multiplier = 1.2;
-    self->website_width *= multiplier;
-    self->username_width *= multiplier;
-    self->password_width *= multiplier;
-}
-
-/*-----------------------------------------------------------------------------
-Sort the array of password items.
-
-Selection sort has been implemented here. The library function `qsort' was not
-used because the standard does not say anything on whether copies of the data
-are created. In this case, copies must strictly not be made, because the data
-contains passwords.
------------------------------------------------------------------------------*/
-void selection_window_sort_items(selection_window_t *self)
-{
-    for(int i = 0; i < self->num_of_items - 1; ++i)
-    {
-        int i_min = i;
-        for(int j = i + 1; j < self->num_of_items; ++j)
-        {
-            int website_compare = strcasecmp(self->items[i_min]->website, self->items[j]->website);
-            int username_compare = strcasecmp(self->items[i_min]->username, self->items[j]->username);
-            if(website_compare > 0 || (website_compare == 0 && username_compare > 0))
-            {
-                i_min = j;
-            }
-        }
-        password_item_t *temp = self->items[i_min];
-        self->items[i_min] = self->items[i];
-        self->items[i] = temp;
-    }
 }
 
 /*-----------------------------------------------------------------------------
@@ -315,7 +248,31 @@ GtkWidget *manage_box_new(selection_window_t *self)
     // box
     GtkWidget *manage_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
-    // grid to be put in the box
+    // scrollable window to be put in `manage_box'
+    GtkWidget *scrollable = gtk_scrolled_window_new(NULL, NULL);
+    gtk_container_set_border_width(GTK_CONTAINER(scrollable), 0);
+    gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(scrollable), FALSE);
+    gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(scrollable), GTK_CORNER_TOP_LEFT);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollable), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+    gtk_widget_set_can_focus(scrollable, FALSE);
+    gtk_box_pack_end(GTK_BOX(manage_box), scrollable, TRUE, TRUE, 0);
+
+    // box to be put in the scrollable window
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add(GTK_CONTAINER(scrollable), box);
+
+    // list box to be put in the box
+    self->listbox = gtk_list_box_new();
+    gtk_container_set_border_width(GTK_CONTAINER(self->listbox), 25);
+    gtk_list_box_set_filter_func(GTK_LIST_BOX(self->listbox), manage_box_filter, self, NULL);
+    // gtk_list_box_set_placeholder(GTK_LIST_BOX(self->listbox), gtk_label_new(msg_manage_error));
+    gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->listbox), GTK_SELECTION_NONE);
+    gtk_list_box_set_sort_func(GTK_LIST_BOX(self->listbox), manage_box_sort, self, NULL);
+    gtk_widget_set_halign(self->listbox, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(self->listbox, TRUE);
+    gtk_box_pack_start(GTK_BOX(box), self->listbox, TRUE, TRUE, 0);
+
+    // grid to be put in `manage_box'
     GtkWidget *top_grid = gtk_grid_new();
     gtk_container_set_border_width(GTK_CONTAINER(top_grid), 50);
     gtk_grid_set_column_spacing(GTK_GRID(top_grid), 25);
@@ -336,27 +293,52 @@ GtkWidget *manage_box_new(selection_window_t *self)
     // search response entry
     self->search_ent = gtk_entry_new();
     gtk_grid_attach(GTK_GRID(top_grid), self->search_ent, 1, 1, 1, 1);
-    g_signal_connect(self->search_ent, "changed", G_CALLBACK(manage_box_update), self);
-
-    // scrollable window to be put in the box
-    GtkWidget *scrollable = gtk_scrolled_window_new(NULL, NULL);
-    gtk_container_set_border_width(GTK_CONTAINER(scrollable), 0);
-    gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(scrollable), FALSE);
-    gtk_scrolled_window_set_placement(GTK_SCROLLED_WINDOW(scrollable), GTK_CORNER_TOP_LEFT);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollable), GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
-    gtk_widget_set_can_focus(scrollable, FALSE);
-    gtk_box_pack_start(GTK_BOX(manage_box), scrollable, TRUE, TRUE, 0);
-
-    // grid to be put in the scrollable window
-    self->bottom_grid = gtk_grid_new();
-    gtk_container_set_border_width(GTK_CONTAINER(self->bottom_grid), 25);
-    gtk_grid_set_column_spacing(GTK_GRID(self->bottom_grid), 15);
-    gtk_grid_set_row_spacing(GTK_GRID(self->bottom_grid), 15);
-    gtk_widget_set_halign(self->bottom_grid, GTK_ALIGN_CENTER);
-    gtk_widget_set_hexpand(self->bottom_grid, TRUE);
-    gtk_container_add(GTK_CONTAINER(scrollable), self->bottom_grid);
+    g_signal_connect_swapped(self->search_ent, "changed", G_CALLBACK(gtk_list_box_invalidate_filter), self->listbox);
 
     return manage_box;
+}
+
+/*-----------------------------------------------------------------------------
+Filter function for the list box rows.
+-----------------------------------------------------------------------------*/
+gboolean manage_box_filter(GtkListBoxRow *row, gpointer data)
+{
+    selection_window_t *self = data;
+    char const *search = gtk_entry_get_text(GTK_ENTRY(self->search_ent));
+    int i = atoi(gtk_widget_get_name(GTK_WIDGET(row)));
+
+    if(my_strcasestr(self->items[i]->website, search) || my_strcasestr(self->items[i]->username, search))
+    {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*-----------------------------------------------------------------------------
+Sort function for the list box rows.
+-----------------------------------------------------------------------------*/
+int manage_box_sort(GtkListBoxRow *row_i, GtkListBoxRow *row_j, gpointer data)
+{
+    selection_window_t *self = data;
+    int i = atoi(gtk_widget_get_name(GTK_WIDGET(row_i)));
+    int j = atoi(gtk_widget_get_name(GTK_WIDGET(row_j)));
+
+    int website_compare = strcasecmp(self->items[i]->website, self->items[j]->website);
+    int username_compare = strcasecmp(self->items[i]->username, self->items[j]->username);
+    int compare = website_compare ? website_compare : username_compare;
+
+    if(compare < 0)
+    {
+        return -1;
+    }
+
+    if(compare > 0)
+    {
+        return 1;
+    }
+
+    return 0;
 }
 
 /*-----------------------------------------------------------------------------
@@ -374,48 +356,92 @@ Wherefore, there is no need to refer to the entry as `self->search_ent'.
 -----------------------------------------------------------------------------*/
 void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
 {
-    char const *search = gtk_entry_get_text(search_ent);
-    gboolean found = FALSE;
-
-    // clear all widgets in `bottom_grid' (if any)
-    GList *children = gtk_container_get_children(GTK_CONTAINER(self->bottom_grid));
+    // destroy all rows of `self->listbox' (if any)
+    GList *children = gtk_container_get_children(GTK_CONTAINER(self->listbox));
     for(GList *child = children; child != NULL; child = g_list_next(child))
     {
         gtk_widget_destroy(child->data);
     }
     g_list_free(children);
 
-    // show matching items
-    // if the array element at position `i' contains `search', it will be added
-    // the rows of the GTK grid do not have to be consecutive integers
-    // so, the item can simply be attached to row `i' of the grid
+    // calculate the widths of the columns which have to be displayed
+    // the width of a column is the width of the widest string it will display
+    // keep a lower bound on the widths
+    float multiplier = 1.3;
+    int website_width = multiplier * selection_window_get_width_of_string(self, str_website);
+    int username_width = multiplier * selection_window_get_width_of_string(self, str_username);
+    int password_width = multiplier * selection_window_get_width_of_string(self, str_password1);
     for(int i = 0; i < self->num_of_items; ++i)
     {
-        if(!my_strcasestr(self->items[i]->website, search) && !my_strcasestr(self->items[i]->username, search))
+        if(self->items[i] == NULL)
         {
             continue;
         }
-        found = TRUE;
+
+        int w = selection_window_get_width_of_string(self, self->items[i]->website);
+        if(w > website_width)
+        {
+            website_width = w;
+        }
+
+        int u = selection_window_get_width_of_string(self, self->items[i]->username);
+        if(u > username_width)
+        {
+            username_width = u;
+        }
+
+        int p = selection_window_get_width_of_string(self, self->items[i]->password);
+        if(p > password_width)
+        {
+            password_width = p;
+        }
+    }
+    website_width *= multiplier;
+    username_width *= multiplier;
+    password_width *= multiplier;
+
+    // list box rows to be put in the list box
+    for(int i = 0; i < self->num_of_items; ++i)
+    {
+        if(self->items[i] == NULL)
+        {
+            continue;
+        }
+
+        // name to identify widgets associated with the index `i'
+        int length = snprintf(NULL, 0, "%d", i);
+        char *name = malloc((length + 1) * sizeof *name);
+        snprintf(name, length + 1, "%d", i);
+
+        // list box row
+        GtkWidget *row = gtk_list_box_row_new();
+        gtk_widget_set_name(row, name);
+        gtk_container_add(GTK_CONTAINER(self->listbox), row);
+
+        // box to be put in the list box row
+        GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
+        gtk_container_add(GTK_CONTAINER(row), box);
 
         // website label
         GtkWidget *website_lbl = gtk_label_new(self->items[i]->website);
-        gtk_grid_attach(GTK_GRID(self->bottom_grid), website_lbl, 0, i, 1, 1);
+        gtk_widget_set_size_request(website_lbl, website_width, -1);
+        gtk_widget_set_tooltip_text(website_lbl, str_website);
+        gtk_box_pack_start(GTK_BOX(box), website_lbl, FALSE, FALSE, 0);
 
         // username label
         GtkWidget *username_lbl = gtk_label_new(self->items[i]->username);
-        gtk_grid_attach(GTK_GRID(self->bottom_grid), username_lbl, 1, i, 1, 1);
+        gtk_widget_set_size_request(username_lbl, username_width, -1);
+        gtk_widget_set_tooltip_text(username_lbl, str_username);
+        gtk_box_pack_start(GTK_BOX(box), username_lbl, FALSE, FALSE, 0);
 
         // password button
         GtkWidget *password_btn = gtk_button_new_with_label(str_placeholder);
         gtk_widget_set_can_focus(password_btn, FALSE);
+        gtk_widget_set_name(password_btn, name);
+        gtk_widget_set_size_request(password_btn, password_width, -1);
         gtk_widget_set_tooltip_text(password_btn, str_show_password);
-        g_signal_connect(password_btn, "clicked", G_CALLBACK(manage_box_show_password), self->items[i]);
-        gtk_grid_attach(GTK_GRID(self->bottom_grid), password_btn, 2, i, 1, 1);
-
-        // name for identifying edit and delete buttons
-        int length = snprintf(NULL, 0, "%d", i);
-        char *name = malloc((length + 1) * sizeof *name);
-        snprintf(name, length + 1, "%d", i);
+        g_signal_connect(password_btn, "clicked", G_CALLBACK(manage_box_show_password), self);
+        gtk_box_pack_start(GTK_BOX(box), password_btn, FALSE, FALSE, 0);
 
         // copy button
         GtkWidget *copy_btn = gtk_button_new();
@@ -424,7 +450,7 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
         gtk_widget_set_name(copy_btn, name);
         gtk_widget_set_tooltip_text(copy_btn, str_copy_password);
         g_signal_connect(copy_btn, "clicked", G_CALLBACK(manage_box_copy_password), self);
-        gtk_grid_attach(GTK_GRID(self->bottom_grid), copy_btn, 3, i, 1, 1);
+        gtk_box_pack_start(GTK_BOX(box), copy_btn, FALSE, FALSE, 0);
 
         // edit button
         GtkWidget *edit_btn = gtk_button_new();
@@ -433,7 +459,7 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
         gtk_widget_set_name(edit_btn, name);
         gtk_widget_set_tooltip_text(edit_btn, str_edit_password);
         g_signal_connect(edit_btn, "clicked", G_CALLBACK(edit_window_new), self);
-        gtk_grid_attach(GTK_GRID(self->bottom_grid), edit_btn, 4, i, 1, 1);
+        gtk_box_pack_start(GTK_BOX(box), edit_btn, FALSE, FALSE, 0);
 
         // delete button
         GtkWidget *delete_btn = gtk_button_new();
@@ -442,47 +468,23 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
         gtk_widget_set_name(delete_btn, name);
         gtk_widget_set_tooltip_text(delete_btn, str_delete_password);
         g_signal_connect(delete_btn, "clicked", G_CALLBACK(manage_box_delete_password), self);
-        gtk_grid_attach(GTK_GRID(self->bottom_grid), delete_btn, 5, i, 1, 1);
+        gtk_box_pack_start(GTK_BOX(box), delete_btn, FALSE, FALSE, 0);
 
         free(name);
     }
 
-    // if nothing was found, do not display the headers
-    if(!found)
-    {
-        GtkWidget *error_lbl = gtk_label_new(NULL);
-        gtk_label_set_markup(GTK_LABEL(error_lbl), msg_manage_error);
-        gtk_grid_attach(GTK_GRID(self->bottom_grid), error_lbl, 0, 0, 1, 1);
-        gtk_widget_show_all(self->bottom_grid);
-        return;
-    }
-
-    // website header label
-    GtkWidget *header_website = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(header_website), msg_manage_website);
-    gtk_widget_set_size_request(header_website, self->website_width, -1);
-    gtk_grid_attach(GTK_GRID(self->bottom_grid), header_website, 0, -1, 1, 1);
-
-    // username header label
-    GtkWidget *header_username = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(header_username), msg_manage_username);
-    gtk_widget_set_size_request(header_username, self->username_width, -1);
-    gtk_grid_attach(GTK_GRID(self->bottom_grid), header_username, 1, -1, 1, 1);
-
-    // password header label
-    GtkWidget *header_password = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(header_password), msg_manage_password);
-    gtk_widget_set_size_request(header_password, self->password_width, -1);
-    gtk_grid_attach(GTK_GRID(self->bottom_grid), header_password, 2, -1, 1, 1);
-
-    gtk_widget_show_all(self->bottom_grid);
+    gtk_widget_show_all(self->listbox);
 }
 
 /*-----------------------------------------------------------------------------
 Display a password on the button which was clicked.
 -----------------------------------------------------------------------------*/
-void manage_box_show_password(GtkButton *btn, password_item_t *item)
+void manage_box_show_password(GtkButton *btn, selection_window_t *self)
 {
+    char const *name = gtk_widget_get_name(GTK_WIDGET(btn));
+    int i = atoi(name);
+    password_item_t *item = self->items[i];
+
     gtk_button_set_label(btn, item->password);
     gtk_widget_set_has_tooltip(GTK_WIDGET(btn), FALSE);
     gtk_widget_set_sensitive(GTK_WIDGET(btn), FALSE);
@@ -509,24 +511,18 @@ void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
 {
     char const *name = gtk_widget_get_name(GTK_WIDGET(btn));
     int i = atoi(name);
-    password_item_t *item = self->items[i];
 
     // confirmation
-    int response = request_confirmation(self->window, str_delete_password_question, item->website, item->username);
+    int response = request_confirmation(self->window, str_delete_password_question, self->items[i]->website, self->items[i]->username);
     if(response != GTK_RESPONSE_ACCEPT)
     {
         return;
     }
 
-    password_item_delete(item);
-    --self->num_of_items;
-    for(int j = i; j < self->num_of_items; ++j)
-    {
-        self->items[j] = self->items[j + 1];
-    }
+    password_item_delete(self->items[i]);
+    self->items[i] = NULL;
     password_items_write_to_file(self->items, self->num_of_items);
 
-    selection_window_get_widths_of_columns(self);
     manage_box_update(GTK_ENTRY(self->search_ent), self);
     notification_revealer_show(self->notif_revealer, str_delete_password_done);
 }
@@ -538,7 +534,6 @@ void edit_window_new(GtkButton *btn, selection_window_t *self)
 {
     char const *name = gtk_widget_get_name(GTK_WIDGET(btn));
     int i = atoi(name);
-    password_item_t *item = self->items[i];
 
     // window
     self->window_edit = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -576,8 +571,8 @@ void edit_window_new(GtkButton *btn, selection_window_t *self)
 
     // website response entry
     self->website_edit_ent = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(self->website_edit_ent), item->website);
-    gtk_entry_set_text(GTK_ENTRY(self->website_edit_ent), item->website);
+    gtk_entry_set_placeholder_text(GTK_ENTRY(self->website_edit_ent), self->items[i]->website);
+    gtk_entry_set_text(GTK_ENTRY(self->website_edit_ent), self->items[i]->website);
     gtk_entry_set_width_chars(GTK_ENTRY(self->website_edit_ent), ENTRY_WIDTH);
     gtk_grid_attach(GTK_GRID(grid), self->website_edit_ent, 1, 1, 1, 1);
 
@@ -587,8 +582,8 @@ void edit_window_new(GtkButton *btn, selection_window_t *self)
 
     // username response entry
     self->username_edit_ent = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(self->username_edit_ent), item->username);
-    gtk_entry_set_text(GTK_ENTRY(self->username_edit_ent), item->username);
+    gtk_entry_set_placeholder_text(GTK_ENTRY(self->username_edit_ent), self->items[i]->username);
+    gtk_entry_set_text(GTK_ENTRY(self->username_edit_ent), self->items[i]->username);
     gtk_entry_set_width_chars(GTK_ENTRY(self->username_edit_ent), ENTRY_WIDTH);
     gtk_grid_attach(GTK_GRID(grid), self->username_edit_ent, 1, 2, 1, 1);
 
@@ -701,8 +696,6 @@ void edit_window_check(GtkButton *btn, selection_window_t *self)
     password_items_write_to_file(self->items, self->num_of_items);
 
     edit_window_quit(self->window_edit, NULL);
-    selection_window_sort_items(self);
-    selection_window_get_widths_of_columns(self);
     manage_box_update(GTK_ENTRY(self->search_ent), self);
     notification_revealer_show(self->notif_revealer, str_edit_password_done);
 }
@@ -861,9 +854,8 @@ void add_grid_check(GtkButton *btn, selection_window_t *self)
     ++self->num_of_items;
     password_item_write_to_file(item);
 
-    selection_window_sort_items(self);
-    selection_window_get_widths_of_columns(self);
     selection_window_clear_entries(NULL, NULL, 0, self);
+    manage_box_update(GTK_ENTRY(self->search_ent), self);
     notification_revealer_show(self->notif_revealer, str_add_password_done);
 }
 
@@ -971,6 +963,11 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
 
     for(int i = 0; i < self->num_of_items; ++i)
     {
+        if(self->items[i] == NULL)
+        {
+            continue;
+        }
+
         password_item_t *item = self->items[i];
         self->items[i] = password_item_new_from_plaintext(item->website, item->username, item->password, self->kek);
         password_item_delete(item);
@@ -979,6 +976,7 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
     passphrase_hash_to_file(passphrase1);
 
     selection_window_clear_entries(NULL, NULL, 0, self);
+    manage_box_update(GTK_ENTRY(self->search_ent), self);
     notification_revealer_show(self->notif_revealer, str_change_passphrase_done);
 }
 
