@@ -17,10 +17,10 @@ Members:
 
     window_edit: secondary window which is used to edit an existing item
     notif_revealer_edit: struct which shows notifications in `window_edit'
-    website_edit_ent: entry to type the website while editing a new item
-    username_edit_ent: entry to type the username while editing a new item
-    password1_edit_ent: entry to type the password while editing a new item
-    password2_edit_ent: entry to retype the password while editing a new item
+    website_edit_ent: entry to type the website while editing an item
+    username_edit_ent: entry to type the username while editing an item
+    password1_edit_ent: entry to type the password while editing an item
+    password2_edit_ent: entry to retype the password while editing an item
 
     website_width: width of the column which displays websites
     username_width: width of the column which displays usernames
