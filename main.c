@@ -36,7 +36,7 @@ int main(void)
     if(sodium_init() == -1)
     {
         fprintf(stderr, "Failed to initialise Sodium.\n");
-        return 1;
+        return EXIT_FAILURE;
     }
 
     // disable output buffering
