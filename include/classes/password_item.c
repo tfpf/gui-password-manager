@@ -166,15 +166,19 @@ void password_items_write_to_file(password_item_t **items, int num_of_items)
     FILE *Slave_file = fopen(Slave__, "wb");
     for(int i = 0; i < num_of_items; ++i)
     {
-        password_item_t *item = items[i];
-        fwrite(&(item->e_website_length), sizeof(int), 1, Slave_file);
-        fwrite(&(item->e_username_length), sizeof(int), 1, Slave_file);
-        fwrite(&(item->e_password_length), sizeof(int), 1, Slave_file);
-        fwrite(item->e_website, 1, item->e_website_length, Slave_file);
-        fwrite(item->e_username, 1, item->e_username_length, Slave_file);
-        fwrite(item->e_password, 1, item->e_password_length, Slave_file);
-        fwrite(item->e_key, 1, AES_KEY_LENGTH, Slave_file);
-        fwrite(item->iv, 1, INIT_VEC_LENGTH, Slave_file);
+        if(items[i] == NULL)
+        {
+            continue;
+        }
+
+        fwrite(&(items[i]->e_website_length), sizeof(int), 1, Slave_file);
+        fwrite(&(items[i]->e_username_length), sizeof(int), 1, Slave_file);
+        fwrite(&(items[i]->e_password_length), sizeof(int), 1, Slave_file);
+        fwrite(items[i]->e_website, 1, items[i]->e_website_length, Slave_file);
+        fwrite(items[i]->e_username, 1, items[i]->e_username_length, Slave_file);
+        fwrite(items[i]->e_password, 1, items[i]->e_password_length, Slave_file);
+        fwrite(items[i]->e_key, 1, AES_KEY_LENGTH, Slave_file);
+        fwrite(items[i]->iv, 1, INIT_VEC_LENGTH, Slave_file);
     }
     fclose(Slave_file);
 
@@ -206,6 +210,11 @@ void password_items_delete(password_item_t **items, int num_of_items)
 {
     for(int i = 0; i < num_of_items; ++i)
     {
+        if(items[i] == NULL)
+        {
+            continue;
+        }
+
         password_item_delete(items[i]);
     }
     free(items);
