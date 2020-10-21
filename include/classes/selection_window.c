@@ -22,7 +22,6 @@ Members:
     password1_edit_ent: entry to type the password while editing a new item
     password2_edit_ent: entry to retype the password while editing a new item
 
-    layout: Pango layout used to calculate the rendered text size
     website_width: width of the column which displays websites
     username_width: width of the column which displays usernames
     password_width: width of the column which displays passwords
@@ -53,7 +52,6 @@ typedef struct
     GtkWidget *password1_edit_ent;
     GtkWidget *password2_edit_ent;
 
-    PangoLayout *layout;
     int website_width;
     int username_width;
     int password_width;
@@ -150,16 +148,6 @@ selection_window_t *selection_window_new(char unsigned *kek)
     self->notif_revealer = notification_revealer_new();
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->notif_revealer->revealer);
 
-    // obtain font description
-    PangoFontDescription *font;
-    GtkStyleContext *style = gtk_widget_get_style_context(self->window);
-    gtk_style_context_get(style, gtk_style_context_get_state(style), GTK_STYLE_PROPERTY_FONT, &font, NULL);
-    // gtk_style_context_get(style, GTK_STATE_FLAG_SELECTED, GTK_STYLE_PROPERTY_FONT, &font, NULL);
-
-    // obtain Pango layout
-    self->layout = pango_layout_new(gtk_widget_get_pango_context(self->window));
-    pango_layout_set_font_description(self->layout, font);
-
     selection_window_get_widths_of_columns(self);
 
     return self;
@@ -181,9 +169,18 @@ Obtain the size (in pixels) of a string as it is rendered.
 -----------------------------------------------------------------------------*/
 int selection_window_get_width_of_string(selection_window_t *self, char const *string)
 {
-    pango_layout_set_text(self->layout, string, -1);
+    PangoFontDescription *font;
     int w;
-    pango_layout_get_pixel_size(self->layout, &w, NULL);
+
+    GtkStyleContext *style = gtk_widget_get_style_context(self->window);
+    gtk_style_context_get(style, gtk_style_context_get_state(style), GTK_STYLE_PROPERTY_FONT, &font, NULL);
+    // gtk_style_context_get(style, GTK_STATE_FLAG_SELECTED, GTK_STYLE_PROPERTY_FONT, &font, NULL);
+    PangoLayout *layout = pango_layout_new(gtk_widget_get_pango_context(self->window));
+    pango_layout_set_font_description(layout, font);
+    pango_layout_set_text(layout, string, -1);
+    pango_layout_get_pixel_size(layout, &w, NULL);
+    g_object_unref(layout);
+
     return w;
 }
 
@@ -304,7 +301,6 @@ void selection_window_quit(GtkWidget *window, selection_window_t *self)
     // clear the sensitive data from memory
     password_items_delete(self->items, self->num_of_items);
     zero_and_free(self->kek, AES_KEY_LENGTH);
-    g_object_unref(self->layout);
 
     GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
     gtk_clipboard_clear(clipboard);
