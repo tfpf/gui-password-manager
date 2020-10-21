@@ -2,9 +2,10 @@
 Stores your passwords under two layers of AES256 encryption. Sensitive data is
 cleared from RAM when the application exits.
 
-Uses GTK+3.0 (to display GUI windows) and OpenSSL (to hash and encrypt data).
-Compiling this requires a POSIX-compliant system, because I have used functions
-not specified in the C standard, but specified by POSIX.
+Uses GTK+3.0 (to display GUI windows), OpenSSL (to hash and encrypt data) and
+Sodium (to generate cryptographically secure random numbers). Compiling this
+requires a POSIX-compliant system, because I have used functions not specified
+in the C standard, but specified by POSIX.
 
 # Requirements
 * basic computer knowledge
