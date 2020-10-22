@@ -415,6 +415,7 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
 
         // list box row
         GtkWidget *row = gtk_list_box_row_new();
+        gtk_widget_set_can_focus(row, FALSE);
         gtk_widget_set_name(row, name);
         gtk_container_add(GTK_CONTAINER(self->listbox), row);
 
