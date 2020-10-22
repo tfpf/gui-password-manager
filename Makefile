@@ -7,6 +7,7 @@ CFLAGS  = -O2 -s -Wall -Wextra -Wno-unused-parameter $(shell pkg-config --cflags
 LDFLAGS = -lcrypto -lssl $(shell pkg-config --libs gtk+-3.0) $(shell pkg-config --libs libsodium) -Wl,-rpath=./
 SEGVTR  = -g -rdynamic
 SEARCH  = -I./include/miscellaneous -I./include/classes
+WINGUI  = -mwindows
 
 
 Source      = main.c
@@ -26,7 +27,7 @@ lcomp:
 
 wcomp:
 	@$(PRINT) "Compiling for Windows ...\n"
-	$(CC) $(CFLAGS) $(SEARCH) -o $(WExecutable) $(Source) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(SEARCH) -o $(WExecutable) $(Source) $(LDFLAGS) $(WINGUI)
 
 lexec:
 	@$(PRINT) "Running ...\n"
