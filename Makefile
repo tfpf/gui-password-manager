@@ -10,6 +10,7 @@ SEARCH  = -I./include/miscellaneous/ -I./include/classes/
 WINGUI  = -mwindows
 
 
+Resource    = resource.o
 Source      = main.c
 LExecutable = main
 WExecutable = main.exe
@@ -27,7 +28,7 @@ lcomp:
 
 wcomp:
 	@$(PRINT) "Compiling for Windows ...\n"
-	$(CC) $(CFLAGS) $(SEARCH) -o $(WExecutable) $(Source) $(LDFLAGS) $(WINGUI)
+	$(CC) $(CFLAGS) $(SEARCH) -o $(WExecutable) $(Source) $(Resource) $(LDFLAGS) $(WINGUI)
 
 lexec:
 	@$(PRINT) "Running ...\n"
