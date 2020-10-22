@@ -6,7 +6,7 @@ CC      = gcc
 CFLAGS  = -O2 -s -Wall -Wextra -Wno-unused-parameter $(shell pkg-config --cflags gtk+-3.0) $(shell pkg-config --cflags libsodium)
 LDFLAGS = -lcrypto -lssl $(shell pkg-config --libs gtk+-3.0) $(shell pkg-config --libs libsodium) -Wl,-rpath=./
 SEGVTR  = -g -rdynamic
-SEARCH  = -I./include/miscellaneous -I./include/classes
+SEARCH  = -I./include/miscellaneous/ -I./include/classes/
 WINGUI  = -mwindows
 
 
