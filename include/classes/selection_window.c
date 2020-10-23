@@ -6,9 +6,8 @@ Members:
     window: main window in which widgets will be added
     notif_revealer: struct which shows notifications in `window'
     construction_in_progress: whether all child widgets of `window' are created
-    search_ent: entry in which the user can type to search for something
     listbox: list box in which search results will be populated
-    bottom_grid: grid in which search results will be populated
+    search_ent: entry in which the user can type to search for something
     website_add_ent: entry to type the website while adding a new item
     username_add_ent: entry to type the username while adding a new item
     password1_add_ent: entry to type the password while adding a new item
@@ -23,10 +22,6 @@ Members:
     password1_edit_ent: entry to type the password while editing an item
     password2_edit_ent: entry to retype the password while editing an item
 
-    website_width: width of the column which displays websites
-    username_width: width of the column which displays usernames
-    password_width: width of the column which displays passwords
-
     items: array of all existing items
     num_of_items: number of items in `items' (duh)
 
@@ -37,9 +32,8 @@ typedef struct
     GtkWidget *window;
     notification_revealer_t *notif_revealer;
     gboolean construction_in_progress;
-    GtkWidget *search_ent;
-    GtkWidget *bottom_grid;
     GtkWidget *listbox;
+    GtkWidget *search_ent;
     GtkWidget *website_add_ent;
     GtkWidget *username_add_ent;
     GtkWidget *password1_add_ent;
@@ -53,10 +47,6 @@ typedef struct
     GtkWidget *username_edit_ent;
     GtkWidget *password1_edit_ent;
     GtkWidget *password2_edit_ent;
-
-    int website_width;
-    int username_width;
-    int password_width;
 
     password_item_t **items;
     int num_of_items;
@@ -186,8 +176,8 @@ int selection_window_get_width_of_string(selection_window_t *self, char const *s
 /*-----------------------------------------------------------------------------
 Clear all entries on all pages of the GTK notebook in the window. This function
 is called automatically when:
-    (1) the GTK notebook page is changed.
-    (2) GTK notebook page creation.
+    (1) the page is changed.
+    (2) a page is created.
 In the latter case, the GTK window has not been drawn completely, so nothing
 needs to be done.
 -----------------------------------------------------------------------------*/
@@ -209,17 +199,10 @@ void selection_window_clear_entries(GtkNotebook *notebook, GtkWidget *page, guin
 
 /*-----------------------------------------------------------------------------
 Clear the given GTK entry.
-
-Calling `gtk_entry_buffer_delete_text' will clear the text, but it will not
-cause the entry to emit a `changed' signal. I use this signal to update the
-search results, so I need the entry to emit this signal. Hence, the contents of
-the entry are first set to a non-empty string, and then cleared again.
 -----------------------------------------------------------------------------*/
 void selection_window_clear_entry(GtkWidget *widget)
 {
     GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(widget));
-    gtk_entry_buffer_delete_text(buffer, 0, -1);
-    gtk_entry_buffer_set_text(buffer, " ", -1);
     gtk_entry_buffer_delete_text(buffer, 0, -1);
 }
 
@@ -240,13 +223,14 @@ void selection_window_quit(GtkWidget *window, selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Create a GTK box. Add a grid in it. This grid is saved as a member of the
-`selection_window_t' struct.
+Create a GTK list box in which search results will be populated. Put it and
+other widgets in a GTK box.
 -----------------------------------------------------------------------------*/
 GtkWidget *manage_box_new(selection_window_t *self)
 {
     // box
     GtkWidget *manage_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_set_border_width(GTK_CONTAINER(manage_box), 0);
 
     // scrollable window to be put in `manage_box'
     GtkWidget *scrollable = gtk_scrolled_window_new(NULL, NULL);
@@ -259,11 +243,11 @@ GtkWidget *manage_box_new(selection_window_t *self)
 
     // box to be put in the scrollable window
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_set_border_width(GTK_CONTAINER(box), 50);
     gtk_container_add(GTK_CONTAINER(scrollable), box);
 
     // list box to be put in the box
     self->listbox = gtk_list_box_new();
-    gtk_container_set_border_width(GTK_CONTAINER(self->listbox), 25);
     gtk_list_box_set_filter_func(GTK_LIST_BOX(self->listbox), manage_box_filter, self, NULL);
     // gtk_list_box_set_placeholder(GTK_LIST_BOX(self->listbox), gtk_label_new(msg_manage_error));
     gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->listbox), GTK_SELECTION_NONE);
@@ -344,12 +328,7 @@ int manage_box_sort(GtkListBoxRow *row_i, GtkListBoxRow *row_j, gpointer data)
 /*-----------------------------------------------------------------------------
 Create widgets to display those items for which the search term is a
 case-insensitive substring of either the website or the username. If such
-matches are found, they are added to the GTK grid, and the headers for the grid
-are created. The widths of these headers are such that all strings can fit in
-them comfortably.
-
-If no matches are found, the headers are not created, and an error message is
-displayed instead.
+matches are found, they are added to the GTK list box.
 
 Note that the search entry is received as the first argument of the function.
 Wherefore, there is no need to refer to the entry as `self->search_ent'.
@@ -482,8 +461,7 @@ Display a password on the button which was clicked.
 -----------------------------------------------------------------------------*/
 void manage_box_show_password(GtkButton *btn, selection_window_t *self)
 {
-    char const *name = gtk_widget_get_name(GTK_WIDGET(btn));
-    int i = atoi(name);
+    int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
     password_item_t *item = self->items[i];
 
     gtk_button_set_label(btn, item->password);
@@ -496,8 +474,7 @@ Copy a password to the clipboard.
 -----------------------------------------------------------------------------*/
 void manage_box_copy_password(GtkButton *btn, selection_window_t *self)
 {
-    char const *name = gtk_widget_get_name(GTK_WIDGET(btn));
-    int i = atoi(name);
+    int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
     password_item_t *item = self->items[i];
 
     GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
@@ -510,8 +487,7 @@ Delete an item.
 -----------------------------------------------------------------------------*/
 void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
 {
-    char const *name = gtk_widget_get_name(GTK_WIDGET(btn));
-    int i = atoi(name);
+    int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
 
     // confirmation
     int response = request_confirmation(self->window, str_delete_password_question, self->items[i]->website, self->items[i]->username);
@@ -529,7 +505,7 @@ void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
 }
 
 /*-----------------------------------------------------------------------------
-Open a window to edit an item of the array.
+Open a window to edit an item.
 -----------------------------------------------------------------------------*/
 void edit_window_new(GtkButton *btn, selection_window_t *self)
 {
@@ -689,9 +665,7 @@ void edit_window_check(GtkButton *btn, selection_window_t *self)
         return;
     }
 
-    char const *name = gtk_widget_get_name(GTK_WIDGET(btn));
-    int i = atoi(name);
-
+    int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
     password_item_delete(self->items[i]);
     self->items[i] = password_item_new_from_plaintext(website, username, password1, self->kek);
     password_items_write_to_file(self->items, self->num_of_items);
