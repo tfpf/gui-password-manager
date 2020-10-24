@@ -57,9 +57,9 @@ created.
 password_item_t *password_item_new_from_plaintext(char const *website, char const *username, char const *password, char unsigned *kek)
 {
     password_item_t *self = malloc(sizeof *self);
-    self->website = strdup(website);
-    self->username = strdup(username);
-    self->password = strdup(password);
+    self->website = my_strdup(website);
+    self->username = my_strdup(username);
+    self->password = my_strdup(password);
     self->iv = gen_rand(INIT_VEC_LENGTH);
     self->key = gen_rand(AES_KEY_LENGTH);
 
@@ -94,16 +94,11 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
         }
 
         // read
-        char unsigned *e_website = malloc(e_website_length * sizeof *e_website);
-        char unsigned *e_username = malloc(e_username_length * sizeof *e_username);
-        char unsigned *e_password = malloc(e_password_length * sizeof *e_password);
-        char unsigned *e_key = malloc(AES_KEY_LENGTH * sizeof *e_key);
-        char unsigned *iv = malloc(INIT_VEC_LENGTH * sizeof *iv);
-        fread(e_website, 1, e_website_length, Slave_file);
-        fread(e_username, 1, e_username_length, Slave_file);
-        fread(e_password, 1, e_password_length, Slave_file);
-        fread(e_key, 1, AES_KEY_LENGTH, Slave_file);
-        fread(iv, 1, INIT_VEC_LENGTH, Slave_file);
+        char unsigned *e_website = my_fread(e_website_length, Slave_file);
+        char unsigned *e_username = my_fread(e_username_length, Slave_file);
+        char unsigned *e_password = my_fread(e_password_length, Slave_file);
+        char unsigned *e_key = my_fread(AES_KEY_LENGTH, Slave_file);
+        char unsigned *iv = my_fread(INIT_VEC_LENGTH, Slave_file);
 
         // decrypt
         char *website, *username, *password;
