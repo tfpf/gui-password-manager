@@ -134,7 +134,9 @@ void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
 
     // set up the key encryption key
     self->kek = malloc(SHA256_DIGEST_LENGTH * sizeof *(self->kek));
+    SET_MEM_LOCK(self->kek, SHA256_DIGEST_LENGTH * sizeof *(self->kek))
     SHA256((char unsigned *)passphrase, strlen(passphrase), self->kek);
+
     zero_and_free(passphrase_hash, SHA512_DIGEST_LENGTH);
     zero_and_free(stored_hash, SHA512_DIGEST_LENGTH);
 

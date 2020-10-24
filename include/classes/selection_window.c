@@ -934,6 +934,7 @@ void change_grid_check(GtkButton *btn, selection_window_t *self)
     // so is an SHA256 hash
     zero_and_free(self->kek, AES_KEY_LENGTH);
     self->kek = malloc(SHA256_DIGEST_LENGTH * sizeof *(self->kek));
+    SET_MEM_LOCK(self->kek, SHA256_DIGEST_LENGTH * sizeof *(self->kek))
     SHA256((char unsigned *)passphrase1, strlen(passphrase1), self->kek);
 
     for(int i = 0; i < self->num_of_items; ++i)
