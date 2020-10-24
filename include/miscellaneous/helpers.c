@@ -278,7 +278,7 @@ void zero_and_free(char volatile unsigned *data, int length)
     {
         *p = '\0';
     }
-    // CLR_MEM_LOCK((void *)data, length);
+    // CLR_MEM_LOCK((void *)data, length)
     free((void *)data);
 }
 
