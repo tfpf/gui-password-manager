@@ -1,3 +1,6 @@
+/*-----------------------------------------------------------------------------
+General preprocessor directives.
+-----------------------------------------------------------------------------*/
 #include <ctype.h>
 #include <gtk/gtk.h>
 #include <openssl/conf.h>
@@ -10,11 +13,30 @@
 #include <string.h>
 #include <strings.h>
 
+/*-----------------------------------------------------------------------------
+OS-specific preprocessor directives.
+-----------------------------------------------------------------------------*/
+#ifdef _WIN32
+    #include <memoryapi.h>
+#endif
+
 #ifdef __linux__
     #include <execinfo.h>
+    #include <sys/mman.h>
     #include <signal.h>
 #endif
 
+#ifdef _WIN32
+    #define SET_MEM_LOCK(ptr, size) VirtualLock(ptr, size);
+    #define CLR_MEM_LOCK(ptr, size) VirtualUnlock(ptr, size);
+#elif __linux__
+    #define SET_MEM_LOCK(ptr, size) mlock(ptr, size);
+    #define CLR_MEM_LOCK(ptr, size) munlock(ptr, size);
+#endif
+
+/*-----------------------------------------------------------------------------
+Local includes.
+-----------------------------------------------------------------------------*/
 #include "global_constants.c"
 #include "helpers.c"
 #include "notification_revealer.c"
