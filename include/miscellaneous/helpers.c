@@ -10,6 +10,8 @@ void toggle_visibility(GtkButton *btn, GtkEntry *entry);
 int request_confirmation(GtkWidget *window, char const *question, char *website, char *username);
 void segfault_handler(int sig);
 char *my_strcasestr(char const *txt, char const *pat);
+char *my_strdup(char const *string);
+char unsigned *my_fread(int length, FILE *Slave_file);
 void zero_and_free(char volatile unsigned *data, int length);
 
 /*-----------------------------------------------------------------------------
@@ -19,6 +21,7 @@ and initialisation vector for AES. The length is the number of bytes, not bits.
 char unsigned *gen_rand(int length)
 {
     char unsigned *arr = malloc(length * sizeof *arr);
+    SET_MEM_LOCK(arr, length * sizeof *arr)
     randombytes_buf(arr, length);
 
     return arr;
@@ -71,6 +74,7 @@ to store the ciphertext. Return the actual length of the ciphertext.
 int encrypt_AES(char unsigned *pt, int ptlen, char unsigned *key, char unsigned *iv, char unsigned **ct)
 {
     *ct = malloc(2 * ptlen * sizeof **ct);
+    SET_MEM_LOCK(*ct, 2 * ptlen * sizeof **ct)
 
     // encrypt
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
@@ -94,6 +98,7 @@ be the same as the result of calling `strlen' on the plaintext.
 int decrypt_AES(char unsigned *ct, int ctlen, char unsigned *key, char unsigned *iv, char unsigned **pt)
 {
     *pt = malloc(2 * ctlen * sizeof **pt);
+    SET_MEM_LOCK(*pt, 2 * ctlen * sizeof **pt)
 
     // decrypt
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
@@ -234,6 +239,28 @@ char *my_strcasestr(char const *txt, char const *pat)
 }
 
 /*-----------------------------------------------------------------------------
+Duplicate a string. Mark the memory used by it as non-swappable.
+-----------------------------------------------------------------------------*/
+char *my_strdup(char const *string)
+{
+    char *duplicate = strdup(string);
+    SET_MEM_LOCK(duplicate, strlen(duplicate))
+    return duplicate;
+}
+
+/*-----------------------------------------------------------------------------
+Read encrypted data from a file. Mark the memory used by the buffer as
+non-swappable.
+-----------------------------------------------------------------------------*/
+char unsigned *my_fread(int length, FILE *Slave_file)
+{
+    char unsigned *buffer = malloc(length * sizeof *buffer);
+    SET_MEM_LOCK(buffer, length * sizeof *buffer)
+    fread(buffer, 1, length, Slave_file);
+    return buffer;
+}
+
+/*-----------------------------------------------------------------------------
 Overwrite the given memory chunk with zeros. Then release the memory. Whatever
 the input pointer type may have been, assume that it is volatile when it is
 passed to this function. This ensures that the zeroing operation does not get
@@ -243,14 +270,15 @@ It is not possible to replace this loop with a call to the `memset' function,
 because `memset' discards the `volatile' qualifier.
 
 The final cast to a pointer of type `void' ensures that the compiler does not
-give a warning about `free' discarding the `volatile' qualifier.
+give a warning about discarding the `volatile' qualifier.
 -----------------------------------------------------------------------------*/
 void zero_and_free(char volatile unsigned *data, int length)
 {
-    for(int i = 0; i < length; ++i)
+    for(char volatile unsigned *p = data; length != 0; --length, ++p)
     {
-        data[i] = '\0';
+        *p = '\0';
     }
+    // CLR_MEM_LOCK((void *)data, length);
     free((void *)data);
 }
 
