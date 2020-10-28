@@ -36,6 +36,12 @@ processing are saved as members of the struct.
 passphrase_window_t *passphrase_window_new(void)
 {
     passphrase_window_t *self = malloc(sizeof *self);
+    if(self == NULL)
+    {
+        WRITE_ERROR_LOG(err_malloc)
+        exit(EXIT_FAILURE);
+    }
+
     self->kek = NULL;
 
     // window
@@ -94,6 +100,12 @@ passphrase_window_t *passphrase_window_new(void)
 
     // notification revealer
     self->notif_revealer = notification_revealer_new();
+    if(self->notif_revealer == NULL)
+    {
+        WRITE_ERROR_LOG(err_malloc)
+        exit(EXIT_FAILURE);
+    }
+
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), self->notif_revealer->revealer);
 
     return self;
@@ -120,8 +132,23 @@ If the hashes do not match, display a notification and do nothing else.
 void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
 {
     char const *passphrase = gtk_entry_get_text(GTK_ENTRY(self->passphrase_ent));
-    char unsigned *passphrase_hash = hash_custom(passphrase);
+
+    char unsigned *passphrase_hash = my_hash(passphrase);
+    if(passphrase_hash == NULL)
+    {
+        WRITE_ERROR_LOG(err_malloc)
+        notification_revealer_show(self->notif_revealer, err_malloc);
+        return;
+    }
+
     char unsigned *stored_hash = passphrase_hash_from_file();
+    if(stored_hash == NULL)
+    {
+        WRITE_ERROR_LOG(err_malloc)
+        notification_revealer_show(self->notif_revealer, err_malloc);
+        zero_and_free(passphrase_hash, SHA512_DIGEST_LENGTH);
+        return;
+    }
 
     // compare
     if(memcmp(passphrase_hash, stored_hash, SHA512_DIGEST_LENGTH))
@@ -133,10 +160,17 @@ void passphrase_window_check(GtkButton *btn, passphrase_window_t *self)
     }
 
     // set up the key encryption key
-    self->kek = malloc(SHA256_DIGEST_LENGTH * sizeof *(self->kek));
-    SET_MEM_LOCK(self->kek, SHA256_DIGEST_LENGTH * sizeof *(self->kek))
-    SHA256((char unsigned *)passphrase, strlen(passphrase), self->kek);
+    self->kek = my_malloc(SHA256_DIGEST_LENGTH * sizeof *(self->kek));
+    if(self->kek == NULL)
+    {
+        WRITE_ERROR_LOG(err_malloc)
+        notification_revealer_show(self->notif_revealer, err_malloc);
+        zero_and_free(passphrase_hash, SHA512_DIGEST_LENGTH);
+        zero_and_free(stored_hash, SHA512_DIGEST_LENGTH);
+        return;
+    }
 
+    SHA256((char unsigned *)passphrase, strlen(passphrase), self->kek);
     zero_and_free(passphrase_hash, SHA512_DIGEST_LENGTH);
     zero_and_free(stored_hash, SHA512_DIGEST_LENGTH);
 
@@ -149,6 +183,11 @@ Read the hash from the passphrase file.
 char unsigned *passphrase_hash_from_file(void)
 {
     char unsigned *hash = malloc(SHA512_DIGEST_LENGTH * sizeof *hash);
+    if(hash == NULL)
+    {
+        return NULL;
+    }
+
     FILE *Master_file = fopen(Master, "rb");
     fread(hash, 1, SHA512_DIGEST_LENGTH, Master_file);
     fclose(Master_file);
@@ -161,7 +200,7 @@ Write the hash to the passphrase file.
 -----------------------------------------------------------------------------*/
 void passphrase_hash_to_file(char const *passphrase)
 {
-    char unsigned *passphrase_hash = hash_custom(passphrase);
+    char unsigned *passphrase_hash = my_hash(passphrase);
     FILE *Master_file = fopen(Master__, "wb");
     fwrite(passphrase_hash, 1, SHA512_DIGEST_LENGTH, Master_file);
     fclose(Master_file);

@@ -90,14 +90,25 @@ char const *const msg_change          = "<span weight=\"normal\">Change Passphra
 char const *const msg_change_header   = "<span weight=\"bold\">Fill these fields to change the passphrase.</span>";
 
 /*-----------------------------------------------------------------------------
-File names. The first is the passphrase file. It contains the hash of the
-passphrase. The second is the password file. All user data is stored in it
-(encrypted, of course). The other two are the names which will be used to
-create temporary files when the contents of the original files have to be
-changed.
+Error messages. May be used int notifications also.
+-----------------------------------------------------------------------------*/
+char const *const err_sodium = "Sodium RNG initialisation failure. Try restarting the app.";
+char const *const err_malloc = "Memory error. Try restarting the app.";
+
+/*-----------------------------------------------------------------------------
+File names.
+
+The first is the passphrase file. It contains the hash of the passphrase. The
+second is the password file. All user data is stored in it (encrypted, of
+course). The other two are the names which will be used to create temporary
+files when the contents of the original files have to be changed.
+
+Lastly, there's the log file. This is where the error log will be written when
+a memory error is encountered.
 -----------------------------------------------------------------------------*/
 char const *const Master   = "Master.bin";
 char const *const Slave    = "Slave.bin";
 char const *const Master__ = "Master.tmp";
 char const *const Slave__  = "Slave.tmp";
+char const *const Error    = "Error.log";
 

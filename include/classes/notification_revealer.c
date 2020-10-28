@@ -27,6 +27,10 @@ revealer and the label as struct members.
 notification_revealer_t *notification_revealer_new(void)
 {
     notification_revealer_t *self = malloc(sizeof *self);
+    if(self == NULL)
+    {
+        return NULL;
+    }
 
     // revealer
     self->revealer = gtk_revealer_new();

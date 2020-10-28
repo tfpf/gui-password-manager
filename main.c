@@ -12,6 +12,7 @@ General preprocessor directives.
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <time.h>
 
 /*-----------------------------------------------------------------------------
 OS-specific preprocessor directives.
@@ -22,8 +23,8 @@ OS-specific preprocessor directives.
 
 #ifdef __linux__
     #include <execinfo.h>
-    #include <sys/mman.h>
     #include <signal.h>
+    #include <sys/mman.h>
 #endif
 
 #ifdef _WIN32
@@ -33,6 +34,11 @@ OS-specific preprocessor directives.
     #define SET_MEM_LOCK(ptr, size) mlock(ptr, size);
     #define CLR_MEM_LOCK(ptr, size) munlock(ptr, size);
 #endif
+
+/*-----------------------------------------------------------------------------
+Defines.
+-----------------------------------------------------------------------------*/
+#define WRITE_ERROR_LOG(message) write_error_log(__FILE__, __LINE__, message);
 
 /*-----------------------------------------------------------------------------
 Local includes.
@@ -57,7 +63,7 @@ int main(void)
     // initialise random number generator
     if(sodium_init() == -1)
     {
-        fprintf(stderr, "Failed to initialise Sodium.\n");
+        WRITE_ERROR_LOG(err_sodium)
         return EXIT_FAILURE;
     }
 

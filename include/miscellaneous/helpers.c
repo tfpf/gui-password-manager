@@ -3,7 +3,6 @@ Function prototypes.
 -----------------------------------------------------------------------------*/
 char unsigned *gen_rand(int length);
 char *gen_rand_constrained(int lower, int upper);
-char unsigned *hash_custom(char const *passphrase);
 int encrypt_AES(char unsigned *pt, int ptlen, char unsigned *key, char unsigned *iv, char unsigned **ct);
 int decrypt_AES(char unsigned *ct, int ctlen, char unsigned *key, char unsigned *iv, char unsigned **pt);
 void toggle_visibility(GtkButton *btn, GtkEntry *entry);
@@ -11,7 +10,10 @@ int request_confirmation(GtkWidget *window, char const *question, char *website,
 void segfault_handler(int sig);
 char *my_strcasestr(char const *txt, char const *pat);
 char *my_strdup(char const *string);
+void *my_malloc(size_t size);
 char unsigned *my_fread(int length, FILE *Slave_file);
+char unsigned *my_hash(char const *passphrase);
+void write_error_log(char const *file, int line, char const *message);
 void zero_and_free(char volatile unsigned *data, int length);
 
 /*-----------------------------------------------------------------------------
@@ -49,22 +51,6 @@ char *gen_rand_constrained(int lower, int upper)
     arr[length] = '\0';
 
     return arr;
-}
-
-/*-----------------------------------------------------------------------------
-Repeatedly hash the input array of bytes. This is expected to be used on the
-passphrase only.
------------------------------------------------------------------------------*/
-char unsigned *hash_custom(char const *passphrase)
-{
-    char unsigned *passphrase_hash = malloc(SHA512_DIGEST_LENGTH * sizeof *passphrase_hash);
-    SHA512((char unsigned *)passphrase, strlen(passphrase), passphrase_hash);
-    for(int i = 0; i < NUM_OF_HASHES; ++i)
-    {
-        SHA512(passphrase_hash, SHA512_DIGEST_LENGTH, passphrase_hash);
-    }
-
-    return passphrase_hash;
 }
 
 /*-----------------------------------------------------------------------------
@@ -249,6 +235,33 @@ char *my_strdup(char const *string)
 }
 
 /*-----------------------------------------------------------------------------
+Allocate memory and mark it as non-swappable.
+-----------------------------------------------------------------------------*/
+void *my_malloc(size_t size)
+{
+    // allocate
+    void *ptr = malloc(size);
+    if(ptr == NULL)
+    {
+        return NULL;
+    }
+
+    // lock
+    #ifdef _WIN32
+    int successful = VirtualLock(ptr, size);
+    #elif __linux__
+    int successful = !mlock(ptr, size);
+    #endif
+    if(!successful)
+    {
+        free(ptr);
+        return NULL;
+    }
+
+    return ptr;
+}
+
+/*-----------------------------------------------------------------------------
 Read encrypted data from a file. Mark the memory used by the buffer as
 non-swappable.
 -----------------------------------------------------------------------------*/
@@ -258,6 +271,46 @@ char unsigned *my_fread(int length, FILE *Slave_file)
     SET_MEM_LOCK(buffer, length * sizeof *buffer)
     fread(buffer, 1, length, Slave_file);
     return buffer;
+}
+
+/*-----------------------------------------------------------------------------
+Repeatedly hash the input array of bytes. This is expected to be used on the
+passphrase only.
+-----------------------------------------------------------------------------*/
+char unsigned *my_hash(char const *passphrase)
+{
+    char unsigned *passphrase_hash = malloc(SHA512_DIGEST_LENGTH * sizeof *passphrase_hash);
+    if(passphrase_hash == NULL)
+    {
+        return NULL;
+    }
+
+    SHA512((char unsigned *)passphrase, strlen(passphrase), passphrase_hash);
+    for(int i = 0; i < NUM_OF_HASHES; ++i)
+    {
+        SHA512(passphrase_hash, SHA512_DIGEST_LENGTH, passphrase_hash);
+    }
+
+    return passphrase_hash;
+}
+
+/*-----------------------------------------------------------------------------
+Write an error message to the error file.
+-----------------------------------------------------------------------------*/
+void write_error_log(char const *file, int line, char const *message)
+{
+    FILE *Error_file = fopen(Error, "w");
+
+    time_t unix_time = time(NULL);
+    struct tm lt = *localtime(&unix_time);
+    fprintf(Error_file, "Current Local Time:\n");
+    fprintf(Error_file, "%4d-%02d-%02d %02d:%02d:%02d\n\n", lt.tm_year + 1900, lt.tm_mon + 1, lt.tm_mday, lt.tm_hour, lt.tm_min, lt.tm_sec);
+
+    fprintf(Error_file, "File \'%s\', Line %d:\n", file, line);
+    fprintf(Error_file, message);
+    fprintf(Error_file, "\n\n");
+
+    fclose(Error_file);
 }
 
 /*-----------------------------------------------------------------------------
