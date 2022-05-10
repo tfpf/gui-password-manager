@@ -72,6 +72,10 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self);
 void manage_box_show_password(GtkButton *btn, selection_window_t *self);
 void manage_box_copy_password(GtkButton *btn, selection_window_t *self);
 void manage_box_delete_password(GtkButton *btn, selection_window_t *self);
+void manage_box_atu(GtkButton *btn, selection_window_t *self);
+gboolean manage_box_atu_after(gpointer data);
+void manage_box_atp(GtkButton *btn, selection_window_t *self);
+gboolean manage_box_atp_after(gpointer data);
 
 void edit_window_new(GtkButton *btn, selection_window_t *self);
 void edit_window_autofill(GtkButton *btn, selection_window_t *self);
@@ -450,6 +454,24 @@ void manage_box_update(GtkEntry *search_ent, selection_window_t *self)
         g_signal_connect(delete_btn, "clicked", G_CALLBACK(manage_box_delete_password), self);
         gtk_box_pack_start(GTK_BOX(box), delete_btn, FALSE, FALSE, 0);
 
+        // automatically type username button
+        GtkWidget *atu_btn = gtk_button_new();
+        gtk_button_set_image(GTK_BUTTON(atu_btn), gtk_image_new_from_file(icon_atu));
+        gtk_widget_set_can_focus(atu_btn, FALSE);
+        gtk_widget_set_name(atu_btn, name);
+        gtk_widget_set_tooltip_text(atu_btn, str_auto_username);
+        g_signal_connect(atu_btn, "clicked", G_CALLBACK(manage_box_atu), self);
+        gtk_box_pack_start(GTK_BOX(box), atu_btn, FALSE, FALSE, 0);
+
+        // automatically type password button
+        GtkWidget *atp_btn = gtk_button_new();
+        gtk_button_set_image(GTK_BUTTON(atp_btn), gtk_image_new_from_file(icon_atp));
+        gtk_widget_set_can_focus(atp_btn, FALSE);
+        gtk_widget_set_name(atp_btn, name);
+        gtk_widget_set_tooltip_text(atp_btn, str_auto_password);
+        g_signal_connect(atp_btn, "clicked", G_CALLBACK(manage_box_atp), self);
+        gtk_box_pack_start(GTK_BOX(box), atp_btn, FALSE, FALSE, 0);
+
         free(name);
     }
 
@@ -502,6 +524,77 @@ void manage_box_delete_password(GtkButton *btn, selection_window_t *self)
 
     manage_box_update(GTK_ENTRY(self->search_ent), self);
     notification_revealer_show(self->notif_revealer, str_delete_password_done);
+}
+
+/*-----------------------------------------------------------------------------
+Prepare to automatically type the username.
+-----------------------------------------------------------------------------*/
+void manage_box_atu(GtkButton *btn, selection_window_t *self)
+{
+    // Check whether we can simulate keystrokes.
+    #ifdef __linux__
+    int status = system("xdotool getactivewindow > /dev/null 2> /dev/null");
+    if(status)
+    {
+        notification_revealer_show(self->notif_revealer, str_cannot_use_auto);
+        return;
+    }
+    #endif
+
+    int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
+
+    gtk_window_iconify(GTK_WINDOW(self->window));
+    g_timeout_add(MINIMISE_WAIT_TIME, manage_box_atu_after, self->items[i]->username);
+}
+
+/*-----------------------------------------------------------------------------
+Automatically type the username.
+-----------------------------------------------------------------------------*/
+gboolean manage_box_atu_after(gpointer data)
+{
+    char const *username = data;
+    int username_len = strlen(username);
+    char *command = my_malloc((username_len + 32) * sizeof *command);
+    sprintf(command, "xdotool type \'%s\'", username);
+    system(command);
+
+    return FALSE;
+}
+
+/*-----------------------------------------------------------------------------
+Prepare to automatically type the password.
+-----------------------------------------------------------------------------*/
+void manage_box_atp(GtkButton *btn, selection_window_t *self)
+{
+    // Check whether we can simulate keystrokes.
+    #ifdef __linux__
+    int status = system("xdotool getactivewindow > /dev/null 2> /dev/null");
+    if(status)
+    {
+        notification_revealer_show(self->notif_revealer, str_cannot_use_auto);
+        return;
+    }
+    #endif
+
+    int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
+
+    gtk_window_iconify(GTK_WINDOW(self->window));
+    g_timeout_add(MINIMISE_WAIT_TIME, manage_box_atp_after, self->items[i]->password);
+}
+
+/*-----------------------------------------------------------------------------
+Automatically type the password.
+-----------------------------------------------------------------------------*/
+gboolean manage_box_atp_after(gpointer data)
+{
+    char const *password = data;
+    int password_len = strlen(password);
+    char *command = my_malloc((password_len + 32) * sizeof *command);
+    sprintf(command, "xdotool type \'%s\'", password);
+    system(command);
+    system("xdotool key KP_Enter");
+
+    return FALSE;
 }
 
 /*-----------------------------------------------------------------------------

@@ -307,7 +307,7 @@ void write_error_log(char const *file, int line, char const *message)
     fprintf(Error_file, "%4d-%02d-%02d %02d:%02d:%02d\n\n", lt.tm_year + 1900, lt.tm_mon + 1, lt.tm_mday, lt.tm_hour, lt.tm_min, lt.tm_sec);
 
     fprintf(Error_file, "File \'%s\', Line %d:\n", file, line);
-    fprintf(Error_file, message);
+    fprintf(Error_file, "%s", message);
     fprintf(Error_file, "\n\n");
 
     fclose(Error_file);
