@@ -554,9 +554,22 @@ gboolean manage_box_atu_after(gpointer data)
 {
     char const *username = data;
     int username_len = strlen(username);
-    char *command = my_malloc((username_len + 32) * sizeof *command);
+    char *command = my_malloc((username_len + 128) * sizeof *command);
+    #ifdef __linux__
     sprintf(command, "xdotool type \'%s\'", username);
     system(command);
+    #elif _WIN32
+    sprintf(command, "WScript //E:VBScript .\\automatic_type.vbs \"%s\"", username);
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof pi);
+    ZeroMemory(&si, sizeof si);
+    si.cb = sizeof si;
+    CreateProcessA(NULL, command, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    #endif
 
     return FALSE;
 }
@@ -589,10 +602,23 @@ gboolean manage_box_atp_after(gpointer data)
 {
     char const *password = data;
     int password_len = strlen(password);
-    char *command = my_malloc((password_len + 32) * sizeof *command);
+    char *command = my_malloc((password_len + 128) * sizeof *command);
+    #ifdef __linux__
     sprintf(command, "xdotool type \'%s\'", password);
     system(command);
     system("xdotool key KP_Enter");
+    #elif _WIN32
+    sprintf(command, "WScript //E:VBScript .\\automatic_type.vbs \"%s{ENTER}\"", password);
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof pi);
+    ZeroMemory(&si, sizeof si);
+    si.cb = sizeof si;
+    CreateProcessA(NULL, command, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    #endif
 
     return FALSE;
 }

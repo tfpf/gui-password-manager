@@ -96,7 +96,7 @@ char const *const msg_change          = "<span weight=\"normal\">Change Passphra
 char const *const msg_change_header   = "<span weight=\"bold\">Fill these fields to change the passphrase.</span>";
 
 /*-----------------------------------------------------------------------------
-Error messages. May be used int notifications also.
+Error messages. May be used in notifications also.
 -----------------------------------------------------------------------------*/
 char const *const err_sodium = "Sodium RNG initialisation failure. Try restarting the app.";
 char const *const err_malloc = "Memory error. Try restarting the app.";

@@ -7,6 +7,10 @@ Sodium (to generate cryptographically secure random numbers). Compiling this
 requires a POSIX-compliant system, because I have used functions not specified
 in the C standard, but specified by POSIX.
 
+This application can automatically type the username and password for you; this
+is useful if a website has disabled copying and pasting. However, automatic
+typing may not work with non-ASCII characters.
+
 # Requirements
 * basic computer knowledge
 * 64-bit operating system (either Windows or a Linux distribution)

@@ -19,6 +19,7 @@ OS-specific preprocessor directives.
 -----------------------------------------------------------------------------*/
 #ifdef _WIN32
     #include <memoryapi.h>
+    #include <windows.h>
 #endif
 
 #ifdef __linux__
