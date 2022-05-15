@@ -571,6 +571,8 @@ gboolean manage_box_atu_after(gpointer data)
     CloseHandle(pi.hThread);
     #endif
 
+    zero_and_free((char unsigned *)command, strlen(command));
+
     return FALSE;
 }
 
@@ -619,6 +621,8 @@ gboolean manage_box_atp_after(gpointer data)
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
     #endif
+
+    zero_and_free((char unsigned *)command, strlen(command));
 
     return FALSE;
 }

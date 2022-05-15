@@ -12,8 +12,8 @@ WINGUI  = -mwindows
 
 Resource    = resource.o
 Source      = main.c
-LExecutable = main
-WExecutable = main.exe
+LExecutable = ED_Manager
+WExecutable = ED_Manager.exe
 
 
 .PHONY: clean lcomp wcomp lexec wexec lrun wrun
@@ -41,4 +41,3 @@ wexec:
 lrun: lcomp lexec
 
 wrun: wcomp wexec
-
