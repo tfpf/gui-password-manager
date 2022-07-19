@@ -22,7 +22,7 @@ OS-specific preprocessor directives.
     #include <windows.h>
 #endif
 
-#ifdef __linux__
+#if defined __linux__ || __APPLE__
     #include <execinfo.h>
     #include <signal.h>
     #include <sys/mman.h>
@@ -31,7 +31,7 @@ OS-specific preprocessor directives.
 #ifdef _WIN32
     #define SET_MEM_LOCK(ptr, size) VirtualLock(ptr, size);
     #define CLR_MEM_LOCK(ptr, size) VirtualUnlock(ptr, size);
-#elif __linux__
+#elif __linux__ || __APPLE__
     #define SET_MEM_LOCK(ptr, size) mlock(ptr, size);
     #define CLR_MEM_LOCK(ptr, size) munlock(ptr, size);
 #endif

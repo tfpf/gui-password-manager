@@ -249,7 +249,7 @@ void *my_malloc(size_t size)
     // lock
     #ifdef _WIN32
     int successful = VirtualLock(ptr, size);
-    #elif __linux__
+    #elif __linux__ || __APPLE__
     int successful = !mlock(ptr, size);
     #endif
     if(!successful)

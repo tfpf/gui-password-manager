@@ -539,6 +539,9 @@ void manage_box_atu(GtkButton *btn, selection_window_t *self)
         notification_revealer_show(self->notif_revealer, str_cannot_use_auto);
         return;
     }
+    #elif __APPLE__
+    notification_revealer_show(self->notif_revealer, "This feature has not been implemented for macOS.");
+    return;
     #endif
 
     int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
@@ -589,6 +592,9 @@ void manage_box_atp(GtkButton *btn, selection_window_t *self)
         notification_revealer_show(self->notif_revealer, str_cannot_use_auto);
         return;
     }
+    #elif __APPLE__
+    notification_revealer_show(self->notif_revealer, "This feature has not been implemented for macOS.");
+    return;
     #endif
 
     int i = atoi(gtk_widget_get_name(GTK_WIDGET(btn)));
