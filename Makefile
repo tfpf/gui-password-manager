@@ -19,7 +19,7 @@ WExecutable = ED_Manager.exe
 MExecutable = ED_Manager
 
 
-.PHONY: clean lcomp wcomp lexec wexec lrun wrun
+.PHONY: clean lcomp wcomp mcomp lexec wexec mexec lrun wrun mrun
 
 
 clean:
