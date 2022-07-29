@@ -20,6 +20,9 @@ typing may not work with non-ASCII characters.
 * `Master.bin` contains the hashed passphrase.
 * `Slave.bin` contains the encrypted passwords.
 
+I should clarify that these file names were inspired by master-slave
+flip-flops.
+
 # Usage
 
 ### The Easy Way (run pre-built binaries)
