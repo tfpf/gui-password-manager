@@ -188,9 +188,9 @@ char unsigned *passphrase_hash_from_file(void)
         return NULL;
     }
 
-    FILE *Master_file = fopen(Master, "rb");
-    fread(hash, 1, SHA512_DIGEST_LENGTH, Master_file);
-    fclose(Master_file);
+    FILE *Queen_file = fopen(Queen, "rb");
+    fread(hash, 1, SHA512_DIGEST_LENGTH, Queen_file);
+    fclose(Queen_file);
 
     return hash;
 }
@@ -201,12 +201,12 @@ Write the hash to the passphrase file.
 void passphrase_hash_to_file(char const *passphrase)
 {
     char unsigned *passphrase_hash = my_hash(passphrase);
-    FILE *Master_file = fopen(Master__, "wb");
-    fwrite(passphrase_hash, 1, SHA512_DIGEST_LENGTH, Master_file);
-    fclose(Master_file);
+    FILE *Queen_file = fopen(Queen__, "wb");
+    fwrite(passphrase_hash, 1, SHA512_DIGEST_LENGTH, Queen_file);
+    fclose(Queen_file);
 
-    remove(Master);
-    rename(Master__, Master);
+    remove(Queen);
+    rename(Queen__, Queen);
 }
 
 /*-----------------------------------------------------------------------------

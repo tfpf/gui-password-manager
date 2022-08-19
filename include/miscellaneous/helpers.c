@@ -11,7 +11,7 @@ void segfault_handler(int sig);
 char *my_strcasestr(char const *txt, char const *pat);
 char *my_strdup(char const *string);
 void *my_malloc(size_t size);
-char unsigned *my_fread(int length, FILE *Slave_file);
+char unsigned *my_fread(int length, FILE *King_file);
 char unsigned *my_hash(char const *passphrase);
 void write_error_log(char const *file, int line, char const *message);
 void zero_and_free(char volatile unsigned *data, int length);
@@ -265,11 +265,11 @@ void *my_malloc(size_t size)
 Read encrypted data from a file. Mark the memory used by the buffer as
 non-swappable.
 -----------------------------------------------------------------------------*/
-char unsigned *my_fread(int length, FILE *Slave_file)
+char unsigned *my_fread(int length, FILE *King_file)
 {
     char unsigned *buffer = malloc(length * sizeof *buffer);
     SET_MEM_LOCK(buffer, length * sizeof *buffer)
-    fread(buffer, 1, length, Slave_file);
+    fread(buffer, 1, length, King_file);
     return buffer;
 }
 

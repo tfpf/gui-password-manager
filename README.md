@@ -17,11 +17,8 @@ typing may not work with non-ASCII characters.
 
 # Notes
 * The default passphrase is `q`.
-* `Master.bin` contains the hashed passphrase.
-* `Slave.bin` contains the encrypted passwords.
-
-I should clarify that these file names were inspired by master-slave
-flip-flops.
+* `Queen.bin` contains the hashed passphrase.
+* `King.bin` contains the encrypted passwords.
 
 # Usage
 
@@ -38,6 +35,8 @@ you do either, open a terminal there and enter the command `./ED_Manager`.)
 #### If you are on Windows
 Run `ED_Manager.exe`.
 
+There is no release for macOS.
+
 ### The Hard Way (compile from source and run)
 * Install the following dependencies.
   * GTK+3.0 (GUI widget toolkit)
@@ -48,6 +47,7 @@ Run `ED_Manager.exe`.
 * Depending on your environment, enter the correct run command.
   * Linux terminal: `make lrun`
   * Windows MSYS2 (MinGW shell): `make wrun`
+  * macOS terminal: `make mrun`
 
 If you are using any other environment, you will have to find out how to run
 the program on your own.

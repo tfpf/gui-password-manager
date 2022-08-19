@@ -83,22 +83,22 @@ password_item_t **password_items_new_from_file(int *num_of_items, char unsigned 
 
     // check `password_item_append' to see the format in which data is written
     // here data is read conforming to the same format
-    FILE *Slave_file = fopen(Slave, "rb");
+    FILE *King_file = fopen(King, "rb");
     for(*num_of_items = 0;; ++*num_of_items)
     {
         int e_website_length, e_username_length, e_password_length;
-        if(fread(&e_website_length, sizeof(int), 1, Slave_file) != 1 || fread(&e_username_length, sizeof(int), 1, Slave_file) != 1 || fread(&e_password_length, sizeof(int), 1, Slave_file) != 1)
+        if(fread(&e_website_length, sizeof(int), 1, King_file) != 1 || fread(&e_username_length, sizeof(int), 1, King_file) != 1 || fread(&e_password_length, sizeof(int), 1, King_file) != 1)
         {
-            fclose(Slave_file);
+            fclose(King_file);
             break;
         }
 
         // read
-        char unsigned *e_website = my_fread(e_website_length, Slave_file);
-        char unsigned *e_username = my_fread(e_username_length, Slave_file);
-        char unsigned *e_password = my_fread(e_password_length, Slave_file);
-        char unsigned *e_key = my_fread(AES_KEY_LENGTH, Slave_file);
-        char unsigned *iv = my_fread(INIT_VEC_LENGTH, Slave_file);
+        char unsigned *e_website = my_fread(e_website_length, King_file);
+        char unsigned *e_username = my_fread(e_username_length, King_file);
+        char unsigned *e_password = my_fread(e_password_length, King_file);
+        char unsigned *e_key = my_fread(AES_KEY_LENGTH, King_file);
+        char unsigned *iv = my_fread(INIT_VEC_LENGTH, King_file);
 
         // decrypt
         char *website, *username, *password;
@@ -141,16 +141,16 @@ Write the ciphertext data in a single item to the pasword file.
 -----------------------------------------------------------------------------*/
 void password_item_write_to_file(password_item_t *self)
 {
-    FILE *Slave_file = fopen(Slave, "ab");
-    fwrite(&(self->e_website_length), sizeof(int), 1, Slave_file);
-    fwrite(&(self->e_username_length), sizeof(int), 1, Slave_file);
-    fwrite(&(self->e_password_length), sizeof(int), 1, Slave_file);
-    fwrite(self->e_website, 1, self->e_website_length, Slave_file);
-    fwrite(self->e_username, 1, self->e_username_length, Slave_file);
-    fwrite(self->e_password, 1, self->e_password_length, Slave_file);
-    fwrite(self->e_key, 1, AES_KEY_LENGTH, Slave_file);
-    fwrite(self->iv, 1, INIT_VEC_LENGTH, Slave_file);
-    fclose(Slave_file);
+    FILE *King_file = fopen(King, "ab");
+    fwrite(&(self->e_website_length), sizeof(int), 1, King_file);
+    fwrite(&(self->e_username_length), sizeof(int), 1, King_file);
+    fwrite(&(self->e_password_length), sizeof(int), 1, King_file);
+    fwrite(self->e_website, 1, self->e_website_length, King_file);
+    fwrite(self->e_username, 1, self->e_username_length, King_file);
+    fwrite(self->e_password, 1, self->e_password_length, King_file);
+    fwrite(self->e_key, 1, AES_KEY_LENGTH, King_file);
+    fwrite(self->iv, 1, INIT_VEC_LENGTH, King_file);
+    fclose(King_file);
 }
 
 /*-----------------------------------------------------------------------------
@@ -158,7 +158,7 @@ Write the ciphertext data in the array of items to the password file.
 -----------------------------------------------------------------------------*/
 void password_items_write_to_file(password_item_t **items, int num_of_items)
 {
-    FILE *Slave_file = fopen(Slave__, "wb");
+    FILE *King_file = fopen(King__, "wb");
     for(int i = 0; i < num_of_items; ++i)
     {
         if(items[i] == NULL)
@@ -166,19 +166,19 @@ void password_items_write_to_file(password_item_t **items, int num_of_items)
             continue;
         }
 
-        fwrite(&(items[i]->e_website_length), sizeof(int), 1, Slave_file);
-        fwrite(&(items[i]->e_username_length), sizeof(int), 1, Slave_file);
-        fwrite(&(items[i]->e_password_length), sizeof(int), 1, Slave_file);
-        fwrite(items[i]->e_website, 1, items[i]->e_website_length, Slave_file);
-        fwrite(items[i]->e_username, 1, items[i]->e_username_length, Slave_file);
-        fwrite(items[i]->e_password, 1, items[i]->e_password_length, Slave_file);
-        fwrite(items[i]->e_key, 1, AES_KEY_LENGTH, Slave_file);
-        fwrite(items[i]->iv, 1, INIT_VEC_LENGTH, Slave_file);
+        fwrite(&(items[i]->e_website_length), sizeof(int), 1, King_file);
+        fwrite(&(items[i]->e_username_length), sizeof(int), 1, King_file);
+        fwrite(&(items[i]->e_password_length), sizeof(int), 1, King_file);
+        fwrite(items[i]->e_website, 1, items[i]->e_website_length, King_file);
+        fwrite(items[i]->e_username, 1, items[i]->e_username_length, King_file);
+        fwrite(items[i]->e_password, 1, items[i]->e_password_length, King_file);
+        fwrite(items[i]->e_key, 1, AES_KEY_LENGTH, King_file);
+        fwrite(items[i]->iv, 1, INIT_VEC_LENGTH, King_file);
     }
-    fclose(Slave_file);
+    fclose(King_file);
 
-    remove(Slave);
-    rename(Slave__, Slave);
+    remove(King);
+    rename(King__, King);
 }
 
 /*-----------------------------------------------------------------------------

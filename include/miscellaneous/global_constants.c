@@ -112,9 +112,9 @@ files when the contents of the original files have to be changed.
 Lastly, there's the log file. This is where the error log will be written when
 a memory error is encountered.
 -----------------------------------------------------------------------------*/
-char const *const Master   = "Master.bin";
-char const *const Slave    = "Slave.bin";
-char const *const Master__ = "Master.tmp";
-char const *const Slave__  = "Slave.tmp";
-char const *const Error    = "Error.log";
+char const *const Queen   = "Queen.bin";
+char const *const King    = "King.bin";
+char const *const Queen__ = "Queen.tmp";
+char const *const King__  = "King.tmp";
+char const *const Error   = "Error.log";
 
